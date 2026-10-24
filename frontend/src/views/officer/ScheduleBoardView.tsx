@@ -387,23 +387,23 @@ export const ScheduleBoardView: React.FC<ScheduleBoardViewProps> = ({ initialDri
                         {slot ? (
                           <div
                             onClick={() => setSelectedSlot(slot)}
-                            className="bg-blue-50/80 hover:bg-blue-100/90 border border-blue-200 hover:border-blue-400 rounded-xl p-2.5 shadow-2xs cursor-pointer transition-all space-y-1.5 group"
+                            className="bg-[#111e38]/90 hover:bg-[#16274a] border border-[#1e3258] hover:border-emerald-500/60 rounded-xl p-2.5 shadow-sm hover:shadow-emerald-950/30 cursor-pointer transition-all space-y-1.5 group"
                           >
-                            <span className="text-[11px] font-bold text-blue-950 block truncate group-hover:text-blue-700">
+                            <span className="text-[11.5px] font-bold text-slate-100 block truncate group-hover:text-emerald-300 transition-colors">
                               {slot.student_name}
                             </span>
-                            <span className="text-[10px] font-mono font-medium text-blue-700 block truncate">
+                            <span className="text-[10.5px] font-mono font-semibold text-cyan-400 block truncate">
                               {slot.roll_no}
                             </span>
-                            <div className="flex items-center justify-between text-[10px] text-slate-500 pt-1 border-t border-blue-100">
+                            <div className="flex items-center justify-between text-[10px] text-slate-400 pt-1 border-t border-[#1a2c50]">
                               <span className="truncate">{slot.round_name}</span>
-                              <span className="font-semibold text-emerald-700 shrink-0 bg-emerald-100/80 px-1.5 py-0.5 rounded-sm">
+                              <span className="font-bold text-emerald-300 shrink-0 bg-emerald-950/80 border border-emerald-500/30 px-1.5 py-0.5 rounded text-[9.5px]">
                                 OK
                               </span>
                             </div>
                           </div>
                         ) : (
-                          <div className="w-full h-full rounded-lg border border-dashed border-slate-200/60 flex items-center justify-center text-[10px] text-slate-300 font-medium">
+                          <div className="w-full h-full rounded-lg min-h-[64px] border border-dashed border-[#1a2a47] bg-[#091122]/40 flex items-center justify-center text-[10.5px] text-slate-500 font-medium hover:border-slate-700 hover:text-slate-400 transition-colors">
                             Available
                           </div>
                         )}
@@ -420,10 +420,10 @@ export const ScheduleBoardView: React.FC<ScheduleBoardViewProps> = ({ initialDri
       {/* Selected Slot Inspector Modal */}
       {selectedSlot && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs">
-          <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-200 space-y-4">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+          <div className="bg-[#0d1527] rounded-2xl max-w-md w-full p-6 shadow-2xl border border-[#1e3258] space-y-4 text-slate-100">
+            <div className="flex items-center justify-between pb-3 border-b border-[#1b2b4d]">
               <div className="flex items-center gap-2">
-                <div className="w-9 h-9 rounded-xl bg-blue-100 text-blue-700 flex items-center justify-center font-bold">
+                <div className="w-9 h-9 rounded-xl bg-emerald-950/80 border border-emerald-500/30 text-emerald-400 flex items-center justify-center font-bold">
                   <UserCheck className="w-5 h-5" />
                 </div>
                 <div>
@@ -440,14 +440,14 @@ export const ScheduleBoardView: React.FC<ScheduleBoardViewProps> = ({ initialDri
             </div>
 
             <div className="space-y-3 text-xs">
-              <div className="p-3 bg-slate-50 rounded-xl space-y-1 border border-slate-100">
+              <div className="p-3 bg-[#080e1c] rounded-xl space-y-1 border border-[#1b2b4d]">
                 <div className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Candidate</div>
                 <div className="text-sm font-black text-slate-900">{selectedSlot.student_name}</div>
                 <div className="font-mono text-slate-600">{selectedSlot.roll_no}</div>
               </div>
 
               <div className="grid grid-cols-2 gap-3">
-                <div className="p-3 bg-slate-50 rounded-xl space-y-1 border border-slate-100">
+                <div className="p-3 bg-[#080e1c] rounded-xl space-y-1 border border-[#1b2b4d]">
                   <div className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider flex items-center gap-1">
                     <Clock className="w-3 h-3 text-blue-600" /> Time Window
                   </div>
@@ -456,7 +456,7 @@ export const ScheduleBoardView: React.FC<ScheduleBoardViewProps> = ({ initialDri
                   </div>
                 </div>
 
-                <div className="p-3 bg-slate-50 rounded-xl space-y-1 border border-slate-100">
+                <div className="p-3 bg-[#080e1c] rounded-xl space-y-1 border border-[#1b2b4d]">
                   <div className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider flex items-center gap-1">
                     <Building className="w-3 h-3 text-emerald-600" /> Venue
                   </div>
