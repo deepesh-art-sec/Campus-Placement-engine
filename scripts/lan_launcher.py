@@ -57,26 +57,40 @@ def get_all_lan_ips() -> list[str]:
 
 def print_banner(lan_ip: str, port: int = 8000) -> None:
     all_ips = get_all_lan_ips()
+    is_offline = (lan_ip == "127.0.0.1" and len([ip for ip in all_ips if ip != "127.0.0.1"]) == 0)
     print("=" * 76)
     print("   INSTITUTIONAL PLACEMENT ELIGIBILITY & SCHEDULING ENGINE")
-    print("   HYBRID PUBLIC CLOUD & INSTITUTIONAL NETWORK DEPLOYMENT")
+    if is_offline:
+        print("   100% OFFLINE STANDALONE MODE (NO NETWORK REQUIRED)")
+    else:
+        print("   HYBRID PUBLIC CLOUD & INSTITUTIONAL NETWORK DEPLOYMENT")
     print("=" * 76)
-    print(f"   [+] Status:              ONLINE (PUBLIC CLOUD & LAN READY)")
+    print(f"   [+] Status:              ONLINE (READY FOR TRAFFIC)")
+    if is_offline:
+        print(f"   [+] Network:             OFFLINE (NO INTERNET OR LAN REQUIRED)")
+    else:
+        print(f"   [+] Network:             CONNECTED ({lan_ip})")
     print(f"   [+] Security:            Role-Based RBAC & Encrypted Student PII")
-    print(f"   [+] Storage Engine:      SQLite WAL Mode (Concurrent Multi-User Access)")
-    print(f"   [+] Constraint Solver:   Google OR-Tools CP-SAT")
+    print(f"   [+] Storage Engine:      SQLite WAL Mode (Local Database)")
+    print(f"   [+] Constraint Solver:   Google OR-Tools CP-SAT (Local In-Memory)")
     print("   " + "-" * 70)
-    print(f"   --> TPO Officer Local:    http://localhost:{port}")
-    print(f"   --> Primary LAN Access:   http://{lan_ip}:{port}")
-    for alt_ip in all_ips:
-        if alt_ip != lan_ip and not alt_ip.startswith("192.168.65.") and not alt_ip.startswith("192.168.83."):
-            print(f"   --> Alternate LAN/Hotspot: http://{alt_ip}:{port}")
-    print("   " + "-" * 70)
-    print(f"   SHARE THIS LINK WITH ANYONE ON YOUR WI-FI / LAN NETWORK:")
-    print(f"   >>> http://{lan_ip}:{port} <<<")
+    print(f"   --> Local Browser URL:    http://localhost:{port}")
+    if not is_offline:
+        print(f"   --> Primary LAN Access:   http://{lan_ip}:{port}")
+        for alt_ip in all_ips:
+            if alt_ip != lan_ip and not alt_ip.startswith("192.168.65.") and not alt_ip.startswith("192.168.83."):
+                print(f"   --> Alternate LAN/Hotspot: http://{alt_ip}:{port}")
+        print("   " + "-" * 70)
+        print(f"   SHARE THIS LINK WITH ANYONE ON YOUR WI-FI / LAN NETWORK:")
+        print(f"   >>> http://{lan_ip}:{port} <<<")
+    else:
+        print(f"   --> Alternate Loopback:   http://127.0.0.1:{port}")
+        print("   " + "-" * 70)
+        print("   [!] OFFLINE STANDALONE: Running 100% locally on this machine.")
+        print(f"   [!] Open http://localhost:{port} in any browser (Chrome, Edge, Firefox).")
     print("   " + "-" * 70)
     print("   Default Officer Login:    username='officer', password='officer123'")
-    print("   Default Student Login:    roll_no='PIPE_001', code='123456'")
+    print("   Default Student Login:    roll_no='BT210001' or 'PIPE_001', code='123456'")
     print("=" * 76)
     sys.stdout.flush()
 
@@ -88,9 +102,9 @@ def main() -> None:
     # 1. Run migrations
     print("[*] Verifying database schema and migrations...")
     try:
-        subprocess.run(["alembic", "-c", "backend/alembic.ini", "upgrade", "head"], check=True)
+        subprocess.run([sys.executable, "-m", "alembic", "-c", "backend/alembic.ini", "upgrade", "head"], check=True)
     except Exception as exc:
-        print(f"[!] Migration warning: {exc}. Initializing schema directly...")
+        print(f"[!] Migration notice: {exc}. Verifying schema directly...")
         from backend.app.storage.database import Base, engine
         Base.metadata.create_all(bind=engine)
 
@@ -108,7 +122,22 @@ def main() -> None:
     lan_ip = get_primary_lan_ip()
     print_banner(lan_ip, port)
 
-    # 4. Launch unified server
+    # 4. Optional browser auto-open
+    if os.getenv("AUTO_OPEN_BROWSER", "0") == "1":
+        try:
+            import threading
+            import time
+            import webbrowser
+
+            def _open():
+                time.sleep(1.2)
+                webbrowser.open(f"http://localhost:{port}")
+
+            threading.Thread(target=_open, daemon=True).start()
+        except Exception:
+            pass
+
+    # 5. Launch unified server
     import uvicorn
     uvicorn.run("backend.app.api.main:app", host=host, port=port, log_level="info")
 

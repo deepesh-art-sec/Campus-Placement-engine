@@ -95,13 +95,24 @@ def generate_schedule(
     # Ensure enough individual cabins for requested parallel panels
     effective_num_panels = max(req.num_panels, (len(shortlist_ids) + 13) // 14) if shortlist_ids else req.num_panels
     cabins = [r for r in room_entities if r.capacity < 50]
+    existing_ids = {r.id for r in room_entities}
+    existing_names = {r.name for r in room_entities}
+    c_num = 1
     while len(cabins) < effective_num_panels:
-        c_idx = len(room_entities) + 1
-        new_c = RoomModel(id=f"cabin_{c_idx}", name=f"Interview Cabin {c_idx}", building="Placement", capacity=5)
+        cabin_id = f"cabin_auto_{c_num}"
+        cabin_name = f"Interview Cabin Auto {c_num}"
+        while cabin_id in existing_ids or cabin_name in existing_names:
+            c_num += 1
+            cabin_id = f"cabin_auto_{c_num}"
+            cabin_name = f"Interview Cabin Auto {c_num}"
+        new_c = RoomModel(id=cabin_id, name=cabin_name, building="Placement", capacity=5)
         db.add(new_c)
         db.flush()
+        existing_ids.add(cabin_id)
+        existing_names.add(cabin_name)
         room_entities.append(new_c)
         cabins.append(new_c)
+        c_num += 1
     db.commit()
 
     rooms = [

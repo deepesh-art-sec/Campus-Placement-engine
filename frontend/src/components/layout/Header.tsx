@@ -69,14 +69,16 @@ export const Header: React.FC<HeaderProps> = ({ onOpenTour, onNavigateToAudit })
         </div>
 
         <div className="flex items-center gap-3">
-          {/* Quick LAN IP Pill */}
+          {/* Quick Access Pill (Offline / LAN) */}
           <button
             type="button"
             onClick={handleCopyLanUrl}
             className="flex items-center gap-1.5 px-2.5 py-0.5 rounded-lg bg-[#0e172a] hover:bg-[#152342] text-slate-300 text-[11px] font-mono transition-all border border-[#1b2b4d] hover:border-emerald-500/40 cursor-pointer"
-            title="Click to copy candidate LAN access link"
+            title="Click to copy local / LAN access link"
           >
-            <span className="text-slate-400">LAN:</span>
+            <span className="text-slate-400">
+              {lanUrl.includes("localhost") || lanUrl.includes("127.0.0.1") ? "Offline:" : "LAN:"}
+            </span>
             <span className="text-emerald-300 font-bold">{lanUrl}</span>
             {copied ? (
               <Check className="w-3 h-3 text-emerald-400 ml-0.5" />
