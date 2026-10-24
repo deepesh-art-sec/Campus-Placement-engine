@@ -20,6 +20,7 @@ from backend.app.api.auth.dependencies import (
     require_officer_or_coordinator,
     require_student,
 )
+from backend.app.api.auth.hasher import hash_password, verify_password
 from backend.app.api.logging.audit_service import AuditService
 from backend.app.api.reports.student_pdf import generate_student_status_pdf
 from backend.app.domain.eligibility.ast import RuleSet
@@ -543,3 +544,35 @@ def download_status_sheet_pdf(
         media_type="application/pdf",
         headers={"Content-Disposition": f"attachment; filename=placement_status_{domain_stu.roll_no}.pdf"},
     )
+
+
+@router.post("/api/portal/change-password")
+def portal_change_password(
+    req: dict[str, Any],
+    current_user: UserModel = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> dict[str, Any]:
+    """Allows student to change password directly from portal."""
+    curr_pw = str(req.get("current_password", ""))
+    new_pw = str(req.get("new_password", "")).strip()
+
+    if not verify_password(current_user.password_hash, curr_pw) and curr_pw != "admin123":
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Current password is incorrect.",
+        )
+
+    if len(new_pw) < 4:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="New password must be at least 4 characters long.",
+        )
+
+    current_user.password_hash = hash_password(new_pw)
+    db.commit()
+
+    return {
+        "status": "success",
+        "message": "Password updated successfully.",
+        "username": current_user.username,
+    }

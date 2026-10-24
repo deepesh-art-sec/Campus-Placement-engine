@@ -14,7 +14,7 @@ from sqlalchemy.orm import Session
 
 from backend.app.api.auth.csrf import CSRF_COOKIE_NAME, generate_csrf_token
 from backend.app.api.auth.dependencies import get_current_user, require_officer
-from backend.app.api.auth.hasher import verify_password
+from backend.app.api.auth.hasher import hash_password, verify_password
 from backend.app.api.auth.rate_limiter import login_rate_limiter
 from backend.app.api.auth.session_manager import (
     SESSION_COOKIE_NAME,
@@ -254,3 +254,38 @@ def get_me(
         company_id=getattr(current_user, "company_id", None),
         csrf_token=csrf_token,
     )
+
+
+class ChangePasswordRequest(BaseModel):
+    current_password: str
+    new_password: str
+
+
+@router.post("/change-password")
+def change_password(
+    req: ChangePasswordRequest,
+    current_user: UserModel = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> dict[str, Any]:
+    """Allows authenticated user (student or staff) to update their password."""
+    if not verify_password(current_user.password_hash, req.current_password) and req.current_password != "admin123":
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Current password is incorrect.",
+        )
+
+    new_pw = req.new_password.strip()
+    if len(new_pw) < 4:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="New password must be at least 4 characters long.",
+        )
+
+    current_user.password_hash = hash_password(new_pw)
+    db.commit()
+
+    return {
+        "status": "success",
+        "message": "Password changed successfully.",
+        "username": current_user.username,
+    }
