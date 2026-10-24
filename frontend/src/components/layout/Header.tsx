@@ -1,16 +1,14 @@
-import React, { useState, useEffect } from "react";
+import React from "react";
 import {
   ShieldCheck,
   HardDrive,
   LogOut,
   HelpCircle,
   Activity,
-  Copy,
-  Check,
   Cpu,
 } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
-import { api, auditTracker } from "../../api/client";
+import { auditTracker } from "../../api/client";
 
 interface HeaderProps {
   onOpenTour?: () => void;
@@ -20,32 +18,6 @@ interface HeaderProps {
 export const Header: React.FC<HeaderProps> = ({ onOpenTour, onNavigateToAudit }) => {
   const { user, logout } = useAuth();
   const externalCalls = auditTracker.getExternalCount();
-  const [copied, setCopied] = useState(false);
-
-  const [lanUrl, setLanUrl] = useState<string>(() => {
-    if (typeof window !== "undefined") {
-      if (window.location.hostname !== "localhost" && window.location.hostname !== "127.0.0.1") {
-        return `${window.location.protocol}//${window.location.hostname}:8000`;
-      }
-    }
-    return "http://localhost:8000";
-  });
-
-  useEffect(() => {
-    api.get<any>("/api/lan-info").then((res) => {
-      if (res?.primary_url) {
-        setLanUrl(res.primary_url);
-      }
-    }).catch(() => {});
-  }, []);
-
-  const handleCopyLanUrl = () => {
-    if (navigator.clipboard) {
-      navigator.clipboard.writeText(lanUrl);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    }
-  };
 
   return (
     <header className="bg-[#080e1c]/95 backdrop-blur-md border-b border-[#1b2b4d] sticky top-0 z-30 shadow-md no-print transition-all">
@@ -69,23 +41,11 @@ export const Header: React.FC<HeaderProps> = ({ onOpenTour, onNavigateToAudit })
         </div>
 
         <div className="flex items-center gap-3">
-          {/* Quick Access Pill (Offline / LAN) */}
-          <button
-            type="button"
-            onClick={handleCopyLanUrl}
-            className="flex items-center gap-1.5 px-2.5 py-0.5 rounded-lg bg-[#0e172a] hover:bg-[#152342] text-slate-300 text-[11px] font-mono transition-all border border-[#1b2b4d] hover:border-emerald-500/40 cursor-pointer"
-            title="Click to copy local / LAN access link"
-          >
-            <span className="text-slate-400">
-              {lanUrl.includes("localhost") || lanUrl.includes("127.0.0.1") ? "Offline:" : "LAN:"}
-            </span>
-            <span className="text-emerald-300 font-bold">{lanUrl}</span>
-            {copied ? (
-              <Check className="w-3 h-3 text-emerald-400 ml-0.5" />
-            ) : (
-              <Copy className="w-3 h-3 text-slate-400 hover:text-white ml-0.5" />
-            )}
-          </button>
+          {/* Status Badge */}
+          <div className="flex items-center gap-1.5 px-2.5 py-0.5 rounded-lg bg-[#0e172a] text-slate-300 text-[11px] font-mono border border-[#1b2b4d]">
+            <span className="h-1.5 w-1.5 rounded-full bg-emerald-400"></span>
+            <span className="text-emerald-300 font-semibold">Online</span>
+          </div>
 
           {/* Audit Pill */}
           <button
