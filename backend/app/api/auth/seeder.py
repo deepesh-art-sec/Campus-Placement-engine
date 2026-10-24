@@ -18,9 +18,26 @@ def seed_default_accounts() -> None:
     """Seeds baseline institutional accounts for local college deployment."""
     db = SessionLocal()
     try:
+        # 0. Primary Administrator (admin / admin123)
+        stmt_admin = select(UserModel).where(UserModel.username == "admin")
+        admin_u = db.execute(stmt_admin).scalar_one_or_none()
+        if not admin_u:
+            admin_u = UserModel(
+                id="usr_admin_root",
+                username="admin",
+                email="admin@college.edu",
+                password_hash=hash_password("admin123"),
+                role="officer",
+                is_active=True,
+            )
+            db.add(admin_u)
+        else:
+            admin_u.password_hash = hash_password("admin123")
+
         # 1. Placement Officer
         stmt = select(UserModel).where(UserModel.username == "officer")
-        if not db.execute(stmt).scalar_one_or_none():
+        officer = db.execute(stmt).scalar_one_or_none()
+        if not officer:
             officer = UserModel(
                 id="usr_officer_root",
                 username="officer",
@@ -30,10 +47,13 @@ def seed_default_accounts() -> None:
                 is_active=True,
             )
             db.add(officer)
+        else:
+            officer.password_hash = hash_password("officer123")
 
         # 2. Student Placement Coordinator
         stmt_coord = select(UserModel).where(UserModel.username == "coordinator")
-        if not db.execute(stmt_coord).scalar_one_or_none():
+        coord = db.execute(stmt_coord).scalar_one_or_none()
+        if not coord:
             coord = UserModel(
                 id="usr_coord_root",
                 username="coordinator",
@@ -43,10 +63,13 @@ def seed_default_accounts() -> None:
                 is_active=True,
             )
             db.add(coord)
+        else:
+            coord.password_hash = hash_password("coord123")
 
         # 3. Recruiter Read-Only Account
         stmt_rec = select(UserModel).where(UserModel.username == "recruiter_google")
-        if not db.execute(stmt_rec).scalar_one_or_none():
+        recruiter = db.execute(stmt_rec).scalar_one_or_none()
+        if not recruiter:
             recruiter = UserModel(
                 id="usr_recruiter_google",
                 username="recruiter_google",
@@ -57,6 +80,8 @@ def seed_default_accounts() -> None:
                 is_active=True,
             )
             db.add(recruiter)
+        else:
+            recruiter.password_hash = hash_password("recruiter123")
 
         # 4. Default Demo Students for LAN Access & Dispute Comparison
         stmt_stu = select(StudentModel).where(StudentModel.roll_no == "PIPE_001")
@@ -78,7 +103,8 @@ def seed_default_accounts() -> None:
             db.flush()
 
         stmt_stu_user = select(UserModel).where(UserModel.username == "PIPE_001")
-        if not db.execute(stmt_stu_user).scalar_one_or_none():
+        stu_user = db.execute(stmt_stu_user).scalar_one_or_none()
+        if not stu_user:
             stu_user = UserModel(
                 id="usr_stu_pipe_001",
                 username="PIPE_001",
@@ -89,6 +115,8 @@ def seed_default_accounts() -> None:
                 is_active=True,
             )
             db.add(stu_user)
+        else:
+            stu_user.password_hash = hash_password("123456")
 
         # 5. Second Demo Student for Comparative Analysis
         stmt_stu2 = select(StudentModel).where(StudentModel.roll_no == "PIPE_002")
@@ -110,7 +138,8 @@ def seed_default_accounts() -> None:
             db.flush()
 
         stmt_stu2_user = select(UserModel).where(UserModel.username == "PIPE_002")
-        if not db.execute(stmt_stu2_user).scalar_one_or_none():
+        stu2_user = db.execute(stmt_stu2_user).scalar_one_or_none()
+        if not stu2_user:
             stu2_user = UserModel(
                 id="usr_stu_pipe_002",
                 username="PIPE_002",
@@ -121,6 +150,8 @@ def seed_default_accounts() -> None:
                 is_active=True,
             )
             db.add(stu2_user)
+        else:
+            stu2_user.password_hash = hash_password("123456")
 
         db.commit()
     finally:

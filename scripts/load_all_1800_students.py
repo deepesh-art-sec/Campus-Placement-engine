@@ -41,8 +41,8 @@ def load_1800_students() -> None:
 
     db = SessionLocal()
     try:
-        # Precompute password hash once for all 1,800 student logins
-        default_student_pwd_hash = hash_password("123456")
+        # Precompute password hash once for all 1,800 student logins (admin123)
+        default_student_pwd_hash = hash_password("admin123")
 
         # Existing roll numbers in DB
         existing_rolls = set(db.execute(select(StudentModel.roll_no)).scalars().all())

@@ -30,10 +30,10 @@ const MainContent: React.FC = () => {
 
   // Unauthenticated Login Form State
   const [authRole, setAuthRole] = useState<"officer" | "student" | "recruiter">("officer");
-  const [username, setUsername] = useState("");
-  const [password, setPassword] = useState("");
-  const [studentRoll, setStudentRoll] = useState("");
-  const [studentCode, setStudentCode] = useState("");
+  const [username, setUsername] = useState("admin");
+  const [password, setPassword] = useState("admin123");
+  const [studentRoll, setStudentRoll] = useState("admin");
+  const [studentCode, setStudentCode] = useState("admin123");
   const [authLoading, setAuthLoading] = useState(false);
 
   const handleTabSelect = (tab: string, driveId?: string) => {
@@ -152,7 +152,7 @@ const MainContent: React.FC = () => {
                       value={studentRoll}
                       onChange={(e) => setStudentRoll(e.target.value)}
                       className="w-full px-4 py-2.5 bg-[#080e1c] border border-[#1e3258] rounded-xl text-sm font-semibold text-white focus:bg-[#0d1527] focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-all"
-                      placeholder="e.g. BT210001"
+                      placeholder="e.g. BT210001 or admin"
                     />
                   </div>
                   <div>
@@ -165,7 +165,7 @@ const MainContent: React.FC = () => {
                       value={studentCode}
                       onChange={(e) => setStudentCode(e.target.value)}
                       className="w-full px-4 py-2.5 bg-[#080e1c] border border-[#1e3258] rounded-xl text-sm font-semibold text-white focus:bg-[#0d1527] focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-all"
-                      placeholder="Enter access code"
+                      placeholder="Default: admin123"
                     />
                   </div>
                 </>
@@ -181,7 +181,7 @@ const MainContent: React.FC = () => {
                       value={username}
                       onChange={(e) => setUsername(e.target.value)}
                       className="w-full px-4 py-2.5 bg-[#080e1c] border border-[#1e3258] rounded-xl text-sm font-semibold text-white focus:bg-[#0d1527] focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-all"
-                      placeholder={authRole === "officer" ? "e.g. officer, coordinator" : "e.g. recruiter_google"}
+                      placeholder="Default: admin"
                     />
                   </div>
                   <div>
@@ -194,7 +194,7 @@ const MainContent: React.FC = () => {
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
                       className="w-full px-4 py-2.5 bg-[#080e1c] border border-[#1e3258] rounded-xl text-sm font-semibold text-white focus:bg-[#0d1527] focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-all"
-                      placeholder="Enter password"
+                      placeholder="Default: admin123"
                     />
                   </div>
                 </>
