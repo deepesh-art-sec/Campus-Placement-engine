@@ -26,6 +26,7 @@ env/
 
 # Database
 *.db
+!placement_engine.db
 *.sqlite3
 *.db-journal
 *.db-wal
