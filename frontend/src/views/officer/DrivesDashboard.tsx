@@ -138,61 +138,79 @@ export const DrivesDashboard: React.FC<DrivesDashboardProps> = ({ onNavigateTab 
 
       {/* Metrics Row */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <div className="bg-white p-4.5 rounded-2xl border border-slate-200/80 shadow-xs relative overflow-hidden group hover:border-brand-300 transition-all">
-          <div className="absolute top-0 left-0 right-0 h-1 bg-brand-500" />
-          <div className="flex items-center justify-between">
-            <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Total Drives</span>
-            <div className="p-2 bg-brand-50 text-brand-700 rounded-xl">
-              <Briefcase className="w-4 h-4" />
-            </div>
+        <div className="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-xs relative overflow-hidden group hover:border-brand-300 transition-all flex flex-col items-center justify-between text-center min-h-[168px]">
+          <div className="absolute top-0 left-0 right-0 h-1.5 bg-brand-500 rounded-t-2xl" />
+          <div className="p-2.5 bg-brand-50 text-brand-700 rounded-xl mt-1">
+            <Briefcase className="w-5 h-5" />
           </div>
-          <span className="text-3xl font-black text-slate-900 block mt-2">{drives.length}</span>
-          <span className="text-[11px] text-slate-400 mt-1 block">Campus season roster</span>
+          <div className="my-1">
+            <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">
+              Total Drives
+            </span>
+            <span className="text-3xl font-black text-slate-900 block mt-1 tracking-tight">
+              {drives.length}
+            </span>
+          </div>
+          <span className="text-[11px] text-slate-400 block font-medium">
+            Campus season roster
+          </span>
         </div>
 
-        <div className="bg-white p-4.5 rounded-2xl border border-slate-200/80 shadow-xs relative overflow-hidden group hover:border-emerald-300 transition-all">
-          <div className="absolute top-0 left-0 right-0 h-1 bg-emerald-500" />
-          <div className="flex items-center justify-between">
-            <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Published</span>
-            <div className="p-2 bg-emerald-50 text-emerald-700 rounded-xl">
-              <CheckCircle className="w-4 h-4" />
-            </div>
+        <div className="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-xs relative overflow-hidden group hover:border-emerald-300 transition-all flex flex-col items-center justify-between text-center min-h-[168px]">
+          <div className="absolute top-0 left-0 right-0 h-1.5 bg-emerald-500 rounded-t-2xl" />
+          <div className="p-2.5 bg-emerald-50 text-emerald-700 rounded-xl mt-1">
+            <CheckCircle className="w-5 h-5" />
           </div>
-          <span className="text-3xl font-black text-emerald-700 block mt-2">
-            {drives.filter((d) => d.status === "published").length}
+          <div className="my-1">
+            <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">
+              Published
+            </span>
+            <span className="text-3xl font-black text-emerald-500 block mt-1 tracking-tight">
+              {drives.filter((d) => d.status === "published").length}
+            </span>
+          </div>
+          <span className="text-[11px] text-emerald-400 block font-semibold">
+            Active on Student LAN
           </span>
-          <span className="text-[11px] text-emerald-600 font-semibold mt-1 block">Active on Student LAN</span>
         </div>
 
-        <div className="bg-white p-4.5 rounded-2xl border border-slate-200/80 shadow-xs relative overflow-hidden group hover:border-amber-300 transition-all">
-          <div className="absolute top-0 left-0 right-0 h-1 bg-amber-500" />
-          <div className="flex items-center justify-between">
-            <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">In Draft / Review</span>
-            <div className="p-2 bg-amber-50 text-amber-700 rounded-xl">
-              <Clock className="w-4 h-4" />
-            </div>
+        <div className="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-xs relative overflow-hidden group hover:border-amber-300 transition-all flex flex-col items-center justify-between text-center min-h-[168px]">
+          <div className="absolute top-0 left-0 right-0 h-1.5 bg-amber-500 rounded-t-2xl" />
+          <div className="p-2.5 bg-amber-50 text-amber-700 rounded-xl mt-1">
+            <Clock className="w-5 h-5" />
           </div>
-          <span className="text-3xl font-black text-amber-700 block mt-2">
-            {drives.filter((d) => d.status === "draft" || d.status === "needs_review").length}
+          <div className="my-1">
+            <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">
+              In Draft / Review
+            </span>
+            <span className="text-3xl font-black text-amber-500 block mt-1 tracking-tight">
+              {drives.filter((d) => d.status === "draft" || d.status === "needs_review").length}
+            </span>
+          </div>
+          <span className="text-[11px] text-slate-400 block font-medium">
+            Pending publication
           </span>
-          <span className="text-[11px] text-slate-400 mt-1 block">Pending publication</span>
         </div>
 
-        <div className="bg-white p-4.5 rounded-2xl border border-slate-200/80 shadow-xs relative overflow-hidden group hover:border-indigo-300 transition-all">
-          <div className="absolute top-0 left-0 right-0 h-1 bg-indigo-500" />
-          <div className="flex items-center justify-between">
-            <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Avg Package</span>
-            <div className="p-2 bg-indigo-50 text-indigo-700 rounded-xl">
-              <IndianRupee className="w-4 h-4" />
-            </div>
+        <div className="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-xs relative overflow-hidden group hover:border-indigo-300 transition-all flex flex-col items-center justify-between text-center min-h-[168px]">
+          <div className="absolute top-0 left-0 right-0 h-1.5 bg-indigo-500 rounded-t-2xl" />
+          <div className="p-2.5 bg-indigo-50 text-indigo-700 rounded-xl mt-1">
+            <IndianRupee className="w-5 h-5" />
           </div>
-          <span className="text-3xl font-black text-indigo-700 block mt-2">
-            {drives.length
-              ? (drives.reduce((acc, d) => acc + (d.ctc_lpa || 0), 0) / drives.length).toFixed(1)
-              : "0.0"}{" "}
-            <span className="text-xs font-bold text-slate-400">LPA</span>
+          <div className="my-1">
+            <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">
+              Avg Package
+            </span>
+            <span className="text-3xl font-black text-indigo-400 block mt-1 tracking-tight">
+              {drives.length
+                ? (drives.reduce((acc, d) => acc + (d.ctc_lpa || 0), 0) / drives.length).toFixed(1)
+                : "0.0"}{" "}
+              <span className="text-xs font-bold text-slate-400">LPA</span>
+            </span>
+          </div>
+          <span className="text-[11px] text-slate-400 block font-medium">
+            Fixed + variable CTC
           </span>
-          <span className="text-[11px] text-slate-400 mt-1 block">Fixed + variable CTC</span>
         </div>
       </div>
 
