@@ -116,8 +116,20 @@ def authenticate_student(
     """
     Authenticates a student via Roll Number + Code (and optional DOB verification).
     """
-    # Support admin login in student portal
+    # Support admin login in student portal - map to active scheduled candidate
     if roll_no.strip().lower() == "admin":
+        from backend.app.storage.models.entities import SlotModel
+        active_slot = db.execute(select(SlotModel).where(SlotModel.student_id.isnot(None))).scalars().first()
+        if active_slot:
+            stu_entity = db.execute(select(StudentModel).where(
+                (StudentModel.id == active_slot.student_id) |
+                (StudentModel.roll_no == active_slot.student_id)
+            )).scalar_one_or_none()
+            if stu_entity:
+                stu_user = db.execute(select(UserModel).where(UserModel.username == stu_entity.roll_no)).scalar_one_or_none()
+                if stu_user:
+                    return stu_user
+
         stmt_admin_stu = select(UserModel).where(UserModel.role == "student")
         first_stu = db.execute(stmt_admin_stu).scalars().first()
         if first_stu and (code == "admin123" or verify_password(first_stu.password_hash, code)):

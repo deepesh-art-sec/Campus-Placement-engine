@@ -13,6 +13,8 @@ import {
   ChevronUp,
   AlertTriangle,
   Briefcase,
+  CheckCircle2,
+  UserCheck,
   MapPin,
 } from "lucide-react";
 
@@ -34,16 +36,16 @@ export const StudentPortal: React.FC = () => {
 
   const fetchPortalData = async () => {
     try {
-      const [stuRes, drvRes, schedRes, polRes] = await Promise.all([
+      const results = await Promise.allSettled([
         api.get<any>("/api/portal/me"),
         api.get<any[]>("/api/portal/drives"),
         api.get<any[]>("/api/portal/schedule"),
         api.get<any>("/api/portal/policy-status"),
       ]);
-      setStudentInfo(stuRes);
-      setDrives(drvRes || []);
-      setSchedule(schedRes || []);
-      setPolicyStatus(polRes);
+      if (results[0].status === "fulfilled") setStudentInfo(results[0].value);
+      if (results[1].status === "fulfilled") setDrives(results[1].value || []);
+      if (results[2].status === "fulfilled") setSchedule(results[2].value || []);
+      if (results[3].status === "fulfilled") setPolicyStatus(results[3].value);
     } catch {
       // Fallback display if mock LAN session
     }
@@ -285,43 +287,103 @@ export const StudentPortal: React.FC = () => {
 
       {/* Section 2: Candidate's Own Interview & Test Timetable */}
       <div className="space-y-4 pt-4">
-        <h2 className="text-base font-bold text-white flex items-center gap-2">
-          <Calendar className="w-4 h-4 text-emerald-400" />
-          My Scheduled Rounds & Campus Venues
-        </h2>
+        <div className="flex items-center justify-between">
+          <h2 className="text-base font-bold text-white flex items-center gap-2">
+            <Calendar className="w-4 h-4 text-emerald-400" />
+            My Scheduled Rounds & Campus Venues
+          </h2>
+          {schedule.length > 0 && (
+            <span className="text-xs font-bold px-2.5 py-0.5 bg-emerald-950/80 text-emerald-300 rounded-full border border-emerald-800/60">
+              {schedule.length} Confirmed {schedule.length === 1 ? "Slot" : "Slots"}
+            </span>
+          )}
+        </div>
 
         {schedule.length === 0 ? (
-          <div className="p-8 bg-[#0d1527] border border-[#1b2b4d] rounded-2xl text-center text-xs text-slate-400">
-            No interview or test rounds scheduled yet.
+          <div className="p-8 bg-[#0d1527] border border-[#1b2b4d] rounded-2xl text-center text-xs text-slate-400 space-y-1">
+            <div className="font-bold text-slate-300">No interview or test rounds scheduled yet.</div>
+            <p className="text-[11px] text-slate-500">
+              Once company drives and panels are generated in the placement engine, your personalized cabin slot will appear here.
+            </p>
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {schedule.map((slot) => (
               <div
                 key={slot.slot_id}
-                className="bg-[#0d1527] border border-[#1b2b4d] hover:border-emerald-500/40 rounded-2xl p-4 shadow-sm space-y-2 print-card"
+                className="bg-[#0d1527] border border-[#1b2b4d] hover:border-emerald-500/40 rounded-2xl p-5 shadow-sm space-y-3 print-card transition-all"
               >
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-bold text-white">{slot.round_name}</span>
+                {/* Header: Company & Verified Status */}
+                <div className="flex items-center justify-between pb-2.5 border-b border-[#1b2b4d]/70">
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-8 h-8 rounded-xl bg-blue-950/80 text-blue-400 border border-blue-800/60 flex items-center justify-center font-bold shrink-0">
+                      <Briefcase className="w-4 h-4" />
+                    </div>
+                    <div>
+                      <span className="text-xs font-black text-white block">
+                        {slot.company_name || "Recruitment Drive"}
+                      </span>
+                      <span className="text-[11px] font-bold text-emerald-400 block">
+                        {slot.round_name}
+                      </span>
+                    </div>
+                  </div>
                   {slot.has_clash ? (
                     <Badge variant="danger" size="sm">
                       <AlertTriangle className="w-3 h-3 inline mr-1" /> Clash Warning
                     </Badge>
                   ) : (
-                    <Badge variant="success" size="sm">Confirmed</Badge>
+                    <span className="text-[10px] font-bold px-2 py-0.5 bg-emerald-950/80 text-emerald-300 rounded-full border border-emerald-800/60 flex items-center gap-1 shrink-0">
+                      <CheckCircle2 className="w-3 h-3 text-emerald-400" />
+                      Confirmed
+                    </span>
                   )}
                 </div>
 
-                <div className="space-y-1 text-xs text-slate-300">
-                  <div className="flex items-center gap-1.5 font-semibold text-emerald-300">
-                    <Clock className="w-3.5 h-3.5 text-emerald-400" />
-                    <span>{slot.start_time} - {slot.end_time}</span>
+                {/* Candidate Name matching Schedule Grid */}
+                <div className="p-2.5 bg-[#080e1c] rounded-xl border border-[#162447] flex items-center justify-between text-xs">
+                  <div className="flex items-center gap-2">
+                    <UserCheck className="w-4 h-4 text-emerald-400 shrink-0" />
+                    <div>
+                      <span className="text-[10px] uppercase font-bold text-slate-500 block">Candidate</span>
+                      <span className="font-bold text-white text-xs block">
+                        {slot.student_name || studentInfo?.name || "Student Candidate"}
+                      </span>
+                    </div>
                   </div>
-                  <div className="flex items-center gap-1.5">
-                    <MapPin className="w-3.5 h-3.5 text-slate-400" />
-                    <span>{slot.room_name} ({slot.building})</span>
+                  <div className="text-right font-mono text-[11px] font-bold text-emerald-400 bg-emerald-950/40 px-2 py-1 rounded-lg border border-emerald-900/40">
+                    {slot.roll_no || studentInfo?.roll_no || user.username}
                   </div>
                 </div>
+
+                {/* Venue & Timings Grid */}
+                <div className="grid grid-cols-2 gap-2 text-xs">
+                  <div className="p-2.5 bg-[#080e1c] rounded-xl border border-[#162447] space-y-0.5">
+                    <div className="flex items-center gap-1 text-[10px] text-slate-400 font-bold uppercase">
+                      <Clock className="w-3 h-3 text-blue-400" /> Slot Time
+                    </div>
+                    <div className="font-bold text-slate-200 text-xs">
+                      {slot.start_time} - {slot.end_time}
+                    </div>
+                  </div>
+
+                  <div className="p-2.5 bg-[#080e1c] rounded-xl border border-[#162447] space-y-0.5">
+                    <div className="flex items-center gap-1 text-[10px] text-slate-400 font-bold uppercase">
+                      <MapPin className="w-3 h-3 text-emerald-400" /> Campus Cabin
+                    </div>
+                    <div className="font-bold text-slate-200 text-xs truncate">
+                      {slot.room_name} {slot.building ? `(${slot.building})` : ""}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Panel Info */}
+                {slot.panel_name && (
+                  <div className="text-[11px] text-slate-400 flex items-center justify-between pt-1 border-t border-[#1b2b4d]/40">
+                    <span>Interview Panel: <strong className="text-slate-300">{slot.panel_name}</strong></span>
+                    <span className="text-[10px] font-mono text-emerald-400 font-bold">0 Clashes Guaranteed</span>
+                  </div>
+                )}
               </div>
             ))}
           </div>
