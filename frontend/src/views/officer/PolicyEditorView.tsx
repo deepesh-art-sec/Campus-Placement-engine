@@ -19,6 +19,40 @@ export const PolicyEditorView: React.FC = () => {
 
   const [savedSuccess, setSavedSuccess] = useState<boolean>(false);
 
+  const [activePolicyPreset, setActivePolicyPreset] = useState<number>(1);
+
+  const applyPolicyPreset = (presetIndex: number) => {
+    setActivePolicyPreset(presetIndex);
+    if (presetIndex === 1) {
+      setPolicyName("Policy 1: Strict One-Offer with Dream Tier Exception");
+      setMaxOffers(1);
+      setDreamThreshold(10.0);
+      setAllowDreamOffers(true);
+      setUseFixedPay(false);
+      setThresholdInclusive(true);
+      setCountOffCampus(true);
+      setRevokedOffersCount(false);
+    } else if (presetIndex === 2) {
+      setPolicyName("Policy 2: Progressive Salary Multiplier (1.5x Rule)");
+      setMaxOffers(2);
+      setDreamThreshold(12.0);
+      setAllowDreamOffers(true);
+      setUseFixedPay(false);
+      setThresholdInclusive(true);
+      setCountOffCampus(true);
+      setRevokedOffersCount(false);
+    } else if (presetIndex === 3) {
+      setPolicyName("Policy 3: Tier-Based Quota Policy (Standard, Dream, Super-Dream)");
+      setMaxOffers(3);
+      setDreamThreshold(8.0);
+      setAllowDreamOffers(true);
+      setUseFixedPay(false);
+      setThresholdInclusive(true);
+      setCountOffCampus(false);
+      setRevokedOffersCount(false);
+    }
+  };
+
   const handleSave = () => {
     setSavedSuccess(true);
     setTimeout(() => setSavedSuccess(false), 3000);
@@ -50,6 +84,74 @@ export const PolicyEditorView: React.FC = () => {
           onClose={() => setSavedSuccess(false)}
         />
       )}
+
+      {/* Three College Offer Policies Preset Selector */}
+      <div className="bg-[#0d1527] border border-[#1b2b4d] rounded-2xl p-5 shadow-md space-y-3">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Shield className="w-4 h-4 text-emerald-400" />
+            <h3 className="text-xs font-bold text-white uppercase tracking-wider">
+              Three College Offer Policies (with Ambiguities)
+            </h3>
+          </div>
+          <span className="text-[11px] text-slate-400 font-medium">As written by institutional placement cells</span>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-2.5">
+          <button
+            type="button"
+            onClick={() => applyPolicyPreset(1)}
+            className={`p-3 rounded-xl border text-left transition-all cursor-pointer ${
+              activePolicyPreset === 1
+                ? "bg-gradient-to-r from-blue-900/60 to-emerald-950/60 text-white border-emerald-500 shadow-xs"
+                : "bg-[#080e1c] text-slate-300 border-[#1b2b4d] hover:bg-[#111d38]"
+            }`}
+          >
+            <div className="text-xs font-bold flex items-center justify-between">
+              <span>Policy 1: Strict One-Offer</span>
+              <span className="text-[10px] text-emerald-400 font-mono">1 Offer</span>
+            </div>
+            <p className="text-[11px] text-slate-400 mt-1 leading-snug">
+              Dream Tier &ge; 10 LPA. Ambiguities: Off-campus offer reporting & Base pay vs CTC.
+            </p>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => applyPolicyPreset(2)}
+            className={`p-3 rounded-xl border text-left transition-all cursor-pointer ${
+              activePolicyPreset === 2
+                ? "bg-gradient-to-r from-blue-900/60 to-emerald-950/60 text-white border-emerald-500 shadow-xs"
+                : "bg-[#080e1c] text-slate-300 border-[#1b2b4d] hover:bg-[#111d38]"
+            }`}
+          >
+            <div className="text-xs font-bold flex items-center justify-between">
+              <span>Policy 2: 1.5x Multiplier</span>
+              <span className="text-[10px] text-emerald-400 font-mono">2 Offers</span>
+            </div>
+            <p className="text-[11px] text-slate-400 mt-1 leading-snug">
+              Hold up to 2 offers. Ambiguities: Concurrent drive precedence & lateral entry diploma.
+            </p>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => applyPolicyPreset(3)}
+            className={`p-3 rounded-xl border text-left transition-all cursor-pointer ${
+              activePolicyPreset === 3
+                ? "bg-gradient-to-r from-blue-900/60 to-emerald-950/60 text-white border-emerald-500 shadow-xs"
+                : "bg-[#080e1c] text-slate-300 border-[#1b2b4d] hover:bg-[#111d38]"
+            }`}
+          >
+            <div className="text-xs font-bold flex items-center justify-between">
+              <span>Policy 3: Tiered Quota</span>
+              <span className="text-[10px] text-emerald-400 font-mono">3 Offers</span>
+            </div>
+            <p className="text-[11px] text-slate-400 mt-1 leading-snug">
+              Standard / Dream / Super-Dream tiers. Ambiguities: Re-evaluation timing & lock rules.
+            </p>
+          </button>
+        </div>
+      </div>
 
       {/* Plain-English Live Preview Box */}
       <div className="bg-gradient-to-r from-brand-900 to-indigo-950 text-white p-6 rounded-2xl shadow-lg border border-brand-800 space-y-3">

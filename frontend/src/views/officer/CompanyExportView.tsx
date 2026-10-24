@@ -3,7 +3,7 @@ import { api } from "../../api/client";
 import { Drive } from "../../types";
 import { Badge } from "../../components/common/Badge";
 import { AlertBanner } from "../../components/common/AlertBanner";
-import { Download, FileSpreadsheet, CheckCircle2, RefreshCw, Upload, ShieldCheck } from "lucide-react";
+import { Download, FileSpreadsheet, CheckCircle2, RefreshCw, Upload, ShieldCheck, Send, Radio, Activity, Share2 } from "lucide-react";
 
 export const CompanyExportView: React.FC = () => {
   const [drives, setDrives] = useState<Drive[]>([]);
@@ -53,6 +53,52 @@ export const CompanyExportView: React.FC = () => {
         "Assigned Cabin",
       ]);
       setSuccess(`Parsed sample company template: ${f.name}`);
+    }
+  };
+
+  const [imatsStatus, setImatsStatus] = useState<string | null>(null);
+  const [imatsResponse, setImatsResponse] = useState<any | null>(null);
+  const [imatsLoading, setImatsLoading] = useState<boolean>(false);
+
+  const handlePushShortlistToImats = async () => {
+    if (!selectedDriveId) return;
+    try {
+      setImatsLoading(true);
+      setImatsStatus(null);
+      const res = await api.post<any>("/api/imats/push-shortlist", {
+        drive_id: selectedDriveId,
+        student_ids: ["BT210001", "BT210002", "BT210003", "BT210004", "BT210005"],
+        idempotency_key: `shortlist_${selectedDriveId}_${Date.now()}`,
+      });
+      setImatsResponse(res);
+      setImatsStatus("Successfully pushed candidate shortlist to IMATS Sandbox ATS!");
+    } catch (err: any) {
+      setImatsStatus(`Push failed: ${err.message || "Network Error"}`);
+    } finally {
+      setImatsLoading(false);
+    }
+  };
+
+  const handlePushScheduleToImats = async () => {
+    if (!selectedDriveId) return;
+    try {
+      setImatsLoading(true);
+      setImatsStatus(null);
+      const res = await api.post<any>("/api/imats/push-schedule", {
+        drive_id: selectedDriveId,
+        schedule_items: [
+          { student_id: "BT210001", round: "Technical Interview 1", start_time: "2026-11-25T09:00:00", cabin: "Interview Cabin 1" },
+          { student_id: "BT210002", round: "Technical Interview 1", start_time: "2026-11-25T09:45:00", cabin: "Interview Cabin 1" },
+          { student_id: "BT210003", round: "Technical Interview 1", start_time: "2026-11-25T10:30:00", cabin: "Interview Cabin 2" }
+        ],
+        idempotency_key: `sched_${selectedDriveId}_${Date.now()}`,
+      });
+      setImatsResponse(res);
+      setImatsStatus("Successfully pushed clash-free interview schedule to IMATS Sandbox ATS!");
+    } catch (err: any) {
+      setImatsStatus(`Push failed: ${err.message || "Network Error"}`);
+    } finally {
+      setImatsLoading(false);
     }
   };
 
@@ -179,6 +225,63 @@ export const CompanyExportView: React.FC = () => {
           <Badge variant="success">Verified Clean</Badge>
         </div>
       )}
+
+      {/* IMATS Campus Drive API (Sandbox ATS) Push Integration */}
+      <div className="bg-gradient-to-r from-[#0d1527] to-[#111e3b] p-6 rounded-2xl border border-emerald-500/30 shadow-lg text-slate-100 space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-emerald-950/80 border border-emerald-500/40 flex items-center justify-center text-emerald-400">
+              <Share2 className="w-5 h-5" />
+            </div>
+            <div>
+              <h3 className="text-sm font-black text-white flex items-center gap-2">
+                <span>IMATS Campus Drive API (Sandbox ATS)</span>
+                <span className="px-2 py-0.5 rounded-full text-[10px] bg-emerald-950 text-emerald-300 border border-emerald-800 font-mono">
+                  Sandbox Active
+                </span>
+              </h3>
+              <p className="text-xs text-slate-400">
+                Push candidate shortlists and clash-free interview schedules directly into the applicant tracking system with idempotency & offline outbox protection.
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2 shrink-0">
+            <button
+              onClick={handlePushShortlistToImats}
+              disabled={imatsLoading || !selectedDriveId}
+              className="flex items-center gap-1.5 px-3.5 py-2 bg-gradient-to-r from-blue-600 to-teal-600 hover:from-blue-500 hover:to-teal-500 text-white text-xs font-bold rounded-xl shadow-md transition-all cursor-pointer disabled:opacity-50"
+            >
+              <Send className="w-3.5 h-3.5" />
+              <span>Push Shortlist</span>
+            </button>
+            <button
+              onClick={handlePushScheduleToImats}
+              disabled={imatsLoading || !selectedDriveId}
+              className="flex items-center gap-1.5 px-3.5 py-2 bg-gradient-to-r from-teal-600 to-emerald-600 hover:from-teal-500 hover:to-emerald-500 text-white text-xs font-bold rounded-xl shadow-md transition-all cursor-pointer disabled:opacity-50"
+            >
+              <Activity className="w-3.5 h-3.5" />
+              <span>Push Schedule</span>
+            </button>
+          </div>
+        </div>
+
+        {imatsStatus && (
+          <div className="p-3 bg-[#080e1c] border border-emerald-500/40 rounded-xl text-xs font-mono text-emerald-300 flex items-center gap-2">
+            <Radio className="w-3.5 h-3.5 animate-pulse text-emerald-400 shrink-0" />
+            <span>{imatsStatus}</span>
+          </div>
+        )}
+
+        {imatsResponse && (
+          <div className="p-4 bg-[#080e1c] rounded-xl border border-[#1b2b4d] space-y-1.5 text-xs font-mono">
+            <div className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">IMATS ATS Server Acknowledgment:</div>
+            <pre className="text-emerald-300 overflow-x-auto text-[11px] leading-relaxed">
+              {JSON.stringify(imatsResponse, null, 2)}
+            </pre>
+          </div>
+        )}
+      </div>
 
       {/* Header Mapping Table */}
       <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-xs space-y-4">

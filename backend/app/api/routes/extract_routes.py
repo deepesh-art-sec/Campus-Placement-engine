@@ -5,6 +5,7 @@ Deterministic offline parser with side-by-side officer review.
 
 from __future__ import annotations
 
+import os
 from typing import Any
 
 from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile, status
@@ -41,6 +42,44 @@ class ReviewResolutionRequest(BaseModel):
     corrected_value: Any = None
     source_text: str = ""
     extracted_value: Any = None
+
+
+@router.get("/samples")
+def list_sample_announcements(
+    current_user: UserModel = Depends(require_officer_or_coordinator),
+) -> list[dict[str, Any]]:
+    """Returns the 25 real-format drive announcements with extracted content and metadata."""
+    ann_dir = None
+    for cand in [
+        os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "..", "..", "fixtures", "announcements")),
+        os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "..", "fixtures", "announcements")),
+        os.path.abspath("fixtures/announcements"),
+    ]:
+        if os.path.exists(cand):
+            ann_dir = cand
+            break
+    if not os.path.exists(ann_dir):
+        return []
+
+    results = []
+    files = sorted([f for f in os.listdir(ann_dir) if not f.endswith(".json") and not f.startswith(".")])
+    for f in files:
+        path = os.path.join(ann_dir, f)
+        ext = f.rsplit(".", 1)[1].upper()
+        name_part = f.split("_", 1)[1].rsplit(".", 1)[0].replace("_", " ").title()
+        try:
+            with open(path, "rb") as fp:
+                text = _loader.load_from_bytes(fp.read(), f)
+            results.append({
+                "filename": f,
+                "label": f"{name_part} ({ext})",
+                "format": ext,
+                "company_name": name_part.split()[0],
+                "text": text,
+            })
+        except Exception:
+            continue
+    return results
 
 
 @router.post("/parse")

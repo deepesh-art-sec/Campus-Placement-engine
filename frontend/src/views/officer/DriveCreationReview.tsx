@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { api } from "../../api/client";
 import { ExtractionParseResult } from "../../types";
 import { Badge } from "../../components/common/Badge";
@@ -38,6 +38,23 @@ export const DriveCreationReview: React.FC<DriveCreationReviewProps> = ({ onSucc
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
   const [editingField, setEditingField] = useState<string | null>(null);
   const [editValue, setEditValue] = useState<string>("");
+  const [samples, setSamples] = useState<Array<{ filename: string; label: string; format: string; company_name: string; text: string }>>([]);
+
+  useEffect(() => {
+    api.get<any[]>("/api/extract/samples").then((res) => {
+      if (res && res.length) setSamples(res);
+    }).catch(() => {});
+  }, []);
+
+  const handleSelectSample = (sampleFilename: string) => {
+    const s = samples.find((x) => x.filename === sampleFilename);
+    if (!s) return;
+    setCompanyName(s.company_name);
+    setInputText(s.text);
+    setFile(null);
+    setParseResult(null);
+    setSuccessMsg("Loaded real-format announcement: " + s.label);
+  };
 
   const handleExtract = async () => {
     try {
@@ -126,6 +143,31 @@ export const DriveCreationReview: React.FC<DriveCreationReviewProps> = ({ onSucc
 
       {error && <AlertBanner type="danger" message={error} onClose={() => setError(null)} />}
       {successMsg && <AlertBanner type="success" message={successMsg} onClose={() => setSuccessMsg(null)} />}
+
+      {/* 25 Real-Format Drive Announcements Sample Selector */}
+      {samples.length > 0 && (
+        <div className="bg-gradient-to-r from-[#0d1527] to-[#121e38] border border-[#1b2b4d] rounded-2xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-slate-100 shadow-md">
+          <div className="flex items-center gap-2.5">
+            <Sparkles className="w-4 h-4 text-emerald-400 shrink-0" />
+            <div>
+              <div className="text-xs font-bold text-white">25 Real-Format Drive Announcements (Emails, PDFs, DOCXs)</div>
+              <div className="text-[11px] text-slate-400">Anonymised company emails, PDFs & specifications received by placement cells.</div>
+            </div>
+          </div>
+          <select
+            onChange={(e) => e.target.value && handleSelectSample(e.target.value)}
+            defaultValue=""
+            className="px-3 py-1.5 bg-[#080e1c] border border-[#1e3258] rounded-xl text-xs font-semibold text-emerald-300 focus:outline-none cursor-pointer max-w-xs"
+          >
+            <option value="" disabled>Choose Announcement (1 of 25)...</option>
+            {samples.map((s) => (
+              <option key={s.filename} value={s.filename}>
+                {s.label}
+              </option>
+            ))}
+          </select>
+        </div>
+      )}
 
       {/* Input Section */}
       <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-xs space-y-4">
