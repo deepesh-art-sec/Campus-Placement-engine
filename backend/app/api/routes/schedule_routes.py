@@ -10,7 +10,7 @@ from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel
-from sqlalchemy import select
+from sqlalchemy import delete, select
 from sqlalchemy.orm import Session
 
 from backend.app.api.auth.dependencies import require_officer_or_coordinator
@@ -178,6 +178,10 @@ def generate_schedule(
 
     # Persist schedule and slots
     sched_id = f"sched_{drive_entity.id}"
+    # Clear existing slots for this drive to prevent duplicate accumulation
+    db.execute(delete(SlotModel).where(SlotModel.drive_id == drive_entity.id))
+    db.flush()
+
     sched_entity = db.execute(select(ScheduleModel).where(ScheduleModel.id == sched_id)).scalar_one_or_none()
     if not sched_entity:
         sched_entity = ScheduleModel(
@@ -238,7 +242,9 @@ def get_drive_schedule(
             "student_name": s.student.name if s.student else "Student",
             "roll_no": s.student.roll_no if s.student else "",
             "round_name": f"Round {s.round_number}",
+            "room_id": s.room_id,
             "room_name": s.room.name if s.room else "Venue",
+            "time_slot": s.start_time.strftime("%H:%M"),
             "start_time": s.start_time.strftime("%d-%b-%Y %H:%M"),
             "end_time": s.end_time.strftime("%H:%M"),
         }

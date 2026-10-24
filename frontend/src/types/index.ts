@@ -95,8 +95,10 @@ export interface ScheduleSlot {
   student_name: string;
   roll_no: string;
   round_name: string;
+  room_id?: string;
   room_name: string;
   panel_name?: string;
+  time_slot?: string;
   start_time: string;
   end_time?: string;
 }
