@@ -5,6 +5,7 @@ import { Navigation, NavTabId } from "./components/layout/Navigation";
 import { GuidedTourModal } from "./components/layout/GuidedTourModal";
 import { DrivesDashboard } from "./views/officer/DrivesDashboard";
 import { DriveCreationReview } from "./views/officer/DriveCreationReview";
+import { AnnouncementsLibraryView } from "./views/officer/AnnouncementsLibraryView";
 import { StudentRegistryView } from "./views/officer/StudentRegistryView";
 import { RuleEditorView } from "./views/officer/RuleEditorView";
 import { PolicyEditorView } from "./views/officer/PolicyEditorView";
@@ -263,6 +264,17 @@ const MainContent: React.FC = () => {
         {activeTab === "create_drive" && (
           <DriveCreationReview
             onSuccess={(driveId) => handleTabSelect("eligibility", driveId)}
+          />
+        )}
+        {activeTab === "announcements" && (
+          <AnnouncementsLibraryView
+            onNavigateToExtract={(fn) => {
+              setActiveTab("create_drive");
+            }}
+            onNavigateToDrive={(id) => {
+              setActiveDriveId(id);
+              setActiveTab("drives");
+            }}
           />
         )}
         {activeTab === "students" && <StudentRegistryView />}

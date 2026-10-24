@@ -23,6 +23,7 @@ from backend.app.api.logging.logger import get_logger
 from backend.app.api.routes import (
     audit_routes,
     auth_routes,
+    announcement_routes,
     backup_routes,
     compare_routes,
     drive_routes,
@@ -156,6 +157,7 @@ app.include_router(audit_routes.router)
 app.include_router(export_routes.router)
 app.include_router(recruiter_routes.router)
 app.include_router(imats_routes.router)
+app.include_router(announcement_routes.router)
 app.include_router(backup_routes.router)
 
 

@@ -2,6 +2,7 @@ import React from "react";
 import {
   Briefcase,
   FileText,
+  Files,
   Users,
   Sliders,
   Shield,
@@ -19,6 +20,7 @@ import {
 export type NavTabId =
   | "drives"
   | "create_drive"
+  | "announcements"
   | "students"
   | "rule_editor"
   | "policies"
@@ -59,6 +61,7 @@ export const Navigation: React.FC<NavigationProps> = ({
       tabs: [
         { id: "drives", label: "Drives", icon: Briefcase },
         { id: "create_drive", label: "Extract Drive", icon: FileText, badge: "NLP" },
+        { id: "announcements", label: "25 Announcements", icon: Files, badge: "25 Docs" },
         { id: "students", label: "Students & Importer", icon: Users },
       ],
     },
