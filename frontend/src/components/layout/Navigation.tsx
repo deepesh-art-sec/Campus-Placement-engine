@@ -1,6 +1,7 @@
 import React from "react";
 import {
   Briefcase,
+  PlusCircle,
   FileText,
   Files,
   Users,
@@ -60,7 +61,7 @@ export const Navigation: React.FC<NavigationProps> = ({
       name: "Setup & Roster",
       tabs: [
         { id: "drives", label: "Drives", icon: Briefcase },
-        { id: "create_drive", label: "Extract Drive", icon: FileText, badge: "NLP" },
+        { id: "create_drive", label: "New Drive", icon: PlusCircle, badge: "Create" },
         { id: "announcements", label: "25 Announcements", icon: Files, badge: "25 Docs" },
         { id: "students", label: "Students & Importer", icon: Users },
       ],

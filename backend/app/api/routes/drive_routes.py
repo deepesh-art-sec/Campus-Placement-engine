@@ -38,6 +38,8 @@ class DriveCreateUpdateRequest(BaseModel):
     max_active_backlogs: int = 0
     max_history_backlogs: int | None = None
     max_gap_years: int | None = 1
+    min_diploma_percentage: float | None = Field(default=None, ge=0.0, le=100.0)
+    allow_gap_during_degree: bool = False
 
 
 @router.get("")
@@ -140,6 +142,8 @@ def create_drive(
         max_active_backlogs=req.max_active_backlogs,
         max_history_backlogs=req.max_history_backlogs,
         max_gap_years=req.max_gap_years,
+        min_diploma_percentage=req.min_diploma_percentage,
+        allow_gap_during_degree=req.allow_gap_during_degree,
         created_at=datetime.datetime.utcnow(),
     )
     db.add(req_version)
