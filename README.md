@@ -6,11 +6,12 @@
 [![Tailwind CSS](https://img.shields.io/badge/TailwindCSS-3.4-38B2AC.svg?style=flat-square&logo=tailwind-css&logoColor=white)](https://tailwindcss.com/)
 [![Google OR-Tools](https://img.shields.io/badge/Google_OR--Tools-CP--SAT_v9.11-4285F4.svg?style=flat-square&logo=google&logoColor=white)](https://developers.google.com/optimization)
 [![SQLite](https://img.shields.io/badge/SQLite-WAL_Mode-003B57.svg?style=flat-square&logo=sqlite&logoColor=white)](https://sqlite.org/)
-[![Air-Gapped Offline](https://img.shields.io/badge/Security-100%25_Air--Gapped_Offline-10B981.svg?style=flat-square)](#security--privacy-guarantee)
+[![Public Cloud & Local Ready](https://img.shields.io/badge/Deployment-Public_Cloud_%26_Local-10B981.svg?style=flat-square)](#deployment-options)
+[![Hugging Face Space](https://img.shields.io/badge/🤗_Hugging_Face-Live_Demo-blue.svg?style=flat-square)](https://huggingface.co/spaces/deeep-sec/campus-placement-engine-demo)
 [![Tests Passing](https://img.shields.io/badge/Tests-149_Passing-10B981.svg?style=flat-square)](#verification--testing)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg?style=flat-square)](LICENSE)
 
-An air-gapped, institutional-grade campus recruitment operations engine designed for collegiate Training & Placement Cells (TPO). Coordinates 40 to 120 recruitment drives, thousands of student academic profiles, institutional multi-offer policies, and interview timetable scheduling entirely on on-premise hardware with **strictly zero external cloud dependencies or outbound network telemetry**.
+An institutional-grade campus recruitment operations and scheduling engine designed for collegiate Training & Placement Cells (TPO) and enterprise recruitment. Coordinates recruitment drives, thousands of student academic profiles, institutional multi-offer policies, and conflict-free interview scheduling. **Deployable anywhere**: publicly on cloud platforms (Hugging Face Spaces, Docker containers, cloud VMs) as well as private institutional networks with complete data sovereignty and privacy.
 
 ---
 
@@ -21,9 +22,9 @@ College placement offices face massive logistical hurdles every recruitment seas
 2. **Deterministic Eligibility**: Manual filtering leads to human error, missed cut-offs, and student disputes.
 3. **Offer Policy Enforcement**: Tracking "one student, one offer" vs. Dream Company CTC multipliers is nearly impossible on spreadsheets.
 4. **Interview Clashes**: Manually assigning hundreds of students to multi-panel interviews across physical cabins leads to double-bookings and room overlap.
-5. **Data Privacy**: Student transcripts and academic records should not be sent to third-party public cloud APIs.
+5. **Data Privacy**: Student transcripts and academic records require strict role-based access control and encryption.
 
-**The Placement Engine** solves all five challenges through a local-first, mathematically verified software architecture.
+**The Placement Engine** solves all five challenges through a modern hybrid, mathematically verified software architecture.
 
 ---
 
@@ -158,32 +159,37 @@ cd ..
 python scripts/lan_launcher.py
 ```
 
-The launcher will verify the database schema, compile the frontend if needed, auto-detect your physical LAN interface, and host the portal:
+The launcher verifies the database schema, compiles the frontend bundle, and hosts the portal across public or private interfaces:
 
 ```text
 ============================================================================
    INSTITUTIONAL PLACEMENT ELIGIBILITY & SCHEDULING ENGINE
-   100% OFFLINE AIR-GAPPED LAN DEPLOYMENT
+   HYBRID PUBLIC CLOUD & INSTITUTIONAL NETWORK DEPLOYMENT
 ============================================================================
-   [+] Status:              ONLINE (HOSTED ON LAN)
-   [+] External Calls:      0 (Strict Air-Gap Verified)
+   [+] Status:              ONLINE (READY FOR TRAFFIC)
+   [+] Security:            Encrypted PII & Role-Based RBAC
    [+] Storage Engine:      SQLite WAL Mode (Concurrent Multi-User Access)
    [+] Constraint Solver:   Google OR-Tools CP-SAT
    ----------------------------------------------------------------------
    --> TPO Officer Local:    http://localhost:8000
-   --> Primary LAN Access:   http://172.16.43.61:8000
+   --> Network / Cloud URL:  http://0.0.0.0:8000
    ----------------------------------------------------------------------
 ```
 
 ---
 
-## Hosting on Local Campus Wi-Fi / LAN
+## Deployment Options: Public Cloud & Local Networks
 
-The server automatically binds to `0.0.0.0:8000`, making it accessible to any device on your Wi-Fi, Ethernet, or mobile hotspot.
+The engine is engineered for flexible deployment across both public internet and private institutional infrastructure:
 
-1. **Shareable URL**: Look for the **"LAN Host"** pill in the top navigation bar or on the login screen. Click to copy the shareable IP address (e.g., `http://172.16.43.61:8000`).
-2. **Access from Mobile / Laptops**: Other computers, tablets, or phones connected to the same Wi-Fi router can open this link directly in any web browser.
-3. **No Internet Required**: Works seamlessly in isolated, air-gapped rooms or offline college networks without internet connectivity.
+### 1. Public Cloud & Hugging Face Spaces
+- **Live Demo Space**: Accessible online at [deeep-sec/campus-placement-engine-demo](https://huggingface.co/spaces/deeep-sec/campus-placement-engine-demo).
+- **Hugging Face Model / Container Engine**: Available at [deeep-sec/campus-placement-engine](https://huggingface.co/deeep-sec/campus-placement-engine).
+- Run on any public cloud container platform (Docker, AWS ECS, Google Cloud Run, Render, or VPS) using port `7860` or `8000`.
+
+### 2. On-Premise & Campus Local Network (Wi-Fi / Ethernet)
+- For university placement offices conducting on-campus recruitment seasons, the engine can be hosted locally without mandatory internet dependency.
+- **Shareable URL**: Look for the **"LAN Host"** pill in the top navigation bar or on the login screen to copy the server address for student mobile devices and recruiter laptops.
 
 ---
 

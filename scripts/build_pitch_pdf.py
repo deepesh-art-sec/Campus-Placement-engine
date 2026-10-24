@@ -67,7 +67,7 @@ class NumberedCanvas(canvas.Canvas):
         # Running Footer
         self.setFont("Helvetica", 7.5)
         self.setFillColor(C_TEXT_MUTED)
-        self.drawString(36, 20, "DEVIATHON 2.0  *  CONFIDENTIAL & PROPRIETARY  *  OFFLINE AIR-GAPPED CORE")
+        self.drawString(36, 20, "DEVIATHON 2.0  *  CONFIDENTIAL & PROPRIETARY  *  HYBRID CLOUD & ENTERPRISE CORE")
         page_str = f"Page {self._pageNumber} of {total_pages}"
         self.drawRightString(w - 36, 20, page_str)
 
@@ -175,10 +175,10 @@ def build_pdf():
     story.append(Paragraph("Institutional Campus Placement Engine &nbsp;|&nbsp; Executive Pitch & Technical Dossier", tagline_style))
 
     summary_text = (
-        "<b>Executive Vision:</b> A mathematically verified, 100% offline, air-gapped platform engineered "
-        "to eliminate the chaotic failure modes of collegiate placement drives. Combines deterministic document "
+        "<b>Executive Vision:</b> A mathematically verified, production-ready platform engineered "
+        "to eliminate the chaotic failure modes of collegiate placement drives and enterprise recruitment. Combines deterministic document "
         "extraction, typed eligibility AST evaluation, live institutional offer policies, Google OR-Tools CP-SAT "
-        "clash-free scheduling, and real-time What-If impact simulation on a single campus LAN server."
+        "clash-free scheduling, and real-time What-If impact simulation across public cloud containers and institutional networks."
     )
     banner_table = Table([[Paragraph(summary_text, callout_style)]], colWidths=[522])
     banner_table.setStyle(TableStyle([
@@ -243,7 +243,7 @@ def build_pdf():
         [Paragraph("Batch Eligibility Evaluation", body_style), Paragraph("15 - 45 Minutes (Excel)", body_style), Paragraph("<b>0.024 Seconds</b> (1,800 students)", code_style), Paragraph("<b>37,500x Faster</b>, Zero errors", body_style)],
         [Paragraph("Conflict-Free Scheduling", body_style), Paragraph("3 - 6 Hours Manual Labor", body_style), Paragraph("<b>1.05 Seconds</b> (600 students)", code_style), Paragraph("<b>0 Room / Panel Clashes</b>", body_style)],
         [Paragraph("Document Extraction Latency", body_style), Paragraph("Manual Data Entry (15m)", body_style), Paragraph("<b>14.6 Milliseconds</b> / circular", code_style), Paragraph("<b>100% Parsing Accuracy</b>", body_style)],
-        [Paragraph("Cloud & Network Dependency", body_style), Paragraph("Requires High-Speed Internet", body_style), Paragraph("<b>0 Outbound Connections</b>", code_style), Paragraph("<b>100% Air-Gapped Resilient</b>", body_style)],
+        [Paragraph("Deployment Versatility", body_style), Paragraph("Restricted Infrastructure", body_style), Paragraph("<b>Public Cloud & Local</b>", code_style), Paragraph("<b>Universal Hybrid Ready</b>", body_style)],
         [Paragraph("Audit Integrity & Tamper Proof", body_style), Paragraph("Untracked Cell Edits", body_style), Paragraph("<b>HMAC-SHA256 Chained</b>", code_style), Paragraph("<b>Zero-Bias Certified Trace</b>", body_style)]
     ]
     t_score = Table(scorecard_data, colWidths=[130, 115, 135, 142])
@@ -666,15 +666,15 @@ def build_pdf():
     story.append(PageBreak())
 
     # =========================================================================
-    # PAGE 8: FUNCTION DEEP DIVE 6 - SECURITY, AUDIT & LAN DISTRIBUTION
+    # PAGE 8: FUNCTION DEEP DIVE 6 - SECURITY, AUDIT & CLOUD/LAN DISTRIBUTION
     # =========================================================================
-    story.append(Paragraph("Function Deep Dive 6: Enterprise Security & LAN Distribution", title_style))
-    story.append(Paragraph("Field-Level AES-256 Crypto, HMAC Audit Chaining & 100% Air-Gap LAN", tagline_style))
+    story.append(Paragraph("Function Deep Dive 6: Enterprise Security & Cloud/LAN Distribution", title_style))
+    story.append(Paragraph("Field-Level AES-256 Crypto, HMAC Audit Chaining & Universal Hybrid Deployment", tagline_style))
 
     story.append(Paragraph("1. STRIDE Threat Model & Data Sovereignty", h1_style))
     story.append(Paragraph(
         "Collegiate placement systems store highly sensitive student Personally Identifiable Information (PII) and corporate salary packages. "
-        "Deviathon 2.0 was audited against the <b>STRIDE Threat Model</b> to guarantee institutional data protection and air-gap integrity.",
+        "Deviathon 2.0 was audited against the <b>STRIDE Threat Model</b> to guarantee institutional data protection and sovereignty across public cloud and local infrastructure.",
         body_style
     ))
 
@@ -721,10 +721,10 @@ def build_pdf():
 
     story.append(Paragraph("3. Summary & Institutional Pitch Conclusion", h1_style))
     closing_banner = (
-        "<b>Institutional Pitch Conclusion:</b> Deviathon 2.0 transforms collegiate placement management from a high-anxiety, "
-        "manual fire-drill into a mathematically guaranteed, transparent, and clash-free operation. Running on a single laptop "
-        "broadcasting to an air-gapped auditorium, it delivers unprecedented speed (1,800 students in 0.024s), absolute fairness, "
-        "and complete cryptographic audit-readiness. The ultimate institutional placement platform."
+        "<b>Institutional Pitch Conclusion:</b> Deviathon 2.0 transforms placement management from a high-anxiety, "
+        "manual fire-drill into a mathematically guaranteed, transparent, and clash-free operation. Deployable anywhere on public "
+        "cloud platforms (Hugging Face Spaces, Docker containers) or private campus networks, it delivers unprecedented speed (1,800 students in 0.024s), "
+        "absolute fairness, and complete cryptographic audit-readiness. The ultimate placement operations platform."
     )
     b_table = Table([[Paragraph(closing_banner, callout_style)]], colWidths=[522])
     b_table.setStyle(TableStyle([

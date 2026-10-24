@@ -19,7 +19,7 @@ def create_architecture_diagram():
 
     rect_client = patches.FancyBboxPatch((2, 4), 22, 42, boxstyle="round,pad=0.8", ec="#94A3B8", fc="#FFFFFF", lw=1.5)
     ax.add_patch(rect_client)
-    ax.text(13, 43, "CLIENT TIER (AIR-GAPPED LAN)", ha='center', va='center', fontsize=8, fontweight='bold', color='#1E293B')
+    ax.text(13, 43, "CLIENT TIER (WEB & LAN)", ha='center', va='center', fontsize=8, fontweight='bold', color='#1E293B')
 
     for y_pos, label, sub in [(34, "Officer Workspace", "React 18 / Tailwind"), (22, "Student Mobile PWA", "Offline-Ready Portal"), (10, "Recruiter Portal", "Roster & Evaluation")]:
         b = patches.FancyBboxPatch((4, y_pos-3), 18, 7, boxstyle="round,pad=0.4", ec="#CBD5E1", fc="#F1F5F9", lw=1)
@@ -230,12 +230,12 @@ def create_security_diagram():
     ax.axis('off')
     fig.patch.set_facecolor('#F8FAFC')
 
-    ax.text(50, 46, "ENTERPRISE SECURITY, CRYPTOGRAPHY & AIR-GAP ARCHITECTURE", ha='center', va='center', fontsize=9.5, fontweight='bold', color='#0F172A')
+    ax.text(50, 46, "ENTERPRISE SECURITY, CRYPTOGRAPHY & DATA PRIVACY", ha='center', va='center', fontsize=9.5, fontweight='bold', color='#0F172A')
 
     pillars = [
         (12, 24, "AES-256 Fernet Crypto", "Encrypted PII columns\n(Phone, Email, CGPA, Address)", "#F1F5F9", "#334155"),
         (37, 24, "HMAC-SHA256 Audit Trail", "Cryptographic chaining\nTamper-proof event ledger", "#EEF2FF", "#3730A3"),
-        (62, 24, "0 Outbound Connections", "Socket-level test verified\nComplete data sovereignty", "#ECFDF5", "#065F46"),
+        (62, 24, "Strict Data Sovereignty", "Self-contained architecture\nZero third-party cloud leaks", "#ECFDF5", "#065F46"),
         (87, 24, "Cryptographic Wipe", "PBKDF2 encrypted backups\n1-click season cleanup", "#FEF2F2", "#991B1B")
     ]
 
