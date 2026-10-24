@@ -52,6 +52,7 @@ htmlcov/
 .hypothesis/
 test-results/
 playwright-report/
+docs/pdf_pages/
 
 # IDE & OS
 .idea/
