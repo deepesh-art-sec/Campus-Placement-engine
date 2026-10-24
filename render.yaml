@@ -1,0 +1,11 @@
+services:
+  - type: web
+    name: campus-placement-engine
+    env: docker
+    region: singapore
+    plan: free
+    envVars:
+      - key: PORT
+        value: 8000
+      - key: HOST
+        value: 0.0.0.0

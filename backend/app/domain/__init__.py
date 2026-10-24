@@ -1,0 +1,68 @@
+"""
+Pure Domain Module.
+Zero database or third-party I/O dependencies.
+"""
+
+from backend.app.domain.exceptions import (
+    ConcurrencyConflictError,
+    DomainException,
+    ProtectedAttributeViolationError,
+    ValidationError,
+)
+from backend.app.domain.models import (
+    BacklogRecord,
+    BacklogStatus,
+    Company,
+    Drive,
+    DriveMode,
+    DriveRound,
+    DriveStatus,
+    EducationTimelineEntry,
+    EligibilityDecision,
+    EligibilityStatus,
+    Event,
+    GapYearRecord,
+    OfferPolicy,
+    OfferRecord,
+    OfferSource,
+    OfferStatus,
+    Panel,
+    ProtectedDemographics,
+    RequirementSet,
+    Room,
+    RoundType,
+    Schedule,
+    Slot,
+    Student,
+)
+
+__all__ = [
+    "BacklogRecord",
+    "BacklogStatus",
+    "Company",
+    "ConcurrencyConflictError",
+    "DomainException",
+    "Drive",
+    "DriveMode",
+    "DriveRound",
+    "DriveStatus",
+    "EducationTimelineEntry",
+    "EligibilityDecision",
+    "EligibilityStatus",
+    "Event",
+    "GapYearRecord",
+    "OfferPolicy",
+    "OfferRecord",
+    "OfferSource",
+    "OfferStatus",
+    "Panel",
+    "ProtectedAttributeViolationError",
+    "ProtectedDemographics",
+    "RequirementSet",
+    "Room",
+    "RoundType",
+    "Schedule",
+    "Slot",
+    "Student",
+    "ValidationError",
+]

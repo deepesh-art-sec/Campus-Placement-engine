@@ -1,0 +1,19 @@
+{
+  "id": "policy_2_progressive_multiplier",
+  "name": "Progressive Salary Multiplier Policy (1.5x Rule)",
+  "version": 1,
+  "max_offers_per_student": 2,
+  "dream_tier_ctc_lpa": 12.0,
+  "super_dream_tier_ctc_lpa": 25.0,
+  "allow_dream_upgrade": true,
+  "upgrade_ctc_multiplier": 1.5,
+  "strict_backlog_cutoff": false,
+  "allow_multiple_offers_if_different_tiers": true,
+  "is_active": false,
+  "summary": "Students may hold up to 2 offers, provided the second offer is at least 1.5x the CTC of the first offer.",
+  "deliberate_ambiguities": [
+    "Concurrent drives: If a student appears for two drives on the same day and receives offers from both simultaneously, which one takes precedence?",
+    "Offer decline: Can a student decline an accepted offer to regain eligibility for a standard drive? Policy mentions no fee or penalty.",
+    "Lateral entry eligibility: Does not explicitly state whether diploma aggregate replaces 12th percentage for cut-off calculations."
+  ]
+}

@@ -1,0 +1,442 @@
+{
+  "01_google_announcement.txt": {
+    "company_name": "Google",
+    "drive_date": "2026-11-01",
+    "mode": "hybrid",
+    "ctc_lpa": 36.0,
+    "cgpa_min": 8.5,
+    "tenth_percentage_min": 60.0,
+    "twelfth_percentage_min": 60.0,
+    "active_backlogs_max": 0,
+    "historical_backlogs_max": 0,
+    "allowed_branches": [
+      "CSE",
+      "IT",
+      "Data Science"
+    ],
+    "gap_years_max": 1,
+    "rounds_count": 4
+  },
+  "02_microsoft_announcement.txt": {
+    "company_name": "Microsoft",
+    "drive_date": "2026-11-04",
+    "mode": "on_campus",
+    "ctc_lpa": 44.0,
+    "cgpa_min": 8.0,
+    "tenth_percentage_min": 60.0,
+    "twelfth_percentage_min": 60.0,
+    "active_backlogs_max": 0,
+    "historical_backlogs_max": null,
+    "allowed_branches": [
+      "CSE",
+      "IT",
+      "ECE"
+    ],
+    "gap_years_max": 1,
+    "rounds_count": 4
+  },
+  "03_amazon_announcement.txt": {
+    "company_name": "Amazon",
+    "drive_date": "2026-11-07",
+    "mode": "on_campus",
+    "ctc_lpa": 32.0,
+    "cgpa_min": 7.5,
+    "tenth_percentage_min": 60.0,
+    "twelfth_percentage_min": 60.0,
+    "active_backlogs_max": 0,
+    "historical_backlogs_max": null,
+    "allowed_branches": [
+      "CSE",
+      "IT",
+      "ECE",
+      "EEE"
+    ],
+    "gap_years_max": 1,
+    "rounds_count": 4
+  },
+  "04_goldman_sachs_announcement.txt": {
+    "company_name": "Goldman Sachs",
+    "drive_date": "2026-11-10",
+    "mode": "hybrid",
+    "ctc_lpa": 28.0,
+    "cgpa_min": 8.0,
+    "tenth_percentage_min": 60.0,
+    "twelfth_percentage_min": 60.0,
+    "active_backlogs_max": 0,
+    "historical_backlogs_max": 0,
+    "allowed_branches": [
+      "All Branches"
+    ],
+    "gap_years_max": 1,
+    "rounds_count": 4
+  },
+  "05_oracle_announcement.txt": {
+    "company_name": "Oracle",
+    "drive_date": "2026-11-13",
+    "mode": "on_campus",
+    "ctc_lpa": 19.5,
+    "cgpa_min": 7.0,
+    "tenth_percentage_min": 60.0,
+    "twelfth_percentage_min": 60.0,
+    "active_backlogs_max": 0,
+    "historical_backlogs_max": null,
+    "allowed_branches": [
+      "CSE",
+      "IT",
+      "ECE"
+    ],
+    "gap_years_max": 1,
+    "rounds_count": 4
+  },
+  "06_qualcomm_announcement.txt": {
+    "company_name": "Qualcomm",
+    "drive_date": "2026-11-16",
+    "mode": "on_campus",
+    "ctc_lpa": 22.0,
+    "cgpa_min": 7.8,
+    "tenth_percentage_min": 60.0,
+    "twelfth_percentage_min": 60.0,
+    "active_backlogs_max": 0,
+    "historical_backlogs_max": null,
+    "allowed_branches": [
+      "ECE",
+      "EEE",
+      "CSE"
+    ],
+    "gap_years_max": 1,
+    "rounds_count": 4
+  },
+  "07_cisco_announcement.txt": {
+    "company_name": "Cisco",
+    "drive_date": "2026-11-19",
+    "mode": "on_campus",
+    "ctc_lpa": 17.5,
+    "cgpa_min": 7.5,
+    "tenth_percentage_min": 60.0,
+    "twelfth_percentage_min": 60.0,
+    "active_backlogs_max": 0,
+    "historical_backlogs_max": 1,
+    "allowed_branches": [
+      "CSE",
+      "IT",
+      "ECE"
+    ],
+    "gap_years_max": 1,
+    "rounds_count": 4
+  },
+  "08_deloitte_usi_email.eml": {
+    "company_name": "Deloitte USI",
+    "drive_date": "2026-11-22",
+    "mode": "on_campus",
+    "ctc_lpa": 9.0,
+    "cgpa_min": 6.8,
+    "tenth_percentage_min": 60.0,
+    "twelfth_percentage_min": 60.0,
+    "active_backlogs_max": 0,
+    "historical_backlogs_max": null,
+    "allowed_branches": [
+      "All Branches"
+    ],
+    "gap_years_max": 1,
+    "rounds_count": 4
+  },
+  "09_tata_consultancy_services_email.eml": {
+    "company_name": "Tata Consultancy Services",
+    "drive_date": "2026-11-25",
+    "mode": "on_campus",
+    "ctc_lpa": 7.0,
+    "cgpa_min": 6.0,
+    "tenth_percentage_min": 60.0,
+    "twelfth_percentage_min": 60.0,
+    "active_backlogs_max": 1,
+    "historical_backlogs_max": null,
+    "allowed_branches": [
+      "All Branches"
+    ],
+    "gap_years_max": 1,
+    "rounds_count": 4
+  },
+  "10_infosys_power_programmer_email.eml": {
+    "company_name": "Infosys Power Programmer",
+    "drive_date": "2026-11-28",
+    "mode": "virtual",
+    "ctc_lpa": 9.5,
+    "cgpa_min": 6.5,
+    "tenth_percentage_min": 60.0,
+    "twelfth_percentage_min": 60.0,
+    "active_backlogs_max": 0,
+    "historical_backlogs_max": null,
+    "allowed_branches": [
+      "CSE",
+      "IT",
+      "ECE",
+      "Data Science"
+    ],
+    "gap_years_max": 1,
+    "rounds_count": 4
+  },
+  "11_wipro_turbo_email.eml": {
+    "company_name": "Wipro Turbo",
+    "drive_date": "2026-12-01",
+    "mode": "on_campus",
+    "ctc_lpa": 6.5,
+    "cgpa_min": 6.0,
+    "tenth_percentage_min": 60.0,
+    "twelfth_percentage_min": 60.0,
+    "active_backlogs_max": 0,
+    "historical_backlogs_max": null,
+    "allowed_branches": [
+      "All Branches"
+    ],
+    "gap_years_max": 1,
+    "rounds_count": 4
+  },
+  "12_accenture_advanced_tech_email.eml": {
+    "company_name": "Accenture Advanced Tech",
+    "drive_date": "2026-12-04",
+    "mode": "on_campus",
+    "ctc_lpa": 11.5,
+    "cgpa_min": 7.0,
+    "tenth_percentage_min": 60.0,
+    "twelfth_percentage_min": 60.0,
+    "active_backlogs_max": 0,
+    "historical_backlogs_max": null,
+    "allowed_branches": [
+      "CSE",
+      "IT",
+      "ECE",
+      "EEE",
+      "Data Science"
+    ],
+    "gap_years_max": 1,
+    "rounds_count": 4
+  },
+  "13_siemens_email.eml": {
+    "company_name": "Siemens",
+    "drive_date": "2026-12-07",
+    "mode": "on_campus",
+    "ctc_lpa": 12.0,
+    "cgpa_min": 7.0,
+    "tenth_percentage_min": 60.0,
+    "twelfth_percentage_min": 60.0,
+    "active_backlogs_max": 0,
+    "historical_backlogs_max": null,
+    "allowed_branches": [
+      "ECE",
+      "EEE",
+      "Mechanical Engineering"
+    ],
+    "gap_years_max": 1,
+    "rounds_count": 4
+  },
+  "14_larsen_and_toubro_spec.pdf": {
+    "company_name": "Larsen & Toubro",
+    "drive_date": "2026-12-10",
+    "mode": "on_campus",
+    "ctc_lpa": 6.5,
+    "cgpa_min": 6.5,
+    "tenth_percentage_min": 60.0,
+    "twelfth_percentage_min": 60.0,
+    "active_backlogs_max": 0,
+    "historical_backlogs_max": 0,
+    "allowed_branches": [
+      "Mechanical Engineering",
+      "Civil Engineering",
+      "EEE"
+    ],
+    "gap_years_max": 1,
+    "rounds_count": 4
+  },
+  "15_texas_instruments_spec.pdf": {
+    "company_name": "Texas Instruments",
+    "drive_date": "2026-12-13",
+    "mode": "on_campus",
+    "ctc_lpa": 25.0,
+    "cgpa_min": 8.0,
+    "tenth_percentage_min": 60.0,
+    "twelfth_percentage_min": 60.0,
+    "active_backlogs_max": 0,
+    "historical_backlogs_max": null,
+    "allowed_branches": [
+      "ECE",
+      "EEE"
+    ],
+    "gap_years_max": 1,
+    "rounds_count": 4
+  },
+  "16_intel_spec.pdf": {
+    "company_name": "Intel",
+    "drive_date": "2026-12-16",
+    "mode": "hybrid",
+    "ctc_lpa": 21.0,
+    "cgpa_min": 7.5,
+    "tenth_percentage_min": 60.0,
+    "twelfth_percentage_min": 60.0,
+    "active_backlogs_max": 0,
+    "historical_backlogs_max": null,
+    "allowed_branches": [
+      "ECE",
+      "CSE",
+      "IT"
+    ],
+    "gap_years_max": 1,
+    "rounds_count": 4
+  },
+  "17_morgan_stanley_spec.pdf": {
+    "company_name": "Morgan Stanley",
+    "drive_date": "2026-12-19",
+    "mode": "virtual",
+    "ctc_lpa": 26.0,
+    "cgpa_min": 8.2,
+    "tenth_percentage_min": 60.0,
+    "twelfth_percentage_min": 60.0,
+    "active_backlogs_max": 0,
+    "historical_backlogs_max": 0,
+    "allowed_branches": [
+      "CSE",
+      "IT"
+    ],
+    "gap_years_max": 1,
+    "rounds_count": 4
+  },
+  "18_samsung_randd_spec.pdf": {
+    "company_name": "Samsung R&D",
+    "drive_date": "2026-12-22",
+    "mode": "on_campus",
+    "ctc_lpa": 16.0,
+    "cgpa_min": 7.5,
+    "tenth_percentage_min": 60.0,
+    "twelfth_percentage_min": 60.0,
+    "active_backlogs_max": 0,
+    "historical_backlogs_max": null,
+    "allowed_branches": [
+      "CSE",
+      "IT",
+      "ECE"
+    ],
+    "gap_years_max": 1,
+    "rounds_count": 4
+  },
+  "19_tata_motors_spec.pdf": {
+    "company_name": "Tata Motors",
+    "drive_date": "2026-12-25",
+    "mode": "on_campus",
+    "ctc_lpa": 8.5,
+    "cgpa_min": 6.5,
+    "tenth_percentage_min": 60.0,
+    "twelfth_percentage_min": 60.0,
+    "active_backlogs_max": 0,
+    "historical_backlogs_max": 1,
+    "allowed_branches": [
+      "Mechanical Engineering",
+      "EEE"
+    ],
+    "gap_years_max": 1,
+    "rounds_count": 4
+  },
+  "20_reliance_industries_jd.docx": {
+    "company_name": "Reliance Industries",
+    "drive_date": "2026-12-28",
+    "mode": "on_campus",
+    "ctc_lpa": 7.5,
+    "cgpa_min": 6.8,
+    "tenth_percentage_min": 60.0,
+    "twelfth_percentage_min": 60.0,
+    "active_backlogs_max": 0,
+    "historical_backlogs_max": null,
+    "allowed_branches": [
+      "Chemical Engineering",
+      "Mechanical Engineering",
+      "Civil Engineering"
+    ],
+    "gap_years_max": 1,
+    "rounds_count": 4
+  },
+  "21_itc_limited_jd.docx": {
+    "company_name": "ITC Limited",
+    "drive_date": "2026-12-31",
+    "mode": "on_campus",
+    "ctc_lpa": 11.0,
+    "cgpa_min": 7.2,
+    "tenth_percentage_min": 60.0,
+    "twelfth_percentage_min": 60.0,
+    "active_backlogs_max": 0,
+    "historical_backlogs_max": 0,
+    "allowed_branches": [
+      "Mechanical Engineering",
+      "Chemical Engineering"
+    ],
+    "gap_years_max": 1,
+    "rounds_count": 4
+  },
+  "22_biocon_jd.docx": {
+    "company_name": "Biocon",
+    "drive_date": "2027-01-03",
+    "mode": "on_campus",
+    "ctc_lpa": 7.0,
+    "cgpa_min": 6.5,
+    "tenth_percentage_min": 60.0,
+    "twelfth_percentage_min": 60.0,
+    "active_backlogs_max": 0,
+    "historical_backlogs_max": null,
+    "allowed_branches": [
+      "Biotechnology",
+      "Chemical Engineering"
+    ],
+    "gap_years_max": 1,
+    "rounds_count": 4
+  },
+  "23_zs_associates_jd.docx": {
+    "company_name": "ZS Associates",
+    "drive_date": "2027-01-06",
+    "mode": "virtual",
+    "ctc_lpa": 13.5,
+    "cgpa_min": 7.0,
+    "tenth_percentage_min": 60.0,
+    "twelfth_percentage_min": 60.0,
+    "active_backlogs_max": 0,
+    "historical_backlogs_max": null,
+    "allowed_branches": [
+      "All Branches"
+    ],
+    "gap_years_max": 1,
+    "rounds_count": 4
+  },
+  "24_barclays_jd.docx": {
+    "company_name": "Barclays",
+    "drive_date": "2027-01-09",
+    "mode": "hybrid",
+    "ctc_lpa": 14.0,
+    "cgpa_min": 7.5,
+    "tenth_percentage_min": 60.0,
+    "twelfth_percentage_min": 60.0,
+    "active_backlogs_max": 0,
+    "historical_backlogs_max": null,
+    "allowed_branches": [
+      "CSE",
+      "IT",
+      "Data Science",
+      "ECE"
+    ],
+    "gap_years_max": 1,
+    "rounds_count": 4
+  },
+  "25_atlassian_jd.docx": {
+    "company_name": "Atlassian",
+    "drive_date": "2027-01-12",
+    "mode": "virtual",
+    "ctc_lpa": 52.0,
+    "cgpa_min": 8.5,
+    "tenth_percentage_min": 60.0,
+    "twelfth_percentage_min": 60.0,
+    "active_backlogs_max": 0,
+    "historical_backlogs_max": 0,
+    "allowed_branches": [
+      "CSE",
+      "IT",
+      "Data Science"
+    ],
+    "gap_years_max": 1,
+    "rounds_count": 4
+  }
+}

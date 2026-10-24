@@ -1,0 +1,412 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply antialiased min-h-screen;
+    background-color: #060b14;
+    color: #f1f5f9;
+    selection-background-color: #059669;
+    selection-color: #ffffff;
+    font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+  }
+
+  /* Accessible focus indicators with emerald glow */
+  :focus-visible {
+    outline: none !important;
+    ring: 2px solid #10b981 !important;
+    ring-offset: 2px !important;
+    ring-offset-color: #060b14 !important;
+  }
+}
+
+/* ==========================================================================
+   Dark Enterprise Theme Utility Overrides (Dark Blue & Emerald Touchup)
+   ========================================================================== */
+
+/* Surfaces & Containers */
+.bg-white {
+  background-color: #0d1527 !important;
+}
+
+.bg-slate-50,
+.bg-slate-50\/40,
+.bg-slate-50\/50,
+.bg-slate-50\/60,
+.bg-slate-50\/70,
+.bg-slate-50\/80 {
+  background-color: #080e1c !important;
+}
+
+.bg-slate-100,
+.bg-slate-100\/50,
+.bg-slate-100\/80 {
+  background-color: #111d38 !important;
+}
+
+.bg-slate-200 {
+  background-color: #17264a !important;
+}
+
+/* Hairline Borders */
+.border-slate-100,
+.border-slate-200,
+.border-slate-200\/60,
+.border-slate-200\/80,
+.border-slate-200\/90,
+.border-slate-300 {
+  border-color: #1b2b4d !important;
+}
+
+.divide-slate-100 > :not([hidden]) ~ :not([hidden]),
+.divide-slate-200 > :not([hidden]) ~ :not([hidden]) {
+  border-color: #1b2b4d !important;
+}
+
+/* High-Legibility Typography Hierarchy */
+.text-slate-900,
+.text-slate-800 {
+  color: #f8fafc !important;
+}
+
+.text-slate-700 {
+  color: #e2e8f0 !important;
+}
+
+.text-slate-600 {
+  color: #cbd5e1 !important;
+}
+
+.text-slate-500 {
+  color: #94a3b8 !important;
+}
+
+.text-slate-400 {
+  color: #64748b !important;
+}
+
+/* Interactive Hover States */
+.hover\:bg-slate-50:hover,
+.hover\:bg-slate-50\/50:hover,
+.hover\:bg-slate-50\/60:hover {
+  background-color: #111d38 !important;
+}
+
+.hover\:bg-slate-100:hover,
+.hover\:bg-slate-100\/80:hover {
+  background-color: #162447 !important;
+}
+
+.hover\:bg-slate-200:hover {
+  background-color: #1b2b52 !important;
+}
+
+.hover\:border-slate-300:hover,
+.hover\:border-slate-400:hover {
+  border-color: #10b981 !important;
+}
+
+/* ==========================================================================
+   Dark Glass Form Controls & Sliders
+   ========================================================================== */
+input:not([type="checkbox"]):not([type="radio"]):not([type="range"]),
+select,
+textarea {
+  background-color: #080e1c !important;
+  border: 1px solid #1e3258 !important;
+  color: #f8fafc !important;
+  transition: all 0.15s ease-in-out;
+}
+
+input:not([type="checkbox"]):not([type="radio"]):not([type="range"])::placeholder,
+textarea::placeholder {
+  color: #64748b !important;
+}
+
+input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):focus,
+select:focus,
+textarea:focus {
+  background-color: #0d1527 !important;
+  border-color: #10b981 !important;
+  box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.3) !important;
+  outline: none !important;
+}
+
+select option {
+  background-color: #0d1527 !important;
+  color: #f8fafc !important;
+}
+
+/* Emerald Accent Color for Inputs */
+input[type="checkbox"],
+input[type="radio"],
+input[type="range"] {
+  accent-color: #10b981 !important;
+  cursor: pointer;
+}
+
+input::file-selector-button {
+  background-color: #111d38 !important;
+  color: #34d399 !important;
+  border: 1px solid #1e3258 !important;
+  border-radius: 0.75rem !important;
+  padding: 0.375rem 0.75rem !important;
+  font-weight: 600 !important;
+  cursor: pointer;
+  transition: all 0.15s ease-in-out;
+}
+
+input::file-selector-button:hover {
+  background-color: #17264a !important;
+  border-color: #10b981 !important;
+}
+
+/* ==========================================================================
+   Matching Buttons: Dark Blue to Emerald Gradient & Slate Glass
+   ========================================================================== */
+
+/* Primary Action Buttons */
+.btn-primary,
+button.bg-brand-600,
+a.bg-brand-600,
+button.bg-brand-700,
+a.bg-brand-700,
+button.bg-brand-500,
+a.bg-brand-500 {
+  background: linear-gradient(135deg, #1d4ed8 0%, #0d9488 50%, #059669 100%) !important;
+  color: #ffffff !important;
+  font-weight: 700 !important;
+  border: 1px solid rgba(52, 211, 153, 0.35) !important;
+  box-shadow: 0 4px 14px -1px rgba(16, 185, 129, 0.3), 0 2px 6px -1px rgba(29, 78, 216, 0.3) !important;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+.btn-primary:hover,
+button.bg-brand-600:hover,
+a.bg-brand-600:hover,
+button.bg-brand-700:hover,
+a.bg-brand-700:hover,
+button.bg-brand-500:hover,
+a.bg-brand-500:hover {
+  background: linear-gradient(135deg, #2563eb 0%, #14b8a6 50%, #10b981 100%) !important;
+  box-shadow: 0 6px 20px -2px rgba(16, 185, 129, 0.45) !important;
+  transform: translateY(-1px);
+  border-color: rgba(110, 231, 183, 0.6) !important;
+}
+
+.btn-primary:active,
+button.bg-brand-600:active,
+a.bg-brand-600:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 8px -1px rgba(16, 185, 129, 0.4) !important;
+}
+
+/* Secondary Action Buttons */
+.btn-secondary,
+button.bg-slate-900,
+button.bg-slate-800 {
+  background-color: #111d38 !important;
+  border: 1px solid #1e3258 !important;
+  color: #f1f5f9 !important;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+.btn-secondary:hover,
+button.bg-slate-900:hover,
+button.bg-slate-800:hover {
+  background-color: #17264a !important;
+  border-color: #10b981 !important;
+  color: #34d399 !important;
+  box-shadow: 0 0 14px -2px rgba(16, 185, 129, 0.25) !important;
+  transform: translateY(-1px);
+}
+
+/* Emerald Action Buttons */
+button.bg-emerald-600,
+a.bg-emerald-600,
+button.bg-emerald-700,
+a.bg-emerald-700 {
+  background: linear-gradient(135deg, #059669 0%, #10b981 100%) !important;
+  color: #ffffff !important;
+  font-weight: 700 !important;
+  border: 1px solid rgba(110, 231, 183, 0.4) !important;
+  box-shadow: 0 4px 14px -1px rgba(16, 185, 129, 0.35) !important;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+button.bg-emerald-600:hover,
+a.bg-emerald-600:hover,
+button.bg-emerald-700:hover,
+a.bg-emerald-700:hover {
+  background: linear-gradient(135deg, #047857 0%, #059669 100%) !important;
+  box-shadow: 0 6px 20px -2px rgba(16, 185, 129, 0.5) !important;
+  transform: translateY(-1px);
+}
+
+/* ==========================================================================
+   Tables & Data Grid
+   ========================================================================== */
+table thead tr {
+  background-color: #080e1c !important;
+  border-color: #1b2b4d !important;
+}
+
+table thead th {
+  color: #94a3b8 !important;
+  border-color: #1b2b4d !important;
+  background-color: #080e1c !important;
+}
+
+table tbody tr {
+  border-color: #14223d !important;
+  background-color: #0d1527 !important;
+  transition: background-color 0.15s ease;
+}
+
+table tbody tr:hover {
+  background-color: #111d38 !important;
+}
+
+table td {
+  border-color: #14223d !important;
+  color: #e2e8f0 !important;
+}
+
+/* ==========================================================================
+   Brand & Status Touchups
+   ========================================================================== */
+.text-brand-900,
+.text-brand-800 {
+  color: #f0fdf4 !important;
+}
+
+.text-brand-600,
+.text-brand-700 {
+  color: #34d399 !important;
+}
+
+.text-emerald-600,
+.text-emerald-700,
+.text-emerald-800,
+.text-emerald-900 {
+  color: #34d399 !important;
+}
+
+.text-rose-600,
+.text-rose-700,
+.text-rose-800,
+.text-rose-900 {
+  color: #fb7185 !important;
+}
+
+.text-amber-600,
+.text-amber-700,
+.text-amber-800,
+.text-amber-900 {
+  color: #fbbf24 !important;
+}
+
+.text-indigo-600,
+.text-indigo-700,
+.text-indigo-800,
+.text-indigo-900 {
+  color: #a5b4fc !important;
+}
+
+.text-sky-600,
+.text-sky-700,
+.text-sky-800,
+.text-sky-900 {
+  color: #7dd3fc !important;
+}
+
+.bg-brand-50 {
+  background-color: rgba(6, 78, 59, 0.4) !important;
+  color: #6ee7b7 !important;
+  border-color: rgba(16, 185, 129, 0.3) !important;
+}
+
+.bg-brand-100 {
+  background-color: rgba(17, 34, 78, 0.7) !important;
+  color: #93c5fd !important;
+}
+
+.border-brand-100,
+.border-brand-200 {
+  border-color: rgba(16, 185, 129, 0.3) !important;
+}
+
+.bg-emerald-50 {
+  background-color: rgba(6, 78, 59, 0.4) !important;
+  border-color: rgba(16, 185, 129, 0.3) !important;
+  color: #6ee7b7 !important;
+}
+
+.bg-amber-50 {
+  background-color: rgba(69, 26, 3, 0.4) !important;
+  border-color: rgba(245, 158, 11, 0.3) !important;
+  color: #fde68a !important;
+}
+
+.bg-rose-50 {
+  background-color: rgba(76, 5, 25, 0.4) !important;
+  border-color: rgba(244, 63, 94, 0.3) !important;
+  color: #fecdd3 !important;
+}
+
+.bg-sky-50 {
+  background-color: rgba(8, 47, 73, 0.4) !important;
+  border-color: rgba(14, 165, 233, 0.3) !important;
+  color: #bae6fd !important;
+}
+
+.bg-indigo-50 {
+  background-color: rgba(30, 27, 75, 0.5) !important;
+  border-color: rgba(99, 102, 241, 0.3) !important;
+  color: #c7d2fe !important;
+}
+
+/* Custom Sleek Dark Scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #060b14;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #1e3258;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #10b981;
+}
+
+/* Printable student sheet layout styles */
+@media print {
+  body {
+    background: white !important;
+    color: black !important;
+  }
+  .no-print {
+    display: none !important;
+  }
+  .print-only {
+    display: block !important;
+  }
+  .print-card {
+    border: 1px solid #cbd5e1 !important;
+    box-shadow: none !important;
+    page-break-inside: avoid;
+  }
+}
+
+@media screen {
+  .print-only {
+    display: none !important;
+  }
+}

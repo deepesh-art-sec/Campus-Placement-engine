@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="Institutional Placement Eligibility and Scheduling Engine - Offline-first Campus Recruitment System" />
+    <title>Campus Placement Engine | Eligibility & Scheduling</title>
+    <style>
+      /* Pure system fonts - strictly 0 external network requests */
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif;
+        margin: 0;
+        padding: 0;
+        background-color: #060b14;
+        color: #f1f5f9;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+    <script>
+      // Register local offline service worker
+      if ('serviceWorker' in navigator && window.location.protocol.startsWith('http')) {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker.register('/sw.js').catch((err) => {
+            console.log('Local SW registration note:', err);
+          });
+        });
+      }
+    </script>
+  </body>
+</html>

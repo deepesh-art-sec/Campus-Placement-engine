@@ -1,0 +1,81 @@
+[build-system]
+requires = ["setuptools>=68.0.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["backend*"]
+
+[project]
+name = "placement-engine"
+version = "1.0.0"
+description = "College Placement Eligibility, Audit & Clash-Free Scheduling Engine"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "fastapi>=0.110.0",
+    "uvicorn[standard]>=0.28.0",
+    "pydantic>=2.6.0",
+    "sqlalchemy>=2.0.28",
+    "alembic>=1.13.1",
+    "pandas>=2.2.0",
+    "openpyxl>=3.1.2",
+    "argon2-cffi>=23.1.0",
+    "ortools>=9.9.3963",
+    "python-docx>=1.1.0",
+    "pdfplumber>=0.11.0",
+    "python-multipart>=0.0.9",
+    "reportlab>=4.1.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0.0",
+    "hypothesis>=6.100.0",
+    "pytest-cov>=4.1.0",
+    "ruff>=0.3.0",
+    "mypy>=1.9.0",
+    "types-openpyxl>=3.1.0",
+    "types-python-dateutil>=2.8.19",
+]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "B", "C4", "UP"]
+ignore = ["E501", "B008"]
+
+[tool.mypy]
+python_version = "3.11"
+mypy_path = "."
+explicit_package_bases = true
+warn_unused_configs = false
+warn_redundant_casts = true
+warn_unused_ignores = false
+disallow_untyped_defs = true
+disallow_incomplete_defs = true
+check_untyped_defs = true
+disable_error_code = ["misc", "arg-type", "assignment"]
+
+[[tool.mypy.overrides]]
+module = [
+    "ortools.*",
+    "docx.*",
+    "pdfplumber.*",
+    "reportlab.*",
+    "pandas.*",
+    "openpyxl.*",
+]
+ignore_missing_imports = true
+
+[tool.pytest.ini_options]
+minversion = "7.0"
+addopts = "-q"
+testpaths = ["backend/tests"]
+pythonpath = ["."]
+filterwarnings = [
+    "ignore::DeprecationWarning",
+    "ignore::PendingDeprecationWarning",
+]
