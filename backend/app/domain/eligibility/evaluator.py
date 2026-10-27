@@ -33,7 +33,7 @@ from backend.app.domain.eligibility.ast import (
 )
 from backend.app.domain.eligibility.templates import TemplateEngine
 from backend.app.domain.models import EligibilityStatus, Student
-from backend.app.importers.canonical_maps import CANONICAL_BRANCHES
+from backend.app.importers.canonical_maps import CANONICAL_BRANCHES, is_branch_allowed
 
 
 class RuleEvaluationStatus(StrEnum):
@@ -309,14 +309,7 @@ class EligibilityEvaluator:
 
     def _eval_branch(self, student: Student, node: BranchInRule) -> RuleEvaluationResult:
         actual_branch = student.branch.strip()
-
-        # Check canonical branch aliases
-        canonical_student_branch = CANONICAL_BRANCHES.get(actual_branch.lower(), actual_branch)
-        canonical_allowed = [CANONICAL_BRANCHES.get(b.lower(), b) for b in node.allowed_branches]
-
-        # Match wildcard (e.g. All Branches), exact, or canonical
-        has_wildcard = any(b.lower() in ("all", "all branches", "any", "all branch") for b in node.allowed_branches)
-        passed = has_wildcard or (actual_branch.lower() in [b.lower() for b in node.allowed_branches]) or (canonical_student_branch in canonical_allowed)
+        passed = is_branch_allowed(actual_branch, node.allowed_branches)
         status = RuleEvaluationStatus.PASSED if passed else RuleEvaluationStatus.FAILED
 
         explanation = self.templates.render_student(

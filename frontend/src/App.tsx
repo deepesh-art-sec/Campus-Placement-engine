@@ -2,7 +2,10 @@ import React, { useState, useEffect } from "react";
 import { AuthProvider, useAuth } from "./context/AuthContext";
 import { Header } from "./components/layout/Header";
 import { Navigation, NavTabId } from "./components/layout/Navigation";
+import { CoordinatorNavigation, CoordinatorTabId } from "./components/layout/CoordinatorNavigation";
 import { GuidedTourModal } from "./components/layout/GuidedTourModal";
+
+// Officer Views
 import { DrivesDashboard } from "./views/officer/DrivesDashboard";
 import { DriveCreationReview } from "./views/officer/DriveCreationReview";
 import { AnnouncementsLibraryView } from "./views/officer/AnnouncementsLibraryView";
@@ -16,8 +19,26 @@ import { WhatIfPublishView } from "./views/officer/WhatIfPublishView";
 import { ResultEntryView } from "./views/officer/ResultEntryView";
 import { DisputeComparisonView } from "./views/officer/DisputeComparisonView";
 import { CompanyExportView } from "./views/officer/CompanyExportView";
+import { UsersRolesView } from "./views/officer/UsersRolesView";
+import { AuditBackupSettingsView } from "./views/officer/AuditBackupSettingsView";
 import { AuditHistoryView } from "./views/officer/AuditHistoryView";
 import { OfflineSelfCheck } from "./views/audit/OfflineSelfCheck";
+
+// Coordinator Views (Modules 1-12)
+import { CoordinatorOverviewView } from "./views/coordinator/CoordinatorOverviewView";
+import { CoordinatorStudentsView } from "./views/coordinator/CoordinatorStudentsView";
+import { CoordinatorDrivesView } from "./views/coordinator/CoordinatorDrivesView";
+import { CoordinatorEligibilityView } from "./views/coordinator/CoordinatorEligibilityView";
+import { CoordinatorScheduleView } from "./views/coordinator/CoordinatorScheduleView";
+import { CoordinatorClashesView } from "./views/coordinator/CoordinatorClashesView";
+import { CoordinatorResultEntryView } from "./views/coordinator/CoordinatorResultEntryView";
+import { CoordinatorCommunicationView } from "./views/coordinator/CoordinatorCommunicationView";
+import { CoordinatorOnTheDayView } from "./views/coordinator/CoordinatorOnTheDayView";
+import { CoordinatorRequestsView } from "./views/coordinator/CoordinatorRequestsView";
+import { CoordinatorReportsExportView } from "./views/coordinator/CoordinatorReportsExportView";
+import { CoordinatorNotificationsView } from "./views/coordinator/CoordinatorNotificationsView";
+
+// Candidate & Recruiter Views
 import { StudentPortal } from "./views/student/StudentPortal";
 import { RecruiterPortal } from "./views/recruiter/RecruiterPortal";
 import { AlertBanner } from "./components/common/AlertBanner";
@@ -25,12 +46,18 @@ import { CheckCircle2 } from "lucide-react";
 
 const MainContent: React.FC = () => {
   const { user, login, studentLogin, error, clearError } = useAuth();
+
+  // Officer Navigation
   const [activeTab, setActiveTab] = useState<NavTabId>("drives");
   const [activeDriveId, setActiveDriveId] = useState<string | undefined>();
   const [isTourOpen, setIsTourOpen] = useState(false);
 
+  // Coordinator Navigation (Modules 1-12)
+  const [coordTab, setCoordTab] = useState<CoordinatorTabId>("overview");
+  const [coordDriveId, setCoordDriveId] = useState<string | undefined>();
+
   // Unauthenticated Login Form State
-  const [authRole, setAuthRole] = useState<"officer" | "student" | "recruiter">("officer");
+  const [authRole, setAuthRole] = useState<"officer" | "coordinator" | "student" | "recruiter">("officer");
   const [username, setUsername] = useState("admin");
   const [password, setPassword] = useState("admin123");
   const [studentRoll, setStudentRoll] = useState("admin");
@@ -42,14 +69,37 @@ const MainContent: React.FC = () => {
     if (driveId) setActiveDriveId(driveId);
   };
 
+  const handleCoordTabSelect = (tab: string, driveId?: string) => {
+    setCoordTab(tab as CoordinatorTabId);
+    if (driveId) setCoordDriveId(driveId);
+  };
+
+  const handleRoleSwitch = (role: "officer" | "coordinator" | "student" | "recruiter") => {
+    setAuthRole(role);
+    if (role === "officer") {
+      setUsername("admin");
+      setPassword("admin123");
+    } else if (role === "coordinator") {
+      setUsername("coordinator");
+      setPassword("coord123");
+    } else if (role === "recruiter") {
+      setUsername("recruiter_google");
+      setPassword("recruiter123");
+    } else {
+      setStudentRoll("BT210001");
+      setStudentCode("student123");
+    }
+  };
+
   const handleLoginSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setAuthLoading(true);
     try {
-      if (authRole === "officer" || authRole === "recruiter") {
-        await login(username, password);
-      } else {
+      if (authRole === "student") {
         await studentLogin(studentRoll, studentCode);
+      } else {
+        await login(username, password);
+        setActiveTab("drives");
       }
     } catch {
       // Error handled by AuthContext
@@ -62,7 +112,7 @@ const MainContent: React.FC = () => {
   if (!user) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-[#040810] via-[#070e1c] to-[#0a162d] flex flex-col justify-between text-slate-100 selection:bg-emerald-500 selection:text-white relative overflow-hidden">
-        {/* Subtle Ambient Background Orbs */}
+        {/* Ambient Glow */}
         <div className="absolute top-[-10%] left-[-10%] w-[500px] h-[500px] bg-emerald-500/10 rounded-full blur-3xl pointer-events-none" />
         <div className="absolute bottom-[-10%] right-[-10%] w-[600px] h-[600px] bg-blue-600/10 rounded-full blur-3xl pointer-events-none" />
 
@@ -102,11 +152,11 @@ const MainContent: React.FC = () => {
             </div>
 
             {/* Role Switcher Tabs */}
-            <div className="grid grid-cols-3 gap-1 bg-[#080e1c] p-1.5 rounded-2xl border border-[#1b2b4d]">
+            <div className="grid grid-cols-4 gap-1 bg-[#080e1c] p-1.5 rounded-2xl border border-[#1b2b4d]">
               <button
                 type="button"
-                onClick={() => setAuthRole("officer")}
-                className={`py-2 text-xs font-bold rounded-xl transition-all cursor-pointer ${
+                onClick={() => handleRoleSwitch("officer")}
+                className={`py-2 text-[11px] font-bold rounded-xl transition-all cursor-pointer ${
                   authRole === "officer"
                     ? "bg-gradient-to-r from-blue-700 to-emerald-600 text-white shadow-sm shadow-emerald-900/40"
                     : "text-slate-400 hover:text-white"
@@ -116,8 +166,19 @@ const MainContent: React.FC = () => {
               </button>
               <button
                 type="button"
-                onClick={() => setAuthRole("student")}
-                className={`py-2 text-xs font-bold rounded-xl transition-all cursor-pointer ${
+                onClick={() => handleRoleSwitch("coordinator")}
+                className={`py-2 text-[11px] font-bold rounded-xl transition-all cursor-pointer ${
+                  authRole === "coordinator"
+                    ? "bg-gradient-to-r from-indigo-700 to-purple-600 text-white shadow-sm shadow-purple-900/40"
+                    : "text-slate-400 hover:text-white"
+                }`}
+              >
+                Coordinator
+              </button>
+              <button
+                type="button"
+                onClick={() => handleRoleSwitch("student")}
+                className={`py-2 text-[11px] font-bold rounded-xl transition-all cursor-pointer ${
                   authRole === "student"
                     ? "bg-gradient-to-r from-blue-700 to-emerald-600 text-white shadow-sm shadow-emerald-900/40"
                     : "text-slate-400 hover:text-white"
@@ -127,8 +188,8 @@ const MainContent: React.FC = () => {
               </button>
               <button
                 type="button"
-                onClick={() => setAuthRole("recruiter")}
-                className={`py-2 text-xs font-bold rounded-xl transition-all cursor-pointer ${
+                onClick={() => handleRoleSwitch("recruiter")}
+                className={`py-2 text-[11px] font-bold rounded-xl transition-all cursor-pointer ${
                   authRole === "recruiter"
                     ? "bg-gradient-to-r from-blue-700 to-emerald-600 text-white shadow-sm shadow-emerald-900/40"
                     : "text-slate-400 hover:text-white"
@@ -153,12 +214,12 @@ const MainContent: React.FC = () => {
                       value={studentRoll}
                       onChange={(e) => setStudentRoll(e.target.value)}
                       className="w-full px-4 py-2.5 bg-[#080e1c] border border-[#1e3258] rounded-xl text-sm font-semibold text-white focus:bg-[#0d1527] focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-all"
-                      placeholder="e.g. BT210001 or admin"
+                      placeholder="e.g. BT210001"
                     />
                   </div>
                   <div>
                     <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1">
-                      One-Time Access Code / Password
+                      Access Code / Password
                     </label>
                     <input
                       type="password"
@@ -166,7 +227,7 @@ const MainContent: React.FC = () => {
                       value={studentCode}
                       onChange={(e) => setStudentCode(e.target.value)}
                       className="w-full px-4 py-2.5 bg-[#080e1c] border border-[#1e3258] rounded-xl text-sm font-semibold text-white focus:bg-[#0d1527] focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-all"
-                      placeholder="Default: admin123"
+                      placeholder="Default: student123"
                     />
                   </div>
                 </>
@@ -181,8 +242,8 @@ const MainContent: React.FC = () => {
                       required
                       value={username}
                       onChange={(e) => setUsername(e.target.value)}
-                      className="w-full px-4 py-2.5 bg-[#080e1c] border border-[#1e3258] rounded-xl text-sm font-semibold text-white focus:bg-[#0d1527] focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-all"
-                      placeholder="Default: admin"
+                      className="w-full px-4 py-2.5 bg-[#080e1c] border border-[#1e3258] rounded-xl text-sm font-semibold text-white focus:bg-[#0d1527] focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all"
+                      placeholder={`e.g. ${authRole}`}
                     />
                   </div>
                   <div>
@@ -194,8 +255,7 @@ const MainContent: React.FC = () => {
                       required
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
-                      className="w-full px-4 py-2.5 bg-[#080e1c] border border-[#1e3258] rounded-xl text-sm font-semibold text-white focus:bg-[#0d1527] focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-all"
-                      placeholder="Default: admin123"
+                      className="w-full px-4 py-2.5 bg-[#080e1c] border border-[#1e3258] rounded-xl text-sm font-semibold text-white focus:bg-[#0d1527] focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all"
                     />
                   </div>
                 </>
@@ -206,7 +266,7 @@ const MainContent: React.FC = () => {
                 disabled={authLoading}
                 className="w-full py-3 bg-gradient-to-r from-blue-600 via-teal-600 to-emerald-600 hover:from-blue-500 hover:via-teal-500 hover:to-emerald-500 text-white font-bold text-sm rounded-xl shadow-lg shadow-emerald-900/30 border border-emerald-400/30 transition-all cursor-pointer disabled:opacity-50"
               >
-                {authLoading ? "Authenticating..." : `Sign in as ${authRole === "officer" ? "Staff / Officer" : authRole === "student" ? "Student" : "Recruiter"}`}
+                {authLoading ? "Authenticating..." : `Sign in as ${authRole}`}
               </button>
             </form>
           </div>
@@ -220,82 +280,134 @@ const MainContent: React.FC = () => {
     );
   }
 
-  // If candidate logged in
+  // 1. Candidate Portal
   if (user.role === "student") {
     return (
       <div className="min-h-screen bg-[#060b14] text-slate-100 flex flex-col">
         <Header onNavigateToAudit={() => {}} />
-        <main className="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 lg:p-8">
+        <div className="flex-1 flex overflow-hidden">
           <StudentPortal />
-        </main>
+        </div>
       </div>
     );
   }
 
-  // If recruiter logged in
-  if (user.role === "recruiter_readonly") {
+  // 2. Recruiter Portal
+  if (user.role === "recruiter_readonly" || user.role === "recruiter") {
     return (
       <div className="min-h-screen bg-[#060b14] text-slate-100 flex flex-col">
         <Header onNavigateToAudit={() => {}} />
-        <main className="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 lg:p-8">
+        <div className="flex-1 flex overflow-hidden">
           <RecruiterPortal />
-        </main>
+        </div>
       </div>
     );
   }
 
-  // Officer / Coordinator Workspace
+  // 3. Coordinator Dashboard (Modules 1 - 12)
+  if (user.role === "coordinator") {
+    return (
+      <div className="min-h-screen bg-[#060b14] text-slate-100 flex flex-col">
+        <Header
+          onOpenTour={() => setIsTourOpen(true)}
+          onNavigateToAudit={() => setCoordTab("notifications")}
+        />
+        <div className="flex-1 flex overflow-hidden">
+          <CoordinatorNavigation
+            activeTab={coordTab}
+            onSelectTab={setCoordTab}
+          />
+          <main className="flex-1 min-w-0 p-4 sm:p-6 lg:p-8 overflow-y-auto">
+            {coordTab === "overview" && (
+              <CoordinatorOverviewView onNavigateTab={handleCoordTabSelect} />
+            )}
+            {coordTab === "students" && <CoordinatorStudentsView />}
+            {coordTab === "drives" && <CoordinatorDrivesView />}
+            {coordTab === "eligibility" && (
+              <CoordinatorEligibilityView initialDriveId={coordDriveId} />
+            )}
+            {coordTab === "schedule" && (
+              <CoordinatorScheduleView initialDriveId={coordDriveId} />
+            )}
+            {coordTab === "clashes" && <CoordinatorClashesView />}
+            {coordTab === "results" && <CoordinatorResultEntryView />}
+            {coordTab === "communication" && <CoordinatorCommunicationView />}
+            {coordTab === "ontheday" && (
+              <CoordinatorOnTheDayView initialDriveId={coordDriveId} />
+            )}
+            {coordTab === "requests" && <CoordinatorRequestsView />}
+            {coordTab === "reports" && <CoordinatorReportsExportView />}
+            {coordTab === "notifications" && (
+              <CoordinatorNotificationsView
+                onNavigateTab={(tab) => setCoordTab(tab as CoordinatorTabId)}
+              />
+            )}
+          </main>
+        </div>
+
+        <GuidedTourModal
+          isOpen={isTourOpen}
+          onClose={() => setIsTourOpen(false)}
+          onNavigateToTab={(tabId) => setCoordTab(tabId as CoordinatorTabId)}
+        />
+      </div>
+    );
+  }
+
+  // 4. Officer Workspace (Full Executive Authority)
   return (
     <div className="min-h-screen bg-[#060b14] text-slate-100 flex flex-col">
       <Header
         onOpenTour={() => setIsTourOpen(true)}
         onNavigateToAudit={() => setActiveTab("offline_audit")}
       />
-      <Navigation
-        activeTab={activeTab}
-        onSelectTab={handleTabSelect}
-        userRole={user.role}
-      />
+      <div className="flex-1 flex overflow-hidden">
+        <Navigation
+          activeTab={activeTab}
+          onSelectTab={handleTabSelect}
+          userRole={user.role}
+        />
 
-      <main className="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 lg:p-8">
-        {activeTab === "drives" && (
-          <DrivesDashboard onNavigateTab={handleTabSelect} />
-        )}
-        {activeTab === "create_drive" && (
-          <DriveCreationReview
-            onSuccess={(driveId) => handleTabSelect("eligibility", driveId)}
-          />
-        )}
-        {activeTab === "announcements" && (
-          <AnnouncementsLibraryView
-            onNavigateToExtract={(fn) => {
-              setActiveTab("create_drive");
-            }}
-            onNavigateToDrive={(id) => {
-              setActiveDriveId(id);
-              setActiveTab("drives");
-            }}
-          />
-        )}
-        {activeTab === "students" && <StudentRegistryView />}
-        {activeTab === "rule_editor" && <RuleEditorView />}
-        {activeTab === "policies" && <PolicyEditorView />}
-        {activeTab === "policy_simulator" && <PolicySimulatorView />}
-        {activeTab === "eligibility" && (
-          <EligibilityTableView initialDriveId={activeDriveId} />
-        )}
-        {activeTab === "schedule" && (
-          <ScheduleBoardView initialDriveId={activeDriveId} />
-        )}
-        {activeTab === "what_if" && (
-          <WhatIfPublishView initialDriveId={activeDriveId} />
-        )}
-        {activeTab === "results" && <ResultEntryView />}
-        {activeTab === "dispute" && <DisputeComparisonView />}
-        {activeTab === "export" && <CompanyExportView />}
-        {activeTab === "audit" && <AuditHistoryView />}
-        {activeTab === "offline_audit" && <OfflineSelfCheck />}
-      </main>
+        <main className="flex-1 min-w-0 p-4 sm:p-6 lg:p-8 overflow-y-auto">
+          {activeTab === "drives" && (
+            <DrivesDashboard onNavigateTab={handleTabSelect} />
+          )}
+          {activeTab === "create_drive" && (
+            <DriveCreationReview
+              onSuccess={(driveId) => handleTabSelect("eligibility", driveId)}
+            />
+          )}
+          {activeTab === "announcements" && (
+            <AnnouncementsLibraryView
+              onNavigateToExtract={() => setActiveTab("create_drive")}
+              onNavigateToDrive={(id) => {
+                setActiveDriveId(id);
+                setActiveTab("drives");
+              }}
+            />
+          )}
+          {activeTab === "students" && <StudentRegistryView />}
+          {activeTab === "rule_editor" && <RuleEditorView />}
+          {activeTab === "policies" && <PolicyEditorView />}
+          {activeTab === "policy_simulator" && <PolicySimulatorView />}
+          {activeTab === "eligibility" && (
+            <EligibilityTableView initialDriveId={activeDriveId} />
+          )}
+          {activeTab === "schedule" && (
+            <ScheduleBoardView initialDriveId={activeDriveId} />
+          )}
+          {activeTab === "what_if" && (
+            <WhatIfPublishView initialDriveId={activeDriveId} />
+          )}
+          {activeTab === "results" && <ResultEntryView />}
+          {activeTab === "dispute" && <DisputeComparisonView />}
+          {activeTab === "export" && <CompanyExportView />}
+          {activeTab === "users_roles" && <UsersRolesView />}
+          {activeTab === "audit_backup" && <AuditBackupSettingsView />}
+          {activeTab === "audit" && <AuditHistoryView />}
+          {activeTab === "offline_audit" && <OfflineSelfCheck />}
+        </main>
+      </div>
 
       <GuidedTourModal
         isOpen={isTourOpen}

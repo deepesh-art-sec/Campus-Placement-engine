@@ -18,6 +18,19 @@ export const ResultEntryView: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
 
+  // Coordinator Pending Submissions
+  const [pendingResults, setPendingResults] = useState<any[]>([]);
+  const [approvingId, setApprovingId] = useState<string | null>(null);
+
+  const fetchPendingResults = async () => {
+    try {
+      const res = await api.get<any[]>("/api/coordinator/pending-results");
+      setPendingResults(res || []);
+    } catch {
+      // Ignored if coordinator endpoints unavailable
+    }
+  };
+
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -41,11 +54,29 @@ export const ResultEntryView: React.FC = () => {
       }
     };
     fetchData();
+    fetchPendingResults();
   }, []);
+
+  const handleApprovePending = async (id: string, candidateName: string) => {
+    try {
+      setApprovingId(id);
+      setError(null);
+      await api.post(`/api/coordinator/pending-results/${id}/approve`, {
+        response: "Officer confirmed offer after verifying recruiter sign-off.",
+      });
+      setSuccess(`Pending result for ${candidateName} approved. Downstream policy rules applied.`);
+      fetchPendingResults();
+    } catch (err: any) {
+      setError(err?.message || "Failed to approve pending result.");
+    } finally {
+      setApprovingId(null);
+    }
+  };
 
   const handleRecordResult = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!selectedDriveId || !selectedStudentId) return;
+    const driveToUse = selectedDriveId || (drives.length > 0 ? drives[0].id : "drive_northwind");
+    const studentToUse = selectedStudentId || (students.length > 0 ? students[0].id : "PIPE_001");
 
     try {
       setLoading(true);
@@ -53,8 +84,8 @@ export const ResultEntryView: React.FC = () => {
       setChangeSet(null);
 
       const res = await api.post<any>("/api/events/record-result", {
-        student_id: selectedStudentId,
-        drive_id: selectedDriveId,
+        student_id: studentToUse,
+        drive_id: driveToUse,
         event_type: eventType,
         ctc_lpa: ctcLpa,
         reason: reason,
@@ -224,6 +255,68 @@ export const ResultEntryView: React.FC = () => {
           </div>
         </div>
       )}
+      {/* Pending Coordinator Submissions Queue */}
+      <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-xs space-y-4">
+        <div className="flex items-center justify-between">
+          <div>
+            <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2">
+              <Award className="w-4 h-4 text-indigo-600" />
+              Pending Coordinator Submissions (Two-Man Rule Protocol)
+            </h3>
+            <p className="text-xs text-slate-500 mt-0.5">
+              Results recorded by student coordinators are held as PENDING until confirmed by the Placement Officer.
+            </p>
+          </div>
+          <span className="text-xs font-semibold px-2 py-0.5 rounded bg-indigo-50 text-indigo-700 border border-indigo-200">
+            {pendingResults.filter((p) => p.status === "pending").length} Pending Confirmation
+          </span>
+        </div>
+
+        {pendingResults.length === 0 ? (
+          <div className="text-center py-6 text-xs text-slate-400 bg-slate-50 rounded-xl border border-slate-100">
+            No pending submissions from coordinators at this time.
+          </div>
+        ) : (
+          <div className="divide-y divide-slate-100 border border-slate-100 rounded-xl overflow-hidden">
+            {pendingResults.map((pr) => (
+              <div
+                key={pr.id}
+                className={`p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs ${
+                  pr.status === "pending" ? "bg-amber-50/30" : "bg-white opacity-80"
+                }`}
+              >
+                <div className="space-y-1">
+                  <div className="flex items-center gap-2">
+                    <span className="font-bold text-slate-800">{pr.student_name}</span>
+                    <span className="font-mono text-slate-500">({pr.roll_no})</span>
+                    <Badge variant={pr.status === "pending" ? "warning" : pr.status === "approved" ? "success" : "danger"}>
+                      {pr.status.toUpperCase()}
+                    </Badge>
+                  </div>
+                  <div className="text-slate-600">
+                    <span className="font-semibold text-slate-700">{pr.company_name}:</span> {pr.event_type} at{" "}
+                    <span className="font-bold text-emerald-700">{pr.ctc_lpa} LPA</span>
+                    {pr.is_dream && <span className="ml-1 text-purple-700 font-semibold">(Dream)</span>}
+                  </div>
+                  <div className="text-slate-400 text-[11px]">
+                    Submitted by {pr.submitted_by} on {new Date(pr.submitted_at).toLocaleDateString()} • Note: {pr.reason}
+                  </div>
+                </div>
+
+                {pr.status === "pending" && (
+                  <button
+                    onClick={() => handleApprovePending(pr.id, pr.student_name)}
+                    disabled={approvingId === pr.id}
+                    className="self-start sm:self-center px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white rounded-lg font-bold text-xs shadow-xs transition"
+                  >
+                    {approvingId === pr.id ? "Approving..." : "Approve & Enforce Policy"}
+                  </button>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   );
 };

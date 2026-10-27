@@ -89,10 +89,15 @@ export async function request<T>(
   if (!response.ok) {
     let errorDetail = `Request failed with status ${response.status}`;
     try {
-      const errJson = await response.json();
-      errorDetail = errJson.detail || JSON.stringify(errJson);
+      const rawText = await response.text();
+      try {
+        const errJson = JSON.parse(rawText);
+        errorDetail = errJson.detail || JSON.stringify(errJson);
+      } catch {
+        errorDetail = rawText || errorDetail;
+      }
     } catch {
-      errorDetail = await response.text();
+      // Keep default errorDetail
     }
     throw new Error(errorDetail);
   }
@@ -119,6 +124,13 @@ export const api = {
   put: <T>(url: string, body?: any, signal?: AbortSignal) =>
     request<T>(url, {
       method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+      signal,
+    }),
+  patch: <T>(url: string, body?: any, signal?: AbortSignal) =>
+    request<T>(url, {
+      method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(body),
       signal,

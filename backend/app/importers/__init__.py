@@ -2,7 +2,16 @@
 Student data importers module.
 """
 
-from backend.app.importers.canonical_maps import CANONICAL_BRANCHES, HEADER_PATTERNS
+from backend.app.importers.canonical_maps import (
+    BRANCH_CODES,
+    CANONICAL_BRANCHES,
+    HEADER_PATTERNS,
+    get_branch_code,
+    get_canonical_branch,
+    is_branch_allowed,
+    normalize_branch_key,
+    parse_allowed_branches,
+)
 from backend.app.importers.student_importer import (
     ImportReport,
     RowError,
@@ -11,10 +20,16 @@ from backend.app.importers.student_importer import (
 )
 
 __all__ = [
+    "BRANCH_CODES",
     "CANONICAL_BRANCHES",
     "HEADER_PATTERNS",
     "ImportReport",
     "RowError",
     "RowWarning",
     "StudentImporter",
+    "get_branch_code",
+    "get_canonical_branch",
+    "is_branch_allowed",
+    "normalize_branch_key",
+    "parse_allowed_branches",
 ]

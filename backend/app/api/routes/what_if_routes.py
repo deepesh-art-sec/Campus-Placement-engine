@@ -17,6 +17,7 @@ from backend.app.domain.impact.what_if import WhatIfEngine
 from backend.app.domain.models import Drive, RequirementSet
 from backend.app.domain.policy.catalog import STRICT_ONE_OFFER_POLICY
 from backend.app.scheduler.models import RoomType, SchedulerRoom
+from backend.app.importers.canonical_maps import parse_allowed_branches
 from backend.app.storage.database import get_db
 from backend.app.storage.models.entities import (
     DriveModel,
@@ -49,15 +50,8 @@ def simulate_change(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Target drive not found.")
 
     latest_req = drive_entity.requirement_versions[0] if drive_entity.requirement_versions else None
-    branches = ["CSE", "IT", "ECE"]
-    if latest_req and latest_req.allowed_branches_json:
-        if isinstance(latest_req.allowed_branches_json, str):
-            try:
-                branches = json.loads(latest_req.allowed_branches_json)
-            except Exception:
-                branches = [b.strip() for b in latest_req.allowed_branches_json.split(",") if b.strip()]
-        elif isinstance(latest_req.allowed_branches_json, list):
-            branches = latest_req.allowed_branches_json
+    raw_branches = latest_req.allowed_branches_json if latest_req else None
+    branches = parse_allowed_branches(raw_branches) if raw_branches else ["CSE", "IT", "ECE"]
 
     req_domain = RequirementSet(
         id=latest_req.id if latest_req else "req_def",

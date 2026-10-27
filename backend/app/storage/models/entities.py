@@ -375,3 +375,72 @@ class SessionModel(Base):
     user_agent = Column(String(255), nullable=True)
 
     user = relationship("UserModel", back_populates="sessions")
+
+
+class CoordinatorRequestModel(Base):
+    """Coordinator requests sent to the officer for approval/answers."""
+    __tablename__ = "coordinator_requests"
+
+    id = Column(String(36), primary_key=True)
+    request_type = Column(String(64), nullable=False, index=True)  # student_data_correction, shortlist_override, rule_doubt, clash_preference, logistics
+    title = Column(String(255), nullable=False)
+    description = Column(Text, nullable=False)
+    submitted_by = Column(String(128), nullable=False, index=True)
+    submitted_at = Column(DateTime, default=datetime.datetime.utcnow, nullable=False)
+    status = Column(String(32), default="open", nullable=False, index=True)  # open, answered, approved, rejected
+    target_id = Column(String(64), nullable=True)  # student_id, drive_id, slot_id
+    payload_json = Column(Text, nullable=False, default="{}")
+    officer_response = Column(Text, nullable=True)
+    officer_name = Column(String(128), nullable=True)
+    resolved_at = Column(DateTime, nullable=True)
+    comments_json = Column(Text, nullable=False, default="[]")
+
+
+class DriveAttendanceModel(Base):
+    """Day-of-drive attendance log per student & room."""
+    __tablename__ = "drive_attendance"
+
+    id = Column(String(36), primary_key=True)
+    drive_id = Column(String(36), ForeignKey("drives.id", ondelete="CASCADE"), nullable=False, index=True)
+    student_id = Column(String(36), ForeignKey("students.id", ondelete="CASCADE"), nullable=False, index=True)
+    slot_id = Column(String(36), nullable=True)
+    room_name = Column(String(128), nullable=False)
+    status = Column(String(32), default="pending", nullable=False)  # pending, present, absent, late
+    marked_by = Column(String(128), nullable=False)
+    marked_at = Column(DateTime, default=datetime.datetime.utcnow, nullable=False)
+    notes = Column(Text, nullable=True)
+
+
+class NotificationModel(Base):
+    """In-app notifications for officers and coordinators."""
+    __tablename__ = "notifications"
+
+    id = Column(String(36), primary_key=True)
+    recipient_role = Column(String(32), nullable=False, index=True)  # 'coordinator', 'officer', 'all'
+    recipient_username = Column(String(128), nullable=True, index=True)
+    category = Column(String(64), nullable=False)  # 'needs_review', 'clash_alert', 'request_update', 'schedule_change'
+    title = Column(String(255), nullable=False)
+    message = Column(Text, nullable=False)
+    is_read = Column(Boolean, default=False, nullable=False)
+    created_at = Column(DateTime, default=datetime.datetime.utcnow, nullable=False)
+    metadata_json = Column(Text, nullable=False, default="{}")
+
+
+class PendingResultModel(Base):
+    """Coordinator submitted result entries awaiting Officer review."""
+    __tablename__ = "pending_results"
+
+    id = Column(String(36), primary_key=True)
+    drive_id = Column(String(36), ForeignKey("drives.id", ondelete="CASCADE"), nullable=False, index=True)
+    student_id = Column(String(36), ForeignKey("students.id", ondelete="CASCADE"), nullable=False, index=True)
+    event_type = Column(String(32), nullable=False)  # shortlisted, selected, offered, accepted, declined, revoked
+    ctc_lpa = Column(Float, nullable=False)
+    fixed_pay_lpa = Column(Float, nullable=True)
+    is_dream = Column(Boolean, default=False)
+    reason = Column(Text, nullable=False)
+    submitted_by = Column(String(128), nullable=False)
+    submitted_at = Column(DateTime, default=datetime.datetime.utcnow, nullable=False)
+    status = Column(String(32), default="pending", nullable=False)  # pending, approved, rejected
+    officer_name = Column(String(128), nullable=True)
+    resolved_at = Column(DateTime, nullable=True)
+    resolution_notes = Column(Text, nullable=True)

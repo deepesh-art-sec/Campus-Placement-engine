@@ -1,6 +1,6 @@
 // Core Domain & API Types for Institutional Placement Engine
 
-export type UserRole = "officer" | "coordinator" | "student" | "recruiter_readonly";
+export type UserRole = "officer" | "coordinator" | "student" | "recruiter_readonly" | "recruiter";
 
 export interface User {
   id: string;
@@ -39,6 +39,10 @@ export interface Student {
   twelfth_percentage?: number | null;
   diploma_percentage?: number | null;
   date_of_birth: string;
+  active_backlogs?: number;
+  history_backlogs?: number;
+  gap_years?: number;
+  existing_offers_count?: number;
   active_backlogs_count?: number;
   total_backlogs_count?: number;
   gap_years_count?: number;

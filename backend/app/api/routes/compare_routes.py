@@ -37,19 +37,25 @@ def compare_two_students(
 ) -> dict[str, Any]:
     """Compares two candidates under institutional offer policy to resolve student disputes."""
     # Fetch Student A
-    stmt_a = select(StudentModel).where(StudentModel.id == req.student_a_id)
+    stmt_a = select(StudentModel).where(
+        (StudentModel.id == req.student_a_id) | (StudentModel.roll_no == req.student_a_id)
+    )
     sa_entity = db.execute(stmt_a).scalar_one_or_none()
     if not sa_entity:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Student A not found.")
 
     # Fetch Student B
-    stmt_b = select(StudentModel).where(StudentModel.id == req.student_b_id)
+    stmt_b = select(StudentModel).where(
+        (StudentModel.id == req.student_b_id) | (StudentModel.roll_no == req.student_b_id)
+    )
     sb_entity = db.execute(stmt_b).scalar_one_or_none()
     if not sb_entity:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Student B not found.")
 
     # Fetch Drive
-    stmt_d = select(DriveModel).where(DriveModel.id == req.drive_id)
+    stmt_d = select(DriveModel).where(
+        (DriveModel.id == req.drive_id) | (DriveModel.company_name == req.drive_id)
+    )
     d_entity = db.execute(stmt_d).scalar_one_or_none()
     if not d_entity:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Drive not found.")

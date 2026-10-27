@@ -71,4 +71,4 @@ def require_role(allowed_roles: list[str]) -> Callable[[UserModel], UserModel]:
 require_officer = require_role(["officer"])
 require_officer_or_coordinator = require_role(["officer", "coordinator"])
 require_student = require_role(["student"])
-require_recruiter = require_role(["recruiter_readonly"])
+require_recruiter = require_role(["recruiter", "recruiter_readonly"])

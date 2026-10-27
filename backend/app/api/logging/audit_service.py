@@ -78,6 +78,29 @@ class AuditService:
         return entry
 
     @staticmethod
+    def record_action(
+        db: Session,
+        actor: str,
+        action: str,
+        aggregate_type: str,
+        aggregate_id: str,
+        payload: dict[str, Any] | None = None,
+    ) -> AuditLogModel:
+        """Records an action in the audit log."""
+        entry = AuditLogModel(
+            id=str(uuid.uuid4()),
+            entity_type=aggregate_type,
+            entity_id=aggregate_id,
+            action=action,
+            actor=actor,
+            changes_json=json.dumps(payload or {}),
+            timestamp=datetime.datetime.utcnow(),
+        )
+        db.add(entry)
+        db.commit()
+        return entry
+
+    @staticmethod
     def record_event(
         db: Session,
         event_type: str,

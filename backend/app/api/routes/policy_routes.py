@@ -32,6 +32,7 @@ from backend.app.domain.policy.catalog import (
 )
 from backend.app.domain.policy.checker import policy_check
 from backend.app.domain.policy.models import CollegeOfferPolicy, PolicyCheckStatus, ThresholdBasis
+from backend.app.importers.canonical_maps import parse_allowed_branches
 from backend.app.storage.database import get_db
 from backend.app.storage.models.entities import DriveModel, StudentModel, UserModel
 from backend.app.storage.repositories.mappers import student_entity_to_domain
@@ -211,8 +212,9 @@ def simulate_policy_check(
         if latest_req.min_twelfth_percentage:
             rules.append(PercentageMinRule(id="rule_12th", qualification="12th", min_percentage=latest_req.min_twelfth_percentage))
         if latest_req.allowed_branches_json:
-            branches = json.loads(latest_req.allowed_branches_json) if isinstance(latest_req.allowed_branches_json, str) else latest_req.allowed_branches_json
-            rules.append(BranchInRule(id="rule_branches", allowed_branches=branches))
+            branches = parse_allowed_branches(latest_req.allowed_branches_json)
+            if branches:
+                rules.append(BranchInRule(id="rule_branches", allowed_branches=branches))
         if latest_req.max_active_backlogs is not None:
             rules.append(ActiveBacklogsMaxRule(id="rule_backlogs", max_backlogs=latest_req.max_active_backlogs))
         if latest_req.max_gap_years is not None:

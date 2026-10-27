@@ -40,14 +40,17 @@ export const DisputeComparisonView: React.FC = () => {
   }, []);
 
   const handleCompare = async () => {
-    if (!selectedDriveId || !studentAId || !studentBId) return;
+    const effDriveId = selectedDriveId || (drives[0]?.id ?? "");
+    const effStudentA = studentAId || (students[0]?.id ?? "");
+    const effStudentB = studentBId || (students[1]?.id ?? students[0]?.id ?? "");
+    if (!effDriveId || !effStudentA || !effStudentB) return;
     try {
       setLoading(true);
       setError(null);
       const res = await api.post<any>("/api/compare/students", {
-        student_a_id: studentAId,
-        student_b_id: studentBId,
-        drive_id: selectedDriveId,
+        student_a_id: effStudentA,
+        student_b_id: effStudentB,
+        drive_id: effDriveId,
       });
       setComparison(res);
     } catch (err: any) {
@@ -57,8 +60,8 @@ export const DisputeComparisonView: React.FC = () => {
     }
   };
 
-  const studentA = students.find((s) => s.id === studentAId);
-  const studentB = students.find((s) => s.id === studentBId);
+  const studentA = students.find((s) => s.id === (studentAId || students[0]?.id));
+  const studentB = students.find((s) => s.id === (studentBId || students[1]?.id));
 
   return (
     <div className="space-y-6 max-w-4xl mx-auto">
@@ -79,7 +82,7 @@ export const DisputeComparisonView: React.FC = () => {
               Recruitment Drive
             </label>
             <select
-              value={selectedDriveId}
+              value={selectedDriveId || drives[0]?.id || ""}
               onChange={(e) => setSelectedDriveId(e.target.value)}
               className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold"
             >
@@ -96,7 +99,7 @@ export const DisputeComparisonView: React.FC = () => {
               Candidate A
             </label>
             <select
-              value={studentAId}
+              value={studentAId || students[0]?.id || ""}
               onChange={(e) => setStudentAId(e.target.value)}
               className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold"
             >
@@ -113,7 +116,7 @@ export const DisputeComparisonView: React.FC = () => {
               Candidate B (Disputing)
             </label>
             <select
-              value={studentBId}
+              value={studentBId || students[1]?.id || ""}
               onChange={(e) => setStudentBId(e.target.value)}
               className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold"
             >
@@ -129,7 +132,7 @@ export const DisputeComparisonView: React.FC = () => {
         <div className="flex justify-end pt-2">
           <button
             onClick={handleCompare}
-            disabled={loading}
+            disabled={loading || drives.length === 0 || students.length < 2}
             className="flex items-center gap-2 px-5 py-2.5 bg-brand-600 hover:bg-brand-700 text-white text-xs font-bold rounded-xl shadow-xs transition-colors disabled:opacity-50"
           >
             <GitCompare className="w-4 h-4" />

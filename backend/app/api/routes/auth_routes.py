@@ -163,7 +163,7 @@ def student_login(
         login_rate_limiter.record_attempt(rate_key)
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Authentication failed. Please verify your roll number, access code, or date of birth.",
+            detail="Code expired - ask your placement officer for a new one.",
         )
 
     login_rate_limiter.reset(rate_key)

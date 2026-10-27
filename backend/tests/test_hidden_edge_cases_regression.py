@@ -270,6 +270,12 @@ def test_scenario_25_diploma_specific_cut_off_rule() -> None:
         ("Civil Engineering", ["All Branches"], EligibilityStatus.ELIGIBLE),          # 30. All branches wildcard
         ("ECE", ["Electronics and Communication"], EligibilityStatus.ELIGIBLE),       # 31. Electronics alias
         ("cse", ["CSE"], EligibilityStatus.ELIGIBLE),                                 # 32. Case-insensitivity
+        ("Computer Science and Engineering", ["CSE", "IT", "ECE"], EligibilityStatus.ELIGIBLE),  # 32a. Full name to multi-acronyms
+        ("Electronics and Communication Engineering", ["CSE", "IT", "ECE"], EligibilityStatus.ELIGIBLE),  # 32b. ECE full to acronyms
+        ("C.S.E.", ["CSE", "IT"], EligibilityStatus.ELIGIBLE),                       # 32c. Dotted acronym
+        ("B.Tech - CSE", ["Computer Science and Engineering"], EligibilityStatus.ELIGIBLE), # 32d. Degree prefix
+        ("CSE", ["Computer Science and Engineering", "Information Technology"], EligibilityStatus.ELIGIBLE), # 32e. Reverse acronym to full
+        ("Civil Engineering", ["CSE", "IT", "ECE"], EligibilityStatus.INELIGIBLE),     # 32f. Distinct disallowed
     ],
 )
 def test_branch_alias_resolution(student_branch: str, allowed_branches: list[str], expected: EligibilityStatus) -> None:

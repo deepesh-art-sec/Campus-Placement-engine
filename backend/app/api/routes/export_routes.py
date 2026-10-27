@@ -56,6 +56,27 @@ async def upload_sample_and_create_mapping(
     return mapping
 
 
+@router.get("/company-mappings")
+def list_company_mappings(
+    current_user: UserModel = Depends(require_officer_or_coordinator),
+    db: Session = Depends(get_db),
+) -> list[dict[str, Any]]:
+    """Lists officer-saved company export layouts for coordinator review and export generation."""
+    entities = db.execute(select(CompanyExportMappingModel)).scalars().all()
+    return [
+        {
+            "id": e.id,
+            "company_id": e.company_id,
+            "company_name": e.company_name,
+            "sheet_name": e.sheet_name,
+            "date_format": e.date_format,
+            "column_order": json.loads(e.column_mappings_json or "{}").get("order", []),
+            "column_widths": json.loads(e.column_widths_json or "{}"),
+        }
+        for e in entities
+    ]
+
+
 @router.post("/company-mapping/save")
 def save_company_mapping(
     mapping: CompanyExportMapping,

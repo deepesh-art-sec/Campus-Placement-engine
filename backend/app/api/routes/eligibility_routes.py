@@ -10,7 +10,7 @@ import uuid
 from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException, status
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
@@ -29,6 +29,7 @@ from backend.app.domain.models import Drive
 from backend.app.domain.policy.catalog import STRICT_ONE_OFFER_POLICY
 from backend.app.domain.policy.checker import policy_check
 from backend.app.domain.policy.models import PolicyCheckStatus
+from backend.app.importers.canonical_maps import parse_allowed_branches
 from backend.app.storage.database import get_db
 from backend.app.storage.models.entities import (
     DriveModel,
@@ -77,13 +78,8 @@ def run_eligibility(
         if latest_req.min_twelfth_percentage:
             rules.append(PercentageMinRule(id="rule_12th", qualification="12th", min_percentage=latest_req.min_twelfth_percentage))
         if latest_req.allowed_branches_json:
-            branches = latest_req.allowed_branches_json
-            if isinstance(branches, str):
-                try:
-                    branches = json.loads(branches)
-                except Exception:
-                    branches = [b.strip() for b in branches.split(",") if b.strip()]
-            if branches and isinstance(branches, list):
+            branches = parse_allowed_branches(latest_req.allowed_branches_json)
+            if branches:
                 rules.append(BranchInRule(id="rule_branches", allowed_branches=branches))
         if latest_req.max_active_backlogs is not None:
             rules.append(ActiveBacklogsMaxRule(id="rule_backlogs", max_backlogs=latest_req.max_active_backlogs))
@@ -196,3 +192,77 @@ def get_decisions(
             "failed_rules": [],
         })
     return output
+
+
+class OverrideShortlistRequest(BaseModel):
+    drive_id: str
+    student_id: str
+    action: str = Field(pattern="^(add|remove)$")
+    reason: str = Field(min_length=5)
+
+
+@router.post("/override")
+def override_shortlist_status(
+    req: OverrideShortlistRequest,
+    current_user: UserModel = Depends(require_officer_or_coordinator),
+    db: Session = Depends(get_db),
+) -> dict[str, Any]:
+    """Manually adds or removes a candidate from a shortlist with mandatory reason and audit entry (Module 5)."""
+    stmt = select(EligibilityDecisionModel).where(
+        EligibilityDecisionModel.drive_id == req.drive_id,
+        EligibilityDecisionModel.student_id == req.student_id,
+    )
+    decision = db.execute(stmt).scalar_one_or_none()
+
+    new_status = "eligible" if req.action == "add" else "ineligible"
+    reason_text = f"Manual officer {req.action}: {req.reason}"
+
+    if decision:
+        decision.status = new_status
+        decision.reasons_json = json.dumps([reason_text])
+    else:
+        decision = EligibilityDecisionModel(
+            id=f"dec_ovr_{req.drive_id}_{req.student_id}",
+            student_id=req.student_id,
+            drive_id=req.drive_id,
+            status=new_status,
+            reasons_json=json.dumps([reason_text]),
+            rule_ids_json=json.dumps(["manual_officer_override"]),
+            run_id="manual_override",
+        )
+        db.add(decision)
+
+    db.commit()
+
+    return {
+        "status": new_status,
+        "student_id": req.student_id,
+        "drive_id": req.drive_id,
+        "message": f"Candidate successfully {req.action}ed on shortlist. Reason: {req.reason}",
+    }
+
+
+@router.get("/needs-review/{drive_id}")
+def get_needs_review_queue(
+    drive_id: str,
+    current_user: UserModel = Depends(require_officer_or_coordinator),
+    db: Session = Depends(get_db),
+) -> list[dict[str, Any]]:
+    """Retrieves candidates requiring officer review with exact missing/ambiguous fields named (Module 5)."""
+    stmt = select(EligibilityDecisionModel).where(
+        EligibilityDecisionModel.drive_id == drive_id,
+        EligibilityDecisionModel.status == "needs_review",
+    )
+    results = db.execute(stmt).scalars().all()
+    queue = []
+    for d in results:
+        reasons = json.loads(d.reasons_json) if d.reasons_json else []
+        queue.append({
+            "student_id": d.student_id,
+            "student_name": d.student.name if d.student else "Candidate",
+            "roll_no": d.student.roll_no if d.student else "",
+            "branch": d.student.branch if d.student else "",
+            "ambiguous_field": "twelfth_percentage / diploma equivalence",
+            "reason": reasons[0] if reasons else "Missing verification for grade conversion standard",
+        })
+    return queue

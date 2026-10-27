@@ -58,12 +58,16 @@ def record_recruitment_result(
     all upcoming drives for that candidate, and flags schedule conflicts.
     """
     # 1. Fetch student and drive
-    stmt_stu = select(StudentModel).where(StudentModel.id == req.student_id)
+    stmt_stu = select(StudentModel).where(
+        (StudentModel.id == req.student_id) | (StudentModel.roll_no == req.student_id)
+    )
     student_entity = db.execute(stmt_stu).scalar_one_or_none()
     if not student_entity:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Student not found.")
 
-    stmt_drv = select(DriveModel).where(DriveModel.id == req.drive_id)
+    stmt_drv = select(DriveModel).where(
+        (DriveModel.id == req.drive_id) | (DriveModel.company_name == req.drive_id)
+    )
     drive_entity = db.execute(stmt_drv).scalar_one_or_none()
     if not drive_entity:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Drive not found.")

@@ -78,14 +78,14 @@ test.describe("Institutional Placement Engine End-to-End Suite", () => {
     // 8. Result Entry & Downstream Policy Enforcement ChangeSet
     await page.getByRole("button", { name: "Result Entry" }).click();
     await expect(page.getByText("Result Entry & Policy Enforcement")).toBeVisible();
-    await page.waitForTimeout(1000);
+    await expect(page.getByRole("button", { name: "Record Outcome & Enforce Policy" })).toBeEnabled({ timeout: 15000 });
     await page.getByRole("button", { name: "Record Outcome & Enforce Policy" }).click();
     await expect(page.getByText("Downstream Enforcement ChangeSet")).toBeVisible({ timeout: 25000 });
 
     // 9. Dispute Explainer (Compare 2 Candidates)
     await page.getByRole("button", { name: "Dispute Explainer" }).click();
     await expect(page.getByText("Student Dispute Comparison Explainer")).toBeVisible();
-    await page.waitForTimeout(1000);
+    await expect(page.getByRole("button", { name: "Generate Dispute Explanation" })).toBeEnabled({ timeout: 15000 });
     await page.getByRole("button", { name: "Generate Dispute Explanation" }).click();
     await expect(page.getByText("Official Placement Cell Dispute Response")).toBeVisible({ timeout: 25000 });
 
@@ -111,9 +111,9 @@ test.describe("Institutional Placement Engine End-to-End Suite", () => {
     await expect(page.getByText("Campus Drives & Eligibility Verdicts")).toBeVisible();
 
     // Verify one-line plain wording
-    await expect(page.getByText("My Scheduled Rounds & Campus Venues")).toBeVisible();
-    await expect(page.getByText("Print Sheet")).toBeVisible();
-    await expect(page.getByText("Official PDF")).toBeVisible();
+    await expect(page.getByText("My Scheduled Rounds & Campus Venues").first()).toBeVisible();
+    await expect(page.getByText("Print Sheet").first()).toBeVisible();
+    await expect(page.getByText("Official PDF").first()).toBeVisible();
   });
 
   // Test 3: Offline Self-Check & Zero External Network Calls
@@ -139,5 +139,36 @@ test.describe("Institutional Placement Engine End-to-End Suite", () => {
     // Check keyboard navigation tabs
     await page.keyboard.press("Tab");
     await page.keyboard.press("Tab");
+  });
+
+  // Test 5: Officer Remove Drive Flow
+  test("Officer Remove Drive: Duplicate drive, open remove modal, provide justification, and verify removal", async ({
+    page,
+  }) => {
+    await page.goto("/");
+    await expect(page.getByRole("heading", { name: "Placement Engine" })).toBeVisible();
+    await page.getByPlaceholder("e.g. officer").fill("admin");
+    await page.locator("input[type='password']").fill("admin123");
+    await page.getByRole("button", { name: "Sign in as officer" }).click();
+    await expect(page.getByText("Recruitment Drives")).toBeVisible({ timeout: 15000 });
+
+    // 1. Duplicate existing drive to create a test drive
+    const duplicateBtn = page.getByRole("button", { name: "Duplicate drive (reuse rules)" }).first();
+    await duplicateBtn.click();
+    await expect(page.getByText(/Duplicated drive created successfully/i)).toBeVisible({ timeout: 10000 });
+
+    // 2. Locate the duplicated drive card and click remove button
+    const removeBtn = page.locator("button[aria-label*='Remove drive for']").first();
+    await expect(removeBtn).toBeVisible();
+    await removeBtn.click();
+
+    // 3. Verify confirmation modal and mandatory reason prompt
+    await expect(page.getByText("Irreversible Administrative Action:")).toBeVisible({ timeout: 10000 });
+    const reasonInput = page.locator("textarea[placeholder*='Duplicate drive created by error']");
+    await reasonInput.fill("Automated test: duplicate test drive cleanup after validation");
+
+    // 4. Confirm permanent deletion
+    await page.getByRole("button", { name: "Confirm Permanent Removal" }).click();
+    await expect(page.getByText(/has been permanently removed/i)).toBeVisible({ timeout: 10000 });
   });
 });

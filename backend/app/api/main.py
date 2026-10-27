@@ -26,6 +26,7 @@ from backend.app.api.routes import (
     announcement_routes,
     backup_routes,
     compare_routes,
+    coordinator_routes,
     drive_routes,
     eligibility_routes,
     event_routes,
@@ -37,6 +38,7 @@ from backend.app.api.routes import (
     recruiter_routes,
     schedule_routes,
     student_routes,
+    user_routes,
     what_if_routes,
 )
 
@@ -72,6 +74,8 @@ def _get_lan_ip() -> str:
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     """Application lifespan context for startup initialization."""
+    from backend.app.storage.database import Base, engine
+    Base.metadata.create_all(bind=engine)
     seed_default_accounts()
     logger.info("Placement Engine API initialized successfully.")
     yield
@@ -159,6 +163,8 @@ app.include_router(recruiter_routes.router)
 app.include_router(imats_routes.router)
 app.include_router(announcement_routes.router)
 app.include_router(backup_routes.router)
+app.include_router(user_routes.router)
+app.include_router(coordinator_routes.router)
 
 
 @app.get("/api/health")

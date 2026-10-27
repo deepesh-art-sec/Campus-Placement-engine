@@ -3,6 +3,8 @@ import { Drive, DriveStatus } from "../../types";
 import { api } from "../../api/client";
 import { Badge } from "../../components/common/Badge";
 import { EmptyState } from "../../components/common/EmptyState";
+import { Modal } from "../../components/common/Modal";
+import { AlertBanner } from "../../components/common/AlertBanner";
 import {
   Briefcase,
   Plus,
@@ -19,26 +21,60 @@ import {
   ArrowRight,
   ShieldCheck,
   Building,
+  Copy,
+  Ban,
+  Users,
+  AlertTriangle,
+  History,
+  FileCheck,
+  Play,
+  Trash2,
 } from "lucide-react";
 
 interface DrivesDashboardProps {
   onNavigateTab: (tabId: string, driveId?: string) => void;
 }
 
+interface OverviewMetrics {
+  upcoming: { today: number; tomorrow: number; this_week: number };
+  total_drives: number;
+  total_shortlisted_students: number;
+  unresolved_clashes: number;
+  needs_review_count: number;
+  pending_coordinator_requests: number;
+  stale_versions_count: number;
+}
+
 export const DrivesDashboard: React.FC<DrivesDashboardProps> = ({ onNavigateTab }) => {
   const [drives, setDrives] = useState<Drive[]>([]);
+  const [metrics, setMetrics] = useState<OverviewMetrics | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [viewMode, setViewMode] = useState<"grid" | "table">("grid");
 
-  const fetchDrives = async () => {
+  // Cancel drive modal state
+  const [cancelModalDrive, setCancelModalDrive] = useState<Drive | null>(null);
+  const [cancelReason, setCancelReason] = useState("");
+  const [cancelling, setCancelling] = useState(false);
+
+  // Remove drive modal state
+  const [deleteModalDrive, setDeleteModalDrive] = useState<Drive | null>(null);
+  const [deleteReason, setDeleteReason] = useState("");
+  const [deleting, setDeleting] = useState(false);
+
+  const fetchDrivesAndMetrics = async () => {
     try {
       setLoading(true);
       setError(null);
-      const res = await api.get<Drive[]>("/api/drives");
-      setDrives(res || []);
+      const [drivesRes, metricsRes] = await Promise.all([
+        api.get<Drive[]>("/api/drives"),
+        api.get<OverviewMetrics>("/api/drives/overview-metrics").catch(() => null),
+      ]);
+      setDrives(drivesRes || []);
+      if (metricsRes) setMetrics(metricsRes);
     } catch (err: any) {
       setError(err.message || "Failed to load recruitment drives.");
     } finally {
@@ -47,8 +83,63 @@ export const DrivesDashboard: React.FC<DrivesDashboardProps> = ({ onNavigateTab 
   };
 
   useEffect(() => {
-    fetchDrives();
+    fetchDrivesAndMetrics();
   }, []);
+
+  const handleDuplicateDrive = async (driveId: string) => {
+    try {
+      setError(null);
+      const res = await api.post<any>(`/api/drives/${driveId}/duplicate`);
+      setSuccess(`Duplicated drive created successfully: ${res.company_name} (Draft v1)`);
+      fetchDrivesAndMetrics();
+    } catch (err: any) {
+      setError(err.message || "Failed to duplicate drive.");
+    }
+  };
+
+  const handleConfirmCancelDrive = async () => {
+    if (!cancelModalDrive) return;
+    if (!cancelReason.trim()) {
+      setError("Please provide a mandatory reason for cancelling the drive.");
+      return;
+    }
+    try {
+      setCancelling(true);
+      setError(null);
+      await api.post(`/api/drives/${cancelModalDrive.id}/cancel`, {
+        reason: cancelReason,
+      });
+      setSuccess(`Drive for ${cancelModalDrive.company_name} cancelled.`);
+      setCancelModalDrive(null);
+      setCancelReason("");
+      fetchDrivesAndMetrics();
+    } catch (err: any) {
+      setError(err.message || "Failed to cancel drive.");
+    } finally {
+      setCancelling(false);
+    }
+  };
+
+  const handleConfirmDeleteDrive = async () => {
+    if (!deleteModalDrive) return;
+    if (!deleteReason.trim()) {
+      setError("Please provide a mandatory reason for removing the drive.");
+      return;
+    }
+    try {
+      setDeleting(true);
+      setError(null);
+      await api.delete(`/api/drives/${deleteModalDrive.id}?reason=${encodeURIComponent(deleteReason)}`);
+      setSuccess(`Drive for ${deleteModalDrive.company_name} has been permanently removed.`);
+      setDeleteModalDrive(null);
+      setDeleteReason("");
+      fetchDrivesAndMetrics();
+    } catch (err: any) {
+      setError(err.message || "Failed to remove drive.");
+    } finally {
+      setDeleting(false);
+    }
+  };
 
   const filteredDrives = drives.filter((d) => {
     const matchesSearch =
@@ -58,7 +149,7 @@ export const DrivesDashboard: React.FC<DrivesDashboardProps> = ({ onNavigateTab 
     return matchesSearch && matchesStatus;
   });
 
-  const getStatusBadgeVariant = (status: DriveStatus) => {
+  const getStatusBadgeVariant = (status: DriveStatus | string) => {
     switch (status) {
       case "published":
         return "success";
@@ -68,6 +159,8 @@ export const DrivesDashboard: React.FC<DrivesDashboardProps> = ({ onNavigateTab 
         return "warning";
       case "completed":
         return "info";
+      case "cancelled":
+        return "danger";
       default:
         return "neutral";
     }
@@ -80,12 +173,12 @@ export const DrivesDashboard: React.FC<DrivesDashboardProps> = ({ onNavigateTab 
         <div>
           <div className="flex items-center gap-2">
             <h1 className="text-2xl font-black text-slate-900 tracking-tight">Recruitment Drives</h1>
-            <span className="text-xs font-bold px-2 py-0.5 bg-slate-100 text-slate-600 rounded-full">
+            <span className="text-xs font-bold px-2 py-0.5 bg-slate-100 text-slate-600 rounded-full font-mono">
               {drives.length} Total
             </span>
           </div>
           <p className="text-sm text-slate-500 mt-1">
-            Institutional overview of active, scheduled, and published campus drives.
+            Institutional overview of active, scheduled, and published campus placement drives.
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -119,12 +212,13 @@ export const DrivesDashboard: React.FC<DrivesDashboardProps> = ({ onNavigateTab 
 
           <button
             type="button"
-            onClick={fetchDrives}
+            onClick={fetchDrivesAndMetrics}
             className="p-2 text-slate-600 hover:text-slate-900 bg-white border border-slate-200/80 rounded-xl hover:bg-slate-50 shadow-2xs transition-all cursor-pointer"
-            title="Refresh drives"
+            title="Refresh drives and metrics"
           >
             <RefreshCw className="w-4 h-4" />
           </button>
+
           <button
             type="button"
             onClick={() => onNavigateTab("create_drive")}
@@ -136,81 +230,173 @@ export const DrivesDashboard: React.FC<DrivesDashboardProps> = ({ onNavigateTab 
         </div>
       </div>
 
-      {/* Metrics Row */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <div className="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-xs relative overflow-hidden group hover:border-brand-300 transition-all flex flex-col items-center justify-between text-center min-h-[168px]">
-          <div className="absolute top-0 left-0 right-0 h-1.5 bg-brand-500 rounded-t-2xl" />
-          <div className="p-2.5 bg-brand-50 text-brand-700 rounded-xl mt-1">
-            <Briefcase className="w-5 h-5" />
+      {error && <AlertBanner type="danger" message={error} onClose={() => setError(null)} />}
+      {success && <AlertBanner type="success" message={success} onClose={() => setSuccess(null)} />}
+
+      {/* Module 1: 6 Overview Metric Cards */}
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3.5">
+        {/* Card 1: Upcoming Drives */}
+        <div className="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-xs relative overflow-hidden group hover:border-blue-300 transition-all flex flex-col justify-between min-h-[140px]">
+          <div className="absolute top-0 left-0 right-0 h-1 bg-blue-500" />
+          <div className="flex items-center justify-between text-blue-600">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+              Upcoming Drives
+            </span>
+            <Calendar className="w-4 h-4 text-blue-500" />
           </div>
           <div className="my-1">
-            <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">
-              Total Drives
-            </span>
-            <span className="text-3xl font-black text-slate-900 block mt-1 tracking-tight">
-              {drives.length}
-            </span>
+            <div className="text-xl font-black text-slate-900 tracking-tight">
+              {metrics ? metrics.upcoming.this_week : 0}{" "}
+              <span className="text-xs font-semibold text-slate-400">This Wk</span>
+            </div>
+            <div className="text-[11px] text-slate-500 font-medium mt-0.5 flex items-center gap-2">
+              <span>Today: <strong>{metrics ? metrics.upcoming.today : 0}</strong></span>
+              <span>•</span>
+              <span>Tmrw: <strong>{metrics ? metrics.upcoming.tomorrow : 0}</strong></span>
+            </div>
           </div>
-          <span className="text-[11px] text-slate-400 block font-medium">
-            Campus season roster
+          <span className="text-[10px] text-blue-600 font-semibold block">Campus schedule active</span>
+        </div>
+
+        {/* Card 2: Shortlisted Students */}
+        <div className="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-xs relative overflow-hidden group hover:border-emerald-300 transition-all flex flex-col justify-between min-h-[140px]">
+          <div className="absolute top-0 left-0 right-0 h-1 bg-emerald-500" />
+          <div className="flex items-center justify-between text-emerald-600">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+              Shortlisted
+            </span>
+            <Users className="w-4 h-4 text-emerald-500" />
+          </div>
+          <div className="my-1">
+            <div className="text-2xl font-black text-emerald-700 tracking-tight">
+              {metrics ? metrics.total_shortlisted_students : 0}
+            </div>
+            <div className="text-[11px] text-slate-500 font-medium">Eligible Candidates</div>
+          </div>
+          <span className="text-[10px] text-emerald-600 font-semibold block">Passed academic cutoffs</span>
+        </div>
+
+        {/* Card 3: Unresolved Clashes */}
+        <div className="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-xs relative overflow-hidden group hover:border-purple-300 transition-all flex flex-col justify-between min-h-[140px]">
+          <div className="absolute top-0 left-0 right-0 h-1 bg-purple-500" />
+          <div className="flex items-center justify-between text-purple-600">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+              Clash Status
+            </span>
+            <ShieldCheck className="w-4 h-4 text-purple-500" />
+          </div>
+          <div className="my-1">
+            <div className="text-2xl font-black text-slate-900 tracking-tight">
+              {metrics ? metrics.unresolved_clashes : 0}
+            </div>
+            <div className="text-[11px] text-slate-500 font-medium">Unresolved Clashes</div>
+          </div>
+          <span className="text-[10px] text-emerald-600 font-bold block flex items-center gap-1">
+            <CheckCircle className="w-3 h-3 text-emerald-500" />
+            0 Clashes Verified
           </span>
         </div>
 
-        <div className="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-xs relative overflow-hidden group hover:border-emerald-300 transition-all flex flex-col items-center justify-between text-center min-h-[168px]">
-          <div className="absolute top-0 left-0 right-0 h-1.5 bg-emerald-500 rounded-t-2xl" />
-          <div className="p-2.5 bg-emerald-50 text-emerald-700 rounded-xl mt-1">
-            <CheckCircle className="w-5 h-5" />
+        {/* Card 4: Needs-Review Items */}
+        <div className="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-xs relative overflow-hidden group hover:border-amber-300 transition-all flex flex-col justify-between min-h-[140px]">
+          <div className="absolute top-0 left-0 right-0 h-1 bg-amber-500" />
+          <div className="flex items-center justify-between text-amber-600">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+              Needs Review
+            </span>
+            <AlertTriangle className="w-4 h-4 text-amber-500" />
           </div>
           <div className="my-1">
-            <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">
-              Published
-            </span>
-            <span className="text-3xl font-black text-emerald-500 block mt-1 tracking-tight">
-              {drives.filter((d) => d.status === "published").length}
-            </span>
+            <div className="text-2xl font-black text-amber-700 tracking-tight">
+              {metrics ? metrics.needs_review_count : 0}
+            </div>
+            <div className="text-[11px] text-slate-500 font-medium">Extraction Flags</div>
           </div>
-          <span className="text-[11px] text-emerald-400 block font-semibold">
-            Active on Student LAN
+          <span className="text-[10px] text-amber-600 font-semibold block">Requires officer sign-off</span>
+        </div>
+
+        {/* Card 5: Pending Coordinator Requests */}
+        <div className="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-xs relative overflow-hidden group hover:border-indigo-300 transition-all flex flex-col justify-between min-h-[140px]">
+          <div className="absolute top-0 left-0 right-0 h-1 bg-indigo-500" />
+          <div className="flex items-center justify-between text-indigo-600">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+              Pending Requests
+            </span>
+            <FileCheck className="w-4 h-4 text-indigo-500" />
+          </div>
+          <div className="my-1">
+            <div className="text-2xl font-black text-indigo-700 tracking-tight">
+              {metrics ? metrics.pending_coordinator_requests : 0}
+            </div>
+            <div className="text-[11px] text-slate-500 font-medium">Data Corrections</div>
+          </div>
+          <span className="text-[10px] text-indigo-600 font-semibold block">From batch coordinators</span>
+        </div>
+
+        {/* Card 6: Stale Versions */}
+        <div className="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-xs relative overflow-hidden group hover:border-rose-300 transition-all flex flex-col justify-between min-h-[140px]">
+          <div className="absolute top-0 left-0 right-0 h-1 bg-rose-500" />
+          <div className="flex items-center justify-between text-rose-600">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+              Stale Versions
+            </span>
+            <History className="w-4 h-4 text-rose-500" />
+          </div>
+          <div className="my-1">
+            <div className="text-2xl font-black text-rose-700 tracking-tight">
+              {metrics ? metrics.stale_versions_count : 0}
+            </div>
+            <div className="text-[11px] text-slate-500 font-medium">Unpublished Updates</div>
+          </div>
+          <span className="text-[10px] text-slate-400 font-medium block">Audit trace preserved</span>
+        </div>
+      </div>
+
+      {/* Quick Actions Bar */}
+      <div className="p-4 bg-gradient-to-r from-[#0d1527] to-[#111e3b] rounded-2xl border border-[#1b2b4d] shadow-md flex flex-wrap items-center justify-between gap-3 text-slate-100">
+        <div className="flex items-center gap-2">
+          <Sparkles className="w-4 h-4 text-emerald-400" />
+          <span className="text-xs font-black uppercase tracking-wider text-white">
+            Quick Actions
+          </span>
+          <span className="text-xs text-slate-400 hidden sm:inline">
+            Direct operational shortcuts
           </span>
         </div>
 
-        <div className="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-xs relative overflow-hidden group hover:border-amber-300 transition-all flex flex-col items-center justify-between text-center min-h-[168px]">
-          <div className="absolute top-0 left-0 right-0 h-1.5 bg-amber-500 rounded-t-2xl" />
-          <div className="p-2.5 bg-amber-50 text-amber-700 rounded-xl mt-1">
-            <Clock className="w-5 h-5" />
-          </div>
-          <div className="my-1">
-            <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">
-              In Draft / Review
-            </span>
-            <span className="text-3xl font-black text-amber-500 block mt-1 tracking-tight">
-              {drives.filter((d) => d.status === "draft" || d.status === "needs_review").length}
-            </span>
-          </div>
-          <span className="text-[11px] text-slate-400 block font-medium">
-            Pending publication
-          </span>
-        </div>
-
-        <div className="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-xs relative overflow-hidden group hover:border-indigo-300 transition-all flex flex-col items-center justify-between text-center min-h-[168px]">
-          <div className="absolute top-0 left-0 right-0 h-1.5 bg-indigo-500 rounded-t-2xl" />
-          <div className="p-2.5 bg-indigo-50 text-indigo-700 rounded-xl mt-1">
-            <IndianRupee className="w-5 h-5" />
-          </div>
-          <div className="my-1">
-            <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">
-              Avg Package
-            </span>
-            <span className="text-3xl font-black text-indigo-400 block mt-1 tracking-tight">
-              {drives.length
-                ? (drives.reduce((acc, d) => acc + (d.ctc_lpa || 0), 0) / drives.length).toFixed(1)
-                : "0.0"}{" "}
-              <span className="text-xs font-bold text-slate-400">LPA</span>
-            </span>
-          </div>
-          <span className="text-[11px] text-slate-400 block font-medium">
-            Fixed + variable CTC
-          </span>
+        <div className="flex items-center gap-2 flex-wrap">
+          <button
+            type="button"
+            onClick={() => onNavigateTab("create_drive")}
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-brand-600 hover:bg-brand-500 text-white font-bold text-xs rounded-xl shadow-xs transition-colors cursor-pointer"
+          >
+            <Plus className="w-3.5 h-3.5" />
+            <span>New drive</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => onNavigateTab("students")}
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-[#1b2b4d] hover:bg-[#253966] text-slate-200 font-bold text-xs rounded-xl transition-colors cursor-pointer"
+          >
+            <Users className="w-3.5 h-3.5 text-blue-400" />
+            <span>Import students</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => onNavigateTab("eligibility")}
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-[#1b2b4d] hover:bg-[#253966] text-slate-200 font-bold text-xs rounded-xl transition-colors cursor-pointer"
+          >
+            <Play className="w-3.5 h-3.5 text-emerald-400 fill-current" />
+            <span>Run eligibility</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => onNavigateTab("schedule")}
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-[#1b2b4d] hover:bg-[#253966] text-slate-200 font-bold text-xs rounded-xl transition-colors cursor-pointer"
+          >
+            <Calendar className="w-3.5 h-3.5 text-purple-400" />
+            <span>Open schedule</span>
+          </button>
         </div>
       </div>
 
@@ -227,7 +413,7 @@ export const DrivesDashboard: React.FC<DrivesDashboardProps> = ({ onNavigateTab 
           />
         </div>
         <div className="flex items-center gap-1.5 w-full sm:w-auto overflow-x-auto no-scrollbar py-0.5">
-          {["all", "draft", "needs_review", "ready", "published", "completed"].map((st) => (
+          {["all", "draft", "needs_review", "ready", "published", "completed", "cancelled"].map((st) => (
             <button
               key={st}
               type="button"
@@ -247,11 +433,7 @@ export const DrivesDashboard: React.FC<DrivesDashboardProps> = ({ onNavigateTab 
       {/* Loading & Error States */}
       {loading ? (
         <div className="bg-white rounded-2xl border border-slate-200 p-12 text-center text-slate-500 text-sm animate-pulse">
-          Loading placement drives roster...
-        </div>
-      ) : error ? (
-        <div className="bg-rose-50 border border-rose-200 rounded-2xl p-6 text-rose-700 text-sm">
-          {error}
+          Loading active drives roster...
         </div>
       ) : filteredDrives.length === 0 ? (
         <EmptyState
@@ -323,6 +505,31 @@ export const DrivesDashboard: React.FC<DrivesDashboardProps> = ({ onNavigateTab 
                 </span>
 
                 <div className="flex items-center gap-1">
+                  <button
+                    type="button"
+                    onClick={() => handleDuplicateDrive(d.id)}
+                    className="p-1.5 text-slate-500 hover:text-slate-800 bg-slate-100 hover:bg-slate-200 rounded-lg transition-colors cursor-pointer"
+                    title="Duplicate drive (reuse rules)"
+                  >
+                    <Copy className="w-3.5 h-3.5" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setCancelModalDrive(d)}
+                    className="p-1.5 text-amber-600 hover:text-amber-800 bg-amber-50 hover:bg-amber-100 rounded-lg transition-colors cursor-pointer"
+                    title="Cancel recruitment drive"
+                  >
+                    <Ban className="w-3.5 h-3.5" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setDeleteModalDrive(d)}
+                    className="p-1.5 text-rose-600 hover:text-rose-800 bg-rose-50 hover:bg-rose-100 rounded-lg transition-colors cursor-pointer"
+                    title="Remove recruitment drive"
+                    aria-label={`Remove drive for ${d.company_name}`}
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </button>
                   <button
                     type="button"
                     onClick={() => onNavigateTab("eligibility", d.id)}
@@ -402,6 +609,31 @@ export const DrivesDashboard: React.FC<DrivesDashboardProps> = ({ onNavigateTab 
                     <div className="flex items-center justify-end gap-1.5">
                       <button
                         type="button"
+                        onClick={() => handleDuplicateDrive(d.id)}
+                        className="p-1.5 text-slate-500 hover:text-slate-800 bg-slate-100 hover:bg-slate-200 rounded-lg transition-colors cursor-pointer"
+                        title="Duplicate drive"
+                      >
+                        <Copy className="w-3.5 h-3.5" />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setCancelModalDrive(d)}
+                        className="p-1.5 text-amber-600 hover:text-amber-800 bg-amber-50 hover:bg-amber-100 rounded-lg transition-colors cursor-pointer"
+                        title="Cancel recruitment drive"
+                      >
+                        <Ban className="w-3.5 h-3.5" />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setDeleteModalDrive(d)}
+                        className="p-1.5 text-rose-600 hover:text-rose-800 bg-rose-50 hover:bg-rose-100 rounded-lg transition-colors cursor-pointer"
+                        title="Remove recruitment drive"
+                        aria-label={`Remove drive for ${d.company_name}`}
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                      <button
+                        type="button"
                         onClick={() => onNavigateTab("eligibility", d.id)}
                         className="px-2.5 py-1 text-xs font-semibold text-brand-700 bg-brand-50 hover:bg-brand-100 rounded-lg transition-colors cursor-pointer"
                         title="Evaluate candidate eligibility"
@@ -431,6 +663,105 @@ export const DrivesDashboard: React.FC<DrivesDashboardProps> = ({ onNavigateTab 
             </tbody>
           </table>
         </div>
+      )}
+
+      {/* Cancel Drive Mandatory Reason Modal */}
+      {cancelModalDrive && (
+        <Modal
+          isOpen={!!cancelModalDrive}
+          onClose={() => setCancelModalDrive(null)}
+          title={`Cancel Recruitment Drive: ${cancelModalDrive.company_name}`}
+        >
+          <div className="space-y-4">
+            <p className="text-xs text-slate-600">
+              Cancelling this drive will notify shortlisted candidates, release reserved interview cabins, and mark the status as cancelled. This action requires a mandatory justification written to the backend audit log.
+            </p>
+
+            <div>
+              <label className="text-xs font-bold text-slate-700 uppercase tracking-wider block mb-1">
+                Mandatory Cancellation Reason <span className="text-rose-500">*</span>
+              </label>
+              <textarea
+                rows={3}
+                required
+                value={cancelReason}
+                onChange={(e) => setCancelReason(e.target.value)}
+                placeholder="e.g. Recruiter postponed on-campus visit due to corporate hiring freeze..."
+                className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium focus:bg-white focus:ring-2 focus:ring-rose-500"
+              />
+            </div>
+
+            <div className="pt-2 flex items-center justify-end gap-2 border-t border-slate-100">
+              <button
+                type="button"
+                onClick={() => setCancelModalDrive(null)}
+                className="px-3 py-1.5 text-xs font-bold text-slate-600 hover:bg-slate-100 rounded-lg cursor-pointer"
+              >
+                Nevermind
+              </button>
+              <button
+                type="button"
+                disabled={cancelling || !cancelReason.trim()}
+                onClick={handleConfirmCancelDrive}
+                className="px-4 py-1.5 bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs rounded-xl shadow-xs transition-colors cursor-pointer disabled:opacity-50"
+              >
+                {cancelling ? "Cancelling..." : "Confirm Cancellation"}
+              </button>
+            </div>
+          </div>
+        </Modal>
+      )}
+
+      {/* Remove Drive Mandatory Reason & Confirmation Modal */}
+      {deleteModalDrive && (
+        <Modal
+          isOpen={!!deleteModalDrive}
+          onClose={() => setDeleteModalDrive(null)}
+          title={`Remove Recruitment Drive: ${deleteModalDrive.company_name}`}
+        >
+          <div className="space-y-4">
+            <div className="p-3 bg-rose-50 border border-rose-200 rounded-xl text-rose-800 text-xs flex items-start gap-2.5">
+              <AlertTriangle className="w-4 h-4 text-rose-600 shrink-0 mt-0.5" />
+              <div>
+                <strong className="block font-bold">Irreversible Administrative Action:</strong>
+                Permanently deleting this drive will purge all candidate eligibility evaluations, round schedule allocations, interview panels, and requirement versions. An immutable audit record will be logged with your justification.
+              </div>
+            </div>
+
+            <div>
+              <label className="text-xs font-bold text-slate-700 uppercase tracking-wider block mb-1">
+                Mandatory Reason for Removal <span className="text-rose-500">*</span>
+              </label>
+              <textarea
+                rows={3}
+                required
+                value={deleteReason}
+                onChange={(e) => setDeleteReason(e.target.value)}
+                placeholder="e.g. Duplicate drive created by error / Recruiter cancelled campus season before registration..."
+                className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium focus:bg-white focus:ring-2 focus:ring-rose-500"
+              />
+            </div>
+
+            <div className="pt-2 flex items-center justify-end gap-2 border-t border-slate-100">
+              <button
+                type="button"
+                onClick={() => setDeleteModalDrive(null)}
+                className="px-3 py-1.5 text-xs font-bold text-slate-600 hover:bg-slate-100 rounded-lg cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                disabled={deleting || !deleteReason.trim()}
+                onClick={handleConfirmDeleteDrive}
+                className="px-4 py-1.5 bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs rounded-xl shadow-xs transition-colors cursor-pointer disabled:opacity-50 flex items-center gap-1.5"
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+                <span>{deleting ? "Removing..." : "Confirm Permanent Removal"}</span>
+              </button>
+            </div>
+          </div>
+        </Modal>
       )}
     </div>
   );

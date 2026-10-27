@@ -46,7 +46,7 @@ const ALL_CAMPUS_BRANCHES = [
 
 export const DriveCreationReview: React.FC<DriveCreationReviewProps> = ({
   onSuccess,
-  initialMode = "manual",
+  initialMode = "nlp",
 }) => {
   // Mode switcher: "manual" or "nlp"
   const [creationMode, setCreationMode] = useState<"manual" | "nlp">(initialMode);
@@ -294,7 +294,7 @@ export const DriveCreationReview: React.FC<DriveCreationReviewProps> = ({
       {/* Top Header & Mode Switcher */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-black text-slate-900 tracking-tight">Create Recruitment Drive</h1>
+          <h1 className="text-2xl font-black text-slate-900 tracking-tight">Requirement Extraction & Review</h1>
           <p className="text-sm text-slate-500 mt-1">
             Configure recruitment drives manually with exact eligibility criteria or extract automatically from circulars.
           </p>
@@ -877,7 +877,7 @@ export const DriveCreationReview: React.FC<DriveCreationReviewProps> = ({
                 className="flex items-center gap-2 px-5 py-2.5 bg-brand-600 hover:bg-brand-700 text-white font-bold text-xs rounded-xl shadow-xs transition-colors disabled:opacity-50 cursor-pointer"
               >
                 <Sparkles className="w-4 h-4" />
-                <span>{extracting ? "Running Deterministic AST Extractor..." : "Run Extraction"}</span>
+                <span>{extracting ? "Running Deterministic AST Extractor..." : "Extract Requirements"}</span>
               </button>
             </div>
           </div>
@@ -887,7 +887,7 @@ export const DriveCreationReview: React.FC<DriveCreationReviewProps> = ({
             <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-xs space-y-6">
               <div className="flex items-center justify-between border-b border-slate-100 pb-4">
                 <div>
-                  <h2 className="text-base font-bold text-slate-900">Extracted Requirements Review</h2>
+                  <h2 className="text-base font-bold text-slate-900">Side-by-Side Field Provenance</h2>
                   <p className="text-xs text-slate-500">Every requirement maps to a verified AST condition.</p>
                 </div>
                 <button
@@ -896,16 +896,22 @@ export const DriveCreationReview: React.FC<DriveCreationReviewProps> = ({
                   className="flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl shadow-xs transition-colors cursor-pointer"
                 >
                   <Save className="w-4 h-4" />
-                  <span>Save & Register Drive</span>
+                  <span>Save & Create Drive</span>
                 </button>
               </div>
 
               {/* Review Queue Alerts */}
+              {(!parseResult.review_queue || parseResult.review_queue.length === 0) && (
+                <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-xl text-xs font-bold text-emerald-800 flex items-center gap-2">
+                  <Check className="w-4 h-4 text-emerald-600" />
+                  <span>All Fields Validated</span>
+                </div>
+              )}
               {parseResult.review_queue && parseResult.review_queue.length > 0 && (
                 <div className="p-4 bg-amber-50 border border-amber-200 rounded-xl space-y-2">
                   <div className="flex items-center gap-2 text-xs font-bold text-amber-800">
                     <AlertTriangle className="w-4 h-4 text-amber-600" />
-                    <span>Officer Review Required ({parseResult.review_queue.length} ambiguous items)</span>
+                    <span>Requires Officer Review ({parseResult.review_queue.length} ambiguous items)</span>
                   </div>
                   <div className="space-y-1.5 pl-6">
                     {parseResult.review_queue.map((q) => (
