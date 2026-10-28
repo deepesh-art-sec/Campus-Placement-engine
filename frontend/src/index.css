@@ -3,10 +3,16 @@
 @tailwind utilities;
 
 @layer base {
+  html {
+    overflow-x: hidden;
+    max-width: 100vw;
+  }
   body {
     @apply antialiased min-h-screen;
     background-color: #060b14;
     color: #f1f5f9;
+    overflow-x: hidden;
+    max-width: 100vw;
     selection-background-color: #059669;
     selection-color: #ffffff;
     font-feature-settings: "cv02", "cv03", "cv04", "cv11";

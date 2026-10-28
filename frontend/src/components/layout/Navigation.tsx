@@ -70,7 +70,9 @@ export const Navigation: React.FC<NavigationProps> = ({
   onSelectTab,
   userRole = "officer",
 }) => {
-  const [isCollapsed, setIsCollapsed] = useState(false);
+  const [isCollapsed, setIsCollapsed] = useState(() =>
+    typeof window !== "undefined" ? window.innerWidth < 1024 : false
+  );
 
   const modules: NavModule[] = [
     {

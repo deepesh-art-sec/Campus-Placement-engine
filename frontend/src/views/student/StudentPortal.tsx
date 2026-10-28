@@ -51,7 +51,9 @@ export const StudentPortal: React.FC = () => {
   // Active Screen / Tab
   const [activeTab, setActiveTab] = useState<StudentTabId>("status");
   const [selectedDriveDetail, setSelectedDriveDetail] = useState<any | null>(null);
-  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(() =>
+    typeof window !== "undefined" ? window.innerWidth < 1024 : false
+  );
 
   // Login form state (if not logged in)
   const [rollNo, setRollNo] = useState("BT210001");

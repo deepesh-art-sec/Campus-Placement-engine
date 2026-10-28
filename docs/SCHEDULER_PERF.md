@@ -4,13 +4,13 @@
 
 | Scenario | Students | Drives | Rooms | Scheduled Slots | Solver Engine | Status | Elapsed Time | Verified Clashes |
 | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
-| **Criterion 4 Target** | 600 | 12 | 8 | 312 | `cp-sat` | `feasible` | **1.053s** | **0 clashes verified** |
-| **Institutional Stress Test** | 1800 | 40 | 20 | 1040 | `cp-sat` | `feasible` | **5.039s** | **0 clashes verified** |
+| **Criterion 4 Target** | 600 | 12 | 8 | 312 | `cp-sat` | `feasible` | **0.684s** | **0 clashes verified** |
+| **Institutional Stress Test** | 1800 | 40 | 20 | 1040 | `cp-sat` | `feasible` | **4.072s** | **0 clashes verified** |
 
 ## 2. Criterion 4 Compliance Verification
 
 - **Requirement**: Schedule 600 students across 12 drives and 8 rooms with NO clashes in under one minute on a normal laptop, offline.
-- **Achieved Runtime**: **1.053 seconds** (target < 60s).
+- **Achieved Runtime**: **0.684 seconds** (target < 60s).
 - **Clash Status**: **0 clashes** (validated by independent zero-dependency auditor).
 - **Offline Execution**: 100% self-contained constraint solver via Google OR-Tools CP-SAT with DSatur constructive heuristic fallback.
 - **Process Isolation**: Dispatched via ProcessPoolExecutor ensuring zero event-loop blocking during web API operations.

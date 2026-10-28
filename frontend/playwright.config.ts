@@ -9,23 +9,16 @@ export default defineConfig({
   workers: 1,
   reporter: "list",
   use: {
-    baseURL: "http://127.0.0.1:3000",
-    channel: "chrome",
+    baseURL: "http://127.0.0.1:8000",
+    channel: "msedge",
     trace: "on-first-retry",
     headless: true,
   },
   webServer: [
     {
-      command: "python -m uvicorn backend.app.api.main:app --host 127.0.0.1 --port 8000",
+      command: ".venv\\Scripts\\python.exe -m uvicorn backend.app.api.main:app --host 127.0.0.1 --port 8000",
       cwd: "..",
       url: "http://127.0.0.1:8000/docs",
-      reuseExistingServer: true,
-      timeout: 30000,
-    },
-    {
-      command: "npm run dev -- --host 127.0.0.1 --port 3000",
-      cwd: ".",
-      url: "http://127.0.0.1:3000",
       reuseExistingServer: true,
       timeout: 30000,
     },

@@ -207,7 +207,7 @@ def create_drive_from_announcement(
     drive_id = f"drv_{uuid.uuid4().hex[:8]}"
 
     # Check if drive for this company already exists
-    existing = db.execute(select(DriveModel).where(DriveModel.company_name == company_name)).scalar_one_or_none()
+    existing = db.execute(select(DriveModel).where(DriveModel.company_name == company_name)).scalars().first()
     if existing:
         return {
             "status": "exists",
@@ -219,7 +219,7 @@ def create_drive_from_announcement(
 
     # Ensure company entity exists
     stmt_comp = select(CompanyModel).where(CompanyModel.name == company_name)
-    existing_company = db.execute(stmt_comp).scalar_one_or_none()
+    existing_company = db.execute(stmt_comp).scalars().first()
     if existing_company:
         company_id = existing_company.id
     else:
