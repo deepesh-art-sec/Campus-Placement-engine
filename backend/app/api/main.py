@@ -187,7 +187,7 @@ def lan_info() -> dict[str, Any]:
 # -----------------------------------------------------------------------------
 # Static App Shell & SPA Serving for Single-Port LAN Deployment
 # -----------------------------------------------------------------------------
-frontend_dist = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../../frontend/dist"))
+frontend_dist = os.getenv("FRONTEND_DIST_DIR") or os.path.abspath(os.path.join(os.path.dirname(__file__), "../../../frontend/dist"))
 if os.path.exists(frontend_dist):
     assets_dir = os.path.join(frontend_dist, "assets")
 
