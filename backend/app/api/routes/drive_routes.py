@@ -183,18 +183,71 @@ def create_drive(
     current_user: UserModel = Depends(require_officer_or_coordinator),
     db: Session = Depends(get_db),
 ) -> dict[str, Any]:
-    """Creates a new campus recruitment drive with deduplication guardrails."""
-    # Prevent duplicate drives for the same company
+    """Creates a new campus recruitment drive with deduplication guardrails (idempotent upsert)."""
+    clean_company = req.company_name.strip()
     stmt_existing = select(DriveModel).where(
-        (DriveModel.company_name.ilike(req.company_name.strip()))
+        (DriveModel.company_name.ilike(clean_company))
         & (DriveModel.status != "cancelled")
     )
     existing_drive = db.execute(stmt_existing).scalars().first()
+    branches_json = json.dumps(req.allowed_branches) if isinstance(req.allowed_branches, list) else str(req.allowed_branches)
+
     if existing_drive:
-        raise HTTPException(
-            status_code=status.HTTP_409_CONFLICT,
-            detail=f"An active recruitment drive for '{existing_drive.company_name}' already exists (ID: {existing_drive.id}, Date: {existing_drive.drive_date}). Duplicate drives are strictly prevented to maintain clean single-source records.",
+        # Update existing drive in place so user changes are saved reliably without creating duplicates
+        existing_drive.drive_date = req.drive_date
+        existing_drive.mode = req.mode.value
+        existing_drive.status = req.status.value
+        existing_drive.ctc_lpa = req.ctc_lpa
+        existing_drive.version += 1
+
+        if existing_drive.company_id:
+            comp = db.execute(select(CompanyModel).where(CompanyModel.id == existing_drive.company_id)).scalar_one_or_none()
+            if comp:
+                comp.name = req.company_name
+
+        stmt_req = (
+            select(DriveRequirementVersionModel)
+            .where(DriveRequirementVersionModel.drive_id == existing_drive.id)
+            .order_by(DriveRequirementVersionModel.version_number.desc())
         )
+        req_version = db.execute(stmt_req).scalars().first()
+        if req_version:
+            req_version.min_cgpa = req.min_cgpa
+            req_version.min_tenth_percentage = req.min_tenth_percentage
+            req_version.min_twelfth_percentage = req.min_twelfth_percentage
+            req_version.allowed_branches_json = branches_json
+            req_version.max_active_backlogs = req.max_active_backlogs
+            req_version.max_history_backlogs = req.max_history_backlogs
+            req_version.max_gap_years = req.max_gap_years
+            req_version.min_diploma_percentage = req.min_diploma_percentage
+            req_version.allow_gap_during_degree = req.allow_gap_during_degree
+            req_version.version_number = existing_drive.version
+        else:
+            req_version = DriveRequirementVersionModel(
+                id=f"req_{uuid.uuid4().hex[:8]}",
+                drive_id=existing_drive.id,
+                version_number=existing_drive.version,
+                min_cgpa=req.min_cgpa,
+                min_tenth_percentage=req.min_tenth_percentage,
+                min_twelfth_percentage=req.min_twelfth_percentage,
+                allowed_branches_json=branches_json,
+                allowed_programs_json=json.dumps(["B.Tech", "M.Tech"]),
+                max_active_backlogs=req.max_active_backlogs,
+                max_history_backlogs=req.max_history_backlogs,
+                max_gap_years=req.max_gap_years,
+                min_diploma_percentage=req.min_diploma_percentage,
+                allow_gap_during_degree=req.allow_gap_during_degree,
+                created_at=datetime.datetime.utcnow(),
+            )
+            db.add(req_version)
+
+        db.commit()
+        return {
+            "id": existing_drive.id,
+            "company_name": existing_drive.company_name,
+            "version": existing_drive.version,
+            "message": "Drive criteria updated successfully (no duplicate created).",
+        }
 
     stmt_comp = select(CompanyModel).where(CompanyModel.name == req.company_name)
     existing_company = db.execute(stmt_comp).scalar_one_or_none()
@@ -231,7 +284,7 @@ def create_drive(
         min_cgpa=req.min_cgpa,
         min_tenth_percentage=req.min_tenth_percentage,
         min_twelfth_percentage=req.min_twelfth_percentage,
-        allowed_branches_json=json.dumps(req.allowed_branches) if isinstance(req.allowed_branches, list) else str(req.allowed_branches),
+        allowed_branches_json=branches_json,
         allowed_programs_json=json.dumps(["B.Tech", "M.Tech"]),
         max_active_backlogs=req.max_active_backlogs,
         max_history_backlogs=req.max_history_backlogs,
@@ -243,7 +296,7 @@ def create_drive(
     db.add(req_version)
     db.commit()
 
-    return {"id": drive_id, "company_name": req.company_name, "message": "Drive registered successfully."}
+    return {"id": drive_id, "company_name": req.company_name, "version": 1, "message": "Drive registered successfully."}
 
 
 @router.put("/{drive_id}")
@@ -253,7 +306,7 @@ def update_drive(
     current_user: UserModel = Depends(require_officer_or_coordinator),
     db: Session = Depends(get_db),
 ) -> dict[str, Any]:
-    """Updates drive date, mode, package, or status."""
+    """Updates drive date, mode, package, status, and academic requirement criteria."""
     stmt = select(DriveModel).where(DriveModel.id == drive_id)
     drive = db.execute(stmt).scalar_one_or_none()
     if not drive:
@@ -266,8 +319,53 @@ def update_drive(
     drive.ctc_lpa = req.ctc_lpa
     drive.version += 1
 
+    # Synchronize company entity name
+    if drive.company_id:
+        comp = db.execute(select(CompanyModel).where(CompanyModel.id == drive.company_id)).scalar_one_or_none()
+        if comp:
+            comp.name = req.company_name
+
+    # Synchronize requirement version criteria
+    stmt_req = (
+        select(DriveRequirementVersionModel)
+        .where(DriveRequirementVersionModel.drive_id == drive_id)
+        .order_by(DriveRequirementVersionModel.version_number.desc())
+    )
+    req_version = db.execute(stmt_req).scalars().first()
+    branches_json = json.dumps(req.allowed_branches) if isinstance(req.allowed_branches, list) else str(req.allowed_branches)
+
+    if req_version:
+        req_version.min_cgpa = req.min_cgpa
+        req_version.min_tenth_percentage = req.min_tenth_percentage
+        req_version.min_twelfth_percentage = req.min_twelfth_percentage
+        req_version.allowed_branches_json = branches_json
+        req_version.max_active_backlogs = req.max_active_backlogs
+        req_version.max_history_backlogs = req.max_history_backlogs
+        req_version.max_gap_years = req.max_gap_years
+        req_version.min_diploma_percentage = req.min_diploma_percentage
+        req_version.allow_gap_during_degree = req.allow_gap_during_degree
+        req_version.version_number = drive.version
+    else:
+        req_version = DriveRequirementVersionModel(
+            id=f"req_{uuid.uuid4().hex[:8]}",
+            drive_id=drive_id,
+            version_number=drive.version,
+            min_cgpa=req.min_cgpa,
+            min_tenth_percentage=req.min_tenth_percentage,
+            min_twelfth_percentage=req.min_twelfth_percentage,
+            allowed_branches_json=branches_json,
+            allowed_programs_json=json.dumps(["B.Tech", "M.Tech"]),
+            max_active_backlogs=req.max_active_backlogs,
+            max_history_backlogs=req.max_history_backlogs,
+            max_gap_years=req.max_gap_years,
+            min_diploma_percentage=req.min_diploma_percentage,
+            allow_gap_during_degree=req.allow_gap_during_degree,
+            created_at=datetime.datetime.utcnow(),
+        )
+        db.add(req_version)
+
     db.commit()
-    return {"id": drive_id, "version": drive.version, "message": "Drive updated successfully."}
+    return {"id": drive_id, "version": drive.version, "message": "Drive and criteria updated successfully."}
 
 
 @router.delete("/{drive_id}")

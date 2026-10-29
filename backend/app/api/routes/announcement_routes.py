@@ -347,12 +347,42 @@ def create_drive_from_announcement(
     company_name = gt.get("company_name") or _clean_company_name(filename, ground_truth)
     drive_id = f"drv_{uuid.uuid4().hex[:8]}"
 
-    # Check if drive for this company already exists
+    raw_date = gt.get("drive_date", "2026-11-20")
+    if isinstance(raw_date, str):
+        try:
+            drive_date = datetime.date.fromisoformat(raw_date)
+        except Exception:
+            drive_date = datetime.date(2026, 11, 20)
+    elif isinstance(raw_date, datetime.date):
+        drive_date = raw_date
+    else:
+        drive_date = datetime.date(2026, 11, 20)
+
+    # Check if drive for this company already exists: update in place without duplicate
     existing = db.execute(select(DriveModel).where(DriveModel.company_name == company_name)).scalars().first()
     if existing:
+        existing.drive_date = drive_date
+        existing.mode = gt.get("mode", existing.mode or "on_campus")
+        existing.ctc_lpa = float(gt.get("ctc_lpa", existing.ctc_lpa or 12.0))
+        existing.version += 1
+
+        req_v = db.execute(
+            select(DriveRequirementVersionModel)
+            .where(DriveRequirementVersionModel.drive_id == existing.id)
+            .order_by(DriveRequirementVersionModel.version_number.desc())
+        ).scalars().first()
+        if req_v:
+            req_v.min_cgpa = float(gt.get("cgpa_min", req_v.min_cgpa))
+            req_v.min_tenth_percentage = float(gt.get("tenth_percentage_min", req_v.min_tenth_percentage))
+            req_v.min_twelfth_percentage = float(gt.get("twelfth_percentage_min", req_v.min_twelfth_percentage))
+            req_v.max_active_backlogs = int(gt.get("active_backlogs_max", req_v.max_active_backlogs))
+            req_v.allowed_branches_json = json.dumps(gt.get("allowed_branches", ["All Branches"]))
+            req_v.version_number = existing.version
+            req_v.raw_source_text = f"Imported from {filename}"
+        db.commit()
         return {
-            "status": "exists",
-            "message": f"Drive for {company_name} already exists in registry.",
+            "status": "updated",
+            "message": f"Drive for {company_name} updated with announcement criteria.",
             "drive_id": existing.id,
             "company_name": existing.company_name,
             "ctc_lpa": existing.ctc_lpa,
@@ -372,17 +402,6 @@ def create_drive_from_announcement(
         )
         db.add(company)
         db.flush()
-
-    raw_date = gt.get("drive_date", "2026-11-20")
-    if isinstance(raw_date, str):
-        try:
-            drive_date = datetime.date.fromisoformat(raw_date)
-        except Exception:
-            drive_date = datetime.date(2026, 11, 20)
-    elif isinstance(raw_date, datetime.date):
-        drive_date = raw_date
-    else:
-        drive_date = datetime.date(2026, 11, 20)
 
     drive = DriveModel(
         id=drive_id,
