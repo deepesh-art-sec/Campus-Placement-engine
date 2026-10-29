@@ -213,8 +213,8 @@ export const Navigation: React.FC<NavigationProps> = ({
     {
       moduleNum: "10",
       id: "export",
-      label: "Messages & Export",
-      accessibleName: "Company Export",
+      label: "Operational Export",
+      accessibleName: "Operational Export",
       icon: Download,
     },
     {
