@@ -1,3 +1,4 @@
+from sqlalchemy import delete
 import json
 import uuid
 import datetime
@@ -10,6 +11,7 @@ from backend.app.api.main import app, seed_default_accounts
 from backend.app.storage.database import SessionLocal
 from backend.app.storage.models.entities import (
     CoordinatorRequestModel,
+    NotificationModel,
     StudentModel,
     UserModel,
 )
@@ -71,6 +73,10 @@ def test_officer_inbox_summary_and_items(officer_client: tuple[TestClient, dict[
     assert matching[0]["source_dashboard"] == "Coordinator Dashboard"
     assert matching[0]["is_pending"] is True
 
+    # Teardown
+    db.delete(req)
+    db.commit()
+
 
 def test_officer_inbox_approve_student_correction(officer_client: tuple[TestClient, dict[str, str]], db: Session) -> None:
     client, headers = officer_client
@@ -118,6 +124,11 @@ def test_officer_inbox_approve_student_correction(officer_client: tuple[TestClie
     assert corr_req.status == "approved"
     assert "Verified with academic cell" in corr_req.officer_response
 
+    # Teardown: restore student CGPA and delete request
+    student.cgpa = orig_cgpa
+    db.delete(corr_req)
+    db.commit()
+
 
 def test_officer_inbox_reject_and_comment(officer_client: tuple[TestClient, dict[str, str]], db: Session) -> None:
     client, headers = officer_client
@@ -157,6 +168,10 @@ def test_officer_inbox_reject_and_comment(officer_client: tuple[TestClient, dict
     assert req.status == "rejected"
     assert "reserved for university exams" in req.officer_response
 
+    # Teardown
+    db.delete(req)
+    db.commit()
+
 
 def test_officer_inbox_send_message(officer_client: tuple[TestClient, dict[str, str]], db: Session) -> None:
     client, headers = officer_client
@@ -174,3 +189,7 @@ def test_officer_inbox_send_message(officer_client: tuple[TestClient, dict[str, 
     assert send_res.status_code == 201
     assert send_res.json()["status"] == "success"
     assert "broadcast_id" in send_res.json()
+
+    # Teardown
+    db.execute(delete(NotificationModel).where(NotificationModel.title == "Daily Briefing at 08:30 AM"))
+    db.commit()

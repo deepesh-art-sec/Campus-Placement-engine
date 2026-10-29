@@ -18,7 +18,7 @@ from typing import Generator
 
 import pytest
 from fastapi.testclient import TestClient
-from sqlalchemy import select
+from sqlalchemy import select, delete
 
 from backend.app.api.auth.hasher import hash_password
 from backend.app.api.main import app, seed_default_accounts
@@ -198,6 +198,22 @@ def test_setup():
     }
 
     db.close()
+
+    # Complete teardown: Clean up test records completely to prevent polluting the live database!
+    cleanup_db = SessionLocal()
+    try:
+        cleanup_db.execute(delete(NotificationModel).where(NotificationModel.recipient_username.in_([roll1, roll2])))
+        cleanup_db.execute(delete(AuditLogModel).where(AuditLogModel.actor.in_([roll1, roll2])))
+        cleanup_db.execute(delete(StudentApplicationModel).where(StudentApplicationModel.drive_id == drive_id))
+        cleanup_db.execute(delete(EligibilityDecisionModel).where(EligibilityDecisionModel.drive_id == drive_id))
+        cleanup_db.execute(delete(DriveRequirementVersionModel).where(DriveRequirementVersionModel.drive_id == drive_id))
+        cleanup_db.execute(delete(DriveModel).where(DriveModel.id == drive_id))
+        cleanup_db.execute(delete(CompanyModel).where(CompanyModel.id == company_id))
+        cleanup_db.execute(delete(UserModel).where(UserModel.username.in_([roll1, roll2])))
+        cleanup_db.execute(delete(StudentModel).where(StudentModel.roll_no.in_([roll1, roll2])))
+        cleanup_db.commit()
+    finally:
+        cleanup_db.close()
 
 
 def test_eligible_student_can_apply_successfully(client: TestClient, test_setup):

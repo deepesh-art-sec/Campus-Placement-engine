@@ -183,7 +183,19 @@ def create_drive(
     current_user: UserModel = Depends(require_officer_or_coordinator),
     db: Session = Depends(get_db),
 ) -> dict[str, Any]:
-    """Creates a new campus recruitment drive with default requirements."""
+    """Creates a new campus recruitment drive with deduplication guardrails."""
+    # Prevent duplicate drives for the same company
+    stmt_existing = select(DriveModel).where(
+        (DriveModel.company_name.ilike(req.company_name.strip()))
+        & (DriveModel.status != "cancelled")
+    )
+    existing_drive = db.execute(stmt_existing).scalars().first()
+    if existing_drive:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=f"An active recruitment drive for '{existing_drive.company_name}' already exists (ID: {existing_drive.id}, Date: {existing_drive.drive_date}). Duplicate drives are strictly prevented to maintain clean single-source records.",
+        )
+
     stmt_comp = select(CompanyModel).where(CompanyModel.name == req.company_name)
     existing_company = db.execute(stmt_comp).scalar_one_or_none()
     if existing_company:
@@ -482,51 +494,14 @@ def duplicate_drive(
     current_user: UserModel = Depends(require_officer_or_coordinator),
     db: Session = Depends(get_db),
 ) -> dict[str, Any]:
-    """Duplicates an existing drive with its full requirement criteria (Module 4)."""
+    """Disallows duplicate drive creation to protect database integrity."""
     drive = db.execute(select(DriveModel).where(DriveModel.id == drive_id)).scalar_one_or_none()
     if not drive:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Drive not found.")
-
-    new_id = f"drv_{uuid.uuid4().hex[:8]}"
-    new_drive = DriveModel(
-        id=new_id,
-        company_id=drive.company_id,
-        company_name=f"{drive.company_name} (Copy)",
-        drive_date=drive.drive_date,
-        mode=drive.mode,
-        status="draft",
-        ctc_lpa=drive.ctc_lpa,
-        version=1,
+    raise HTTPException(
+        status_code=status.HTTP_400_BAD_REQUEST,
+        detail=f"Duplicate drives for '{drive.company_name}' are disabled to keep database records clean and unique.",
     )
-    db.add(new_drive)
-    db.flush()
-
-    latest_req = drive.requirement_versions[0] if drive.requirement_versions else None
-    if latest_req:
-        new_req = DriveRequirementVersionModel(
-            id=f"req_{uuid.uuid4().hex[:8]}",
-            drive_id=new_id,
-            version_number=1,
-            min_cgpa=latest_req.min_cgpa,
-            min_tenth_percentage=latest_req.min_tenth_percentage,
-            min_twelfth_percentage=latest_req.min_twelfth_percentage,
-            allowed_branches_json=latest_req.allowed_branches_json,
-            allowed_programs_json=latest_req.allowed_programs_json,
-            max_active_backlogs=latest_req.max_active_backlogs,
-            max_history_backlogs=latest_req.max_history_backlogs,
-            max_gap_years=latest_req.max_gap_years,
-            min_diploma_percentage=latest_req.min_diploma_percentage,
-            allow_gap_during_degree=latest_req.allow_gap_during_degree,
-            created_at=datetime.datetime.utcnow(),
-        )
-        db.add(new_req)
-
-    db.commit()
-    return {
-        "id": new_id,
-        "company_name": new_drive.company_name,
-        "message": f"Drive successfully duplicated as '{new_drive.company_name}'.",
-    }
 
 
 class CancelDriveRequest(BaseModel):

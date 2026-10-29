@@ -86,16 +86,7 @@ export const DrivesDashboard: React.FC<DrivesDashboardProps> = ({ onNavigateTab 
     fetchDrivesAndMetrics();
   }, []);
 
-  const handleDuplicateDrive = async (driveId: string) => {
-    try {
-      setError(null);
-      const res = await api.post<any>(`/api/drives/${driveId}/duplicate`);
-      setSuccess(`Duplicated drive created successfully: ${res.company_name} (Draft v1)`);
-      fetchDrivesAndMetrics();
-    } catch (err: any) {
-      setError(err.message || "Failed to duplicate drive.");
-    }
-  };
+
 
   const handleConfirmCancelDrive = async () => {
     if (!cancelModalDrive) return;
@@ -515,14 +506,7 @@ export const DrivesDashboard: React.FC<DrivesDashboardProps> = ({ onNavigateTab 
                 </span>
 
                 <div className="flex items-center gap-1">
-                  <button
-                    type="button"
-                    onClick={() => handleDuplicateDrive(d.id)}
-                    className="p-1.5 text-slate-500 hover:text-slate-800 bg-slate-100 hover:bg-slate-200 rounded-lg transition-colors cursor-pointer"
-                    title="Duplicate drive (reuse rules)"
-                  >
-                    <Copy className="w-3.5 h-3.5" />
-                  </button>
+
                   <button
                     type="button"
                     onClick={() => setCancelModalDrive(d)}
@@ -617,14 +601,7 @@ export const DrivesDashboard: React.FC<DrivesDashboardProps> = ({ onNavigateTab 
                   </td>
                   <td className="px-6 py-4 text-right">
                     <div className="flex items-center justify-end gap-1.5">
-                      <button
-                        type="button"
-                        onClick={() => handleDuplicateDrive(d.id)}
-                        className="p-1.5 text-slate-500 hover:text-slate-800 bg-slate-100 hover:bg-slate-200 rounded-lg transition-colors cursor-pointer"
-                        title="Duplicate drive"
-                      >
-                        <Copy className="w-3.5 h-3.5" />
-                      </button>
+
                       <button
                         type="button"
                         onClick={() => setCancelModalDrive(d)}
