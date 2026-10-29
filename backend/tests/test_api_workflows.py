@@ -14,7 +14,8 @@ from sqlalchemy import select
 
 from backend.app.api.main import app, seed_default_accounts
 from backend.app.storage.database import SessionLocal
-from backend.app.storage.models.entities import CompanyModel, DriveModel, StudentModel
+from sqlalchemy import delete
+from backend.app.storage.models.entities import CompanyModel, DriveModel, StudentModel, SlotModel, ScheduleModel
 
 
 @pytest.fixture
@@ -33,7 +34,7 @@ def auth_officer_headers(client: TestClient) -> dict[str, str]:
 
 
 @pytest.fixture
-def setup_pipeline_data() -> tuple[str, str, str]:
+def setup_pipeline_data() -> Generator[tuple[str, str, str], None, None]:
     db = SessionLocal()
     # 0. Seed Company
     comp = db.execute(select(CompanyModel).where(CompanyModel.id == "comp_pipe")).scalar_one_or_none()
@@ -52,7 +53,7 @@ def setup_pipeline_data() -> tuple[str, str, str]:
             id="drv_pipe_01",
             company_id="comp_pipe",
             company_name="Pipeline Systems",
-            drive_date=datetime.date(2026, 11, 20),
+            drive_date=datetime.date(2026, 12, 30),
             mode="on_campus",
             status="draft",
             ctc_lpa=16.0,
@@ -98,7 +99,12 @@ def setup_pipeline_data() -> tuple[str, str, str]:
     db.commit()
     res = (str(d.id), str(s1.id), str(s2.id))
     db.close()
-    return res
+    yield res
+    cleanup_db = SessionLocal()
+    cleanup_db.execute(delete(SlotModel).where(SlotModel.drive_id == "drv_pipe_01"))
+    cleanup_db.execute(delete(ScheduleModel).where(ScheduleModel.id == "sched_drv_pipe_01"))
+    cleanup_db.commit()
+    cleanup_db.close()
 
 
 def test_requirement_extraction_api(
