@@ -14,7 +14,7 @@ from typing import Any
 
 from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status
 from fastapi.responses import FileResponse
-from backend.app.extract.deterministic_extractor import DeterministicExtractor
+from backend.app.extract.nlp_engine import NLPEngine
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
@@ -26,7 +26,7 @@ from backend.app.storage.models.entities import CompanyModel, DriveModel, DriveR
 router = APIRouter(prefix="/api/announcements", tags=["25 Announcements Library"])
 
 _loader = DocumentLoader()
-_extractor = DeterministicExtractor()
+_extractor = NLPEngine()
 
 
 def _get_announcements_dir() -> str:

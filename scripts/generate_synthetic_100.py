@@ -1301,25 +1301,27 @@ def generate_file_content(case: dict) -> str:
 
 
 def create_scanned_pdf(text: str, dest_path: str):
-    """Renders text into an image and embeds it into a scanned PDF (image-only, no digital text layer)."""
-    img = Image.new("RGB", (1240, 1754), color=(255, 255, 255))
-    draw = ImageDraw.Draw(img)
-    y = 60
+    """Renders text into a high-fidelity image and embeds it into a scanned PDF (image-only, no digital text layer)."""
+    doc_temp = fitz.open()
+    page_temp = doc_temp.new_page(width=595, height=842)
+    p = fitz.Point(40, 50)
     for line in text.splitlines():
-        if line.strip():
-            draw.text((60, y), line, fill=(10, 10, 10))
-            y += 32
-        else:
-            y += 20
+        page_temp.insert_text(p, line, fontsize=11)
+        p.y += 20
+        if p.y > 800:
+            page_temp = doc_temp.new_page(width=595, height=842)
+            p = fitz.Point(40, 50)
 
-    doc = fitz.open()
-    page = doc.new_page(width=595, height=842)
-    img_byte_arr = io.BytesIO()
-    img.save(img_byte_arr, format="PNG")
-    rect = fitz.Rect(0, 0, 595, 842)
-    page.insert_image(rect, stream=img_byte_arr.getvalue())
-    doc.save(dest_path)
-    doc.close()
+    doc_scanned = fitz.open()
+    for page in doc_temp:
+        pix = page.get_pixmap(dpi=200)
+        img_bytes = pix.tobytes("png")
+        new_page = doc_scanned.new_page(width=595, height=842)
+        new_page.insert_image(fitz.Rect(0, 0, 595, 842), stream=img_bytes)
+
+    doc_scanned.save(dest_path)
+    doc_scanned.close()
+    doc_temp.close()
 
 
 def create_digital_pdf(text: str, dest_path: str):

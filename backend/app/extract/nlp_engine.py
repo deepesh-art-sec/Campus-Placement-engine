@@ -967,7 +967,13 @@ class NLPEngine:
         for line_val in candidate_lines:
             line_lower = line_val.lower()
             # Normalize OCR word merges
-            line_lower = line_lower.replace("nostanding", "no standing").replace("backlogsat", "backlogs at").replace("activebacklogs", "active backlogs")
+            line_lower = re.sub(r"no\s*active\s*backl[o|e]g[a-z]*", "no active backlogs", line_lower)
+            line_lower = re.sub(r"nostanding", "no standing", line_lower)
+            line_lower = re.sub(r"noactive", "no active", line_lower)
+            line_lower = re.sub(r"backlogsat", "backlogs at", line_lower)
+            line_lower = re.sub(r"activebacklogs", "active backlogs", line_lower)
+            line_lower = re.sub(r"backlogsallowed|backlogsallawed", "backlogs allowed", line_lower)
+            line_lower = re.sub(r"allawed|alowed", "allowed", line_lower)
             src = self._find_sentence(sentences, line_val)
 
             # Case 1: Strictly clean record / 0 active & historical
@@ -1006,7 +1012,10 @@ class NLPEngine:
                     confidence=0.95,
                     source_sentence=src,
                 )
-                if any(k in line_lower for k in ("no active", "0 active", "without active", "no standing", "zero active", "nostanding")) and active_field is None:
+                if (
+                    any(k in line_lower for k in ("no active", "0 active", "without active", "no standing", "zero active", "nostanding", "noactive"))
+                    or re.search(r"\b(?:no|0|zero|without)\s*(?:active|standing)\b", line_lower)
+                ) and active_field is None:
                     active_field = ExtractedField(
                         field_name="active_backlogs_max",
                         value=0,

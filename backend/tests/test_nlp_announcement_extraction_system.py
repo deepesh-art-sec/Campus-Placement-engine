@@ -360,8 +360,10 @@ class TestExtractionIntegrationPipeline:
             assert company.name == "OpenAI Autonomous Systems"
 
             req_v = db.execute(
-                select(DriveRequirementVersionModel).where(DriveRequirementVersionModel.drive_id == drive_id)
-            ).scalar_one_or_none()
+                select(DriveRequirementVersionModel)
+                .where(DriveRequirementVersionModel.drive_id == drive_id)
+                .order_by(DriveRequirementVersionModel.version_number.desc())
+            ).scalars().first()
             assert req_v is not None
             assert req_v.min_cgpa == 8.5
             assert req_v.max_active_backlogs == 0
