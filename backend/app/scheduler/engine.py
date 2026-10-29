@@ -48,10 +48,11 @@ class PlacementSchedulerEngine:
         drives: list[SchedulerDrive],
         rooms: list[SchedulerRoom],
         config: ScheduleConfig | None = None,
+        existing_slots: list[dict[str, Any]] | None = None,
     ) -> ScheduleResult:
         """Synchronous clash-free schedule generation."""
         cfg = config or ScheduleConfig()
-        return self.solver.solve(drives, rooms, cfg)
+        return self.solver.solve(drives, rooms, cfg, existing_slots=existing_slots)
 
     async def generate_schedule_async(
         self,

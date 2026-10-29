@@ -17,6 +17,8 @@ from backend.app.domain.impact.models import DriveVersionState, ImpactReport
 from backend.app.domain.impact.safeguards import PublishSafeguards
 from backend.app.domain.models import Drive, RequirementSet
 from backend.app.storage.database import get_db
+from backend.app.scheduler.clash_service import detect_db_slot_clashes
+from backend.app.api.routes.schedule_routes import generate_schedule, ScheduleGenerateRequest
 from backend.app.storage.models.entities import (
     DriveModel,
     EligibilityDecisionModel,
@@ -62,7 +64,40 @@ def publish_drive(
     )
     shortlist_ids = [d.student_id for d in db.execute(dec_stmt).scalars().all()]
 
-    # Safeguards validation
+    # Check for hard clashes before publishing
+    initial_clashes = detect_db_slot_clashes(db, drive_id=drive_id)
+    unresolved_initial = [c for c in initial_clashes if c.get("status") == "unresolved"]
+
+    # If hard clashes exist, automatically attempt safe clash-free regeneration
+    if unresolved_initial:
+        try:
+            generate_schedule(
+                req=ScheduleGenerateRequest(drive_id=drive_id),
+                current_user=current_user,
+                db=db,
+            )
+            # Re-check after safe regeneration
+            initial_clashes = detect_db_slot_clashes(db, drive_id=drive_id)
+            unresolved_initial = [c for c in initial_clashes if c.get("status") == "unresolved"]
+        except Exception:
+            pass
+
+    if unresolved_initial:
+        conflict_reasons = [
+            f"{c.get('conflict_type', 'Conflict')}: {c.get('student_name', 'Candidate')} conflicts with {c.get('drive_b_company', 'Other drive')} at {c.get('drive_a_time', 'time')}"
+            for c in unresolved_initial
+        ]
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail={
+                "message": "Cannot publish drive: Hard schedule clashes detected with published drives.",
+                "block_reasons": conflict_reasons,
+                "clash_count": len(unresolved_initial),
+            },
+        )
+
+    # Safeguards validation with actual verified clash count
+    actual_clashes_count = len(unresolved_initial)
     mock_impact = ImpactReport(
         change_summary="Publication validation",
         headline=f"Publishing finalized drive for {drive_entity.company_name}",
@@ -70,7 +105,7 @@ def publish_drive(
         drive_name=drive_entity.company_name,
         students_added_count=len(shortlist_ids),
         students_removed_count=0,
-        clashes_count=0,
+        clashes_count=actual_clashes_count,
     )
 
     validation = _safeguards.validate_for_publish(

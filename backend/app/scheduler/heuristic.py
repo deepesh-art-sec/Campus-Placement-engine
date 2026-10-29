@@ -68,6 +68,7 @@ class DSaturHeuristicScheduler:
         drives: list[SchedulerDrive],
         rooms: list[SchedulerRoom],
         config: ScheduleConfig,
+        existing_slots: list[dict[str, Any]] | None = None,
     ) -> ScheduleResult:
         start_time = datetime.datetime.now()
 
@@ -78,7 +79,7 @@ class DSaturHeuristicScheduler:
         conflict_graph = self._build_conflict_graph(tasks)
 
         # Step 3: DSatur constructive scheduling
-        scheduled_tasks = self._dsatur_schedule(tasks, conflict_graph, rooms, config)
+        scheduled_tasks = self._dsatur_schedule(tasks, conflict_graph, rooms, config, existing_slots=existing_slots)
 
         if len(scheduled_tasks) < len(tasks):
             return ScheduleResult(
@@ -220,6 +221,7 @@ class DSaturHeuristicScheduler:
         conflict_graph: dict[str, set[str]],
         rooms: list[SchedulerRoom],
         config: ScheduleConfig,
+        existing_slots: list[dict[str, Any]] | None = None,
     ) -> list[HeuristicTask]:
         scheduled: list[HeuristicTask] = []
         unscheduled = {t.task_id: t for t in tasks}
@@ -230,6 +232,32 @@ class DSaturHeuristicScheduler:
         busy_rooms: set[tuple[datetime.date, int, str]] = set()
         busy_panels: set[tuple[datetime.date, int, str]] = set()
         busy_students: set[tuple[datetime.date, int, str]] = set()
+
+        if existing_slots:
+            for ext in existing_slots:
+                st = ext.get("start_time")
+                et = ext.get("end_time")
+                if not isinstance(st, datetime.datetime) or not isinstance(et, datetime.datetime):
+                    continue
+                ext_date = st.date()
+                day_start_dt = datetime.datetime.combine(ext_date, datetime.time(config.day_start_hour, 0))
+                start_min = max(0, int((st - day_start_dt).total_seconds() / 60))
+                end_min = min(slots_per_day * config.slot_duration_minutes, int((et - day_start_dt).total_seconds() / 60))
+                if end_min <= start_min:
+                    continue
+                s_slot = start_min // config.slot_duration_minutes
+                e_slot = math.ceil(end_min / config.slot_duration_minutes)
+
+                sid = ext.get("student_id")
+                if sid:
+                    ext_range = range(max(0, s_slot - buffer_slots), min(slots_per_day, e_slot + buffer_slots))
+                    for slot_idx in ext_range:
+                        busy_students.add((ext_date, slot_idx, sid))
+
+                rid = ext.get("room_id")
+                if rid:
+                    for slot_idx in range(s_slot, e_slot):
+                        busy_rooms.add((ext_date, slot_idx, rid))
 
         slots_per_day = int((config.day_end_hour - config.day_start_hour) * 60 / config.slot_duration_minutes)
         buffer_slots = int(math.ceil(config.transition_buffer_minutes / config.slot_duration_minutes))

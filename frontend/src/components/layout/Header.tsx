@@ -24,9 +24,8 @@ export const Header: React.FC<HeaderProps> = ({ onOpenTour }) => {
           </div>
           <div className="min-w-0">
             <div className="flex items-center gap-1.5 sm:gap-2">
-              <span className="font-black text-white text-sm sm:text-base tracking-tight truncate">
-                <span className="hidden xs:inline">PLACEMENT ENGINE</span>
-                <span className="xs:hidden">ENGINE</span>
+              <span className="font-black text-white text-sm sm:text-base tracking-tight whitespace-nowrap">
+                Placement Engine
               </span>
               <span className="text-[9px] sm:text-[10px] font-black tracking-wider px-1.5 sm:px-2 py-0.5 bg-blue-950/80 text-blue-300 border border-blue-800/60 rounded-full hidden sm:inline-block">
                 ENTERPRISE

@@ -4,6 +4,7 @@ Clash-Free Placement Scheduler Routes.
 
 from __future__ import annotations
 
+import datetime
 import json
 import uuid
 from typing import Any
@@ -95,11 +96,31 @@ def generate_schedule(
 
     # Ensure enough individual cabins for requested parallel panels
     effective_num_panels = max(req.num_panels, (len(shortlist_ids) + 13) // 14) if shortlist_ids else req.num_panels
-    cabins = [r for r in room_entities if r.capacity < 50]
+
+    # Prioritize cabins that are not booked on this date for other drives
+    day_start = datetime.datetime.combine(drive_entity.drive_date, datetime.time.min)
+    day_end = datetime.datetime.combine(drive_entity.drive_date, datetime.time.max)
+    busy_room_ids = set(
+        db.execute(
+            select(SlotModel.room_id)
+            .where(
+                SlotModel.drive_id != drive_entity.id,
+                SlotModel.start_time >= day_start,
+                SlotModel.start_time <= day_end,
+            )
+            .distinct()
+        ).scalars().all()
+    )
+
+    all_cabins = [r for r in room_entities if r.capacity < 50]
+    avail_cabins = [r for r in all_cabins if r.id not in busy_room_ids]
+    occupied_cabins = [r for r in all_cabins if r.id in busy_room_ids]
+    cabins = avail_cabins + occupied_cabins
+
     existing_ids = {r.id for r in room_entities}
     existing_names = {r.name for r in room_entities}
     c_num = 1
-    while len(cabins) < effective_num_panels:
+    while len(avail_cabins) < effective_num_panels:
         cabin_id = f"cabin_auto_{c_num}"
         cabin_name = f"Interview Cabin Auto {c_num}"
         while cabin_id in existing_ids or cabin_name in existing_names:
@@ -112,7 +133,8 @@ def generate_schedule(
         existing_ids.add(cabin_id)
         existing_names.add(cabin_name)
         room_entities.append(new_c)
-        cabins.append(new_c)
+        cabins.insert(len(avail_cabins), new_c)
+        avail_cabins.append(new_c)
         c_num += 1
     db.commit()
 
@@ -157,11 +179,46 @@ def generate_schedule(
         ],
     )
 
+    # Fetch existing scheduled slots for published drives on this date to guarantee zero cross-drive clashes
+    existing_slots_stmt = (
+        select(SlotModel)
+        .join(DriveModel, SlotModel.drive_id == DriveModel.id)
+        .where(
+            SlotModel.drive_id != drive_entity.id,
+            DriveModel.status == "published",
+            SlotModel.start_time >= day_start,
+            SlotModel.start_time <= day_end,
+        )
+    )
+    existing_slots_entities = db.execute(existing_slots_stmt).scalars().all()
+    existing_slots = [
+        {
+            "student_id": s.student_id,
+            "room_id": s.room_id,
+            "start_time": s.start_time,
+            "end_time": s.end_time,
+            "drive_id": s.drive_id,
+        }
+        for s in existing_slots_entities
+    ]
+
     config = ScheduleConfig(
         solver_time_limit_seconds=float(req.time_limit_seconds),
         stop_after_first_feasible=True,
     )
-    res = _scheduler.generate_schedule(drives=[drive], rooms=rooms, config=config)
+    res = _scheduler.generate_schedule(
+        drives=[drive],
+        rooms=rooms,
+        config=config,
+        existing_slots=existing_slots,
+    )
+
+    is_feasible = res.status in (ScheduleStatus.OPTIMAL, ScheduleStatus.FEASIBLE, ScheduleStatus.FEASIBLE_HEURISTIC)
+    if not is_feasible or len(res.items) == 0:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=res.infeasibility_explanation or "No clash-free solution exists under current room, panel, and student commitments.",
+        )
 
     # Persist panels
     for p in panels:
@@ -212,9 +269,10 @@ def generate_schedule(
             db.merge(slot_entity)
     db.commit()
 
-    is_feasible = res.status in (ScheduleStatus.OPTIMAL, ScheduleStatus.FEASIBLE, ScheduleStatus.FEASIBLE_HEURISTIC)
-    is_valid = res.verification.is_valid if res.verification else False
-    clash_count = res.verification.clash_count if res.verification else 0
+    # Independently audit the database schedule to calculate true clash count
+    actual_db_clashes = detect_db_slot_clashes(db, drive_id=drive_entity.id)
+    actual_unresolved = sum(1 for c in actual_db_clashes if c.get("status") == "unresolved")
+    is_valid = actual_unresolved == 0
 
     return {
         "is_feasible": is_feasible,
@@ -224,7 +282,8 @@ def generate_schedule(
         "total_slots": len(res.items),
         "students_scheduled": len(shortlist_ids),
         "zero_clashes_verified": is_valid,
-        "clash_count": clash_count,
+        "clash_count": actual_unresolved,
+        "infeasibility_explanation": res.infeasibility_explanation,
     }
 
 
@@ -236,15 +295,20 @@ def get_drive_schedule(
     """Retrieves schedule slots for a drive with cross-drive conflict detection."""
     stmt = select(SlotModel).where(SlotModel.drive_id == drive_id).order_by(SlotModel.start_time.asc())
     slots = db.execute(stmt).scalars().all()
-    all_clashes = detect_db_slot_clashes(db)
+    all_clashes = detect_db_slot_clashes(db, drive_id=drive_id)
 
     clash_map: dict[str, str] = {}
+    room_clash_map: dict[tuple[str, str], str] = {}
+
     for c in all_clashes:
         if c.get("status") == "unresolved":
-            if c.get("drive_a_id") == drive_id:
-                clash_map[c["student_roll"]] = f"Conflicts with {c['drive_b_company']} ({c['drive_b_time']})"
-            elif c.get("drive_b_id") == drive_id:
-                clash_map[c["student_roll"]] = f"Conflicts with {c['drive_a_company']} ({c['drive_a_time']})"
+            other_company = c['drive_b_company'] if c.get("drive_a_id") == drive_id else c['drive_a_company']
+            other_time = c['drive_b_time'] if c.get("drive_a_id") == drive_id else c['drive_a_time']
+            msg = f"{c.get('conflict_type', 'Conflict')}: Conflicts with {other_company} ({other_time})"
+            if c.get("student_roll"):
+                clash_map[c["student_roll"]] = msg
+            if c.get("room_name"):
+                room_clash_map[(c["room_name"], c.get("date", ""))] = msg
 
     return [
         {
@@ -258,8 +322,8 @@ def get_drive_schedule(
             "time_slot": s.start_time.strftime("%H:%M"),
             "start_time": s.start_time.strftime("%d-%b-%Y %H:%M"),
             "end_time": s.end_time.strftime("%H:%M"),
-            "has_clash": (s.student and s.student.roll_no in clash_map) or False,
-            "clash_detail": clash_map.get(s.student.roll_no) if s.student else None,
+            "has_clash": (s.student and s.student.roll_no in clash_map) or (s.room and (s.room.name, s.start_time.strftime("%Y-%m-%d")) in room_clash_map),
+            "clash_detail": clash_map.get(s.student.roll_no) if (s.student and s.student.roll_no in clash_map) else room_clash_map.get((s.room.name if s.room else "", s.start_time.strftime("%Y-%m-%d"))),
         }
         for s in slots
     ]
