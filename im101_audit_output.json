@@ -3,7 +3,7 @@
   "title": "One student, three drives, one Tuesday: a placement eligibility and scheduling engine",
   "organization": "Integraminds",
   "theme": "DIGITAL ODYSSEY",
-  "timestamp": "2026-10-29T13:25:10.998970",
+  "timestamp": "2026-10-29T15:23:11.488304",
   "audit_results": {
     "Provided Assets": [
       {
@@ -130,9 +130,9 @@
       {
         "item": "Schedule 600 students across 12 drives and 8 rooms in < 60s with 0 clashes",
         "passed": true,
-        "metric": "Solved in 0.65s with 0 clashes (CP-SAT SATISFIED)",
+        "metric": "Solved in 0.62s with 0 clashes (CP-SAT SATISFIED)",
         "details": {
-          "solve_time_seconds": 0.652901399998882,
+          "solve_time_seconds": 0.623583199998393,
           "scheduled_items": 312,
           "clash_count": 0
         }

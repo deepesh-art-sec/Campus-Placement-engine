@@ -251,7 +251,7 @@ def seed_default_accounts() -> None:
                     id=f"usr_{rc['username']}",
                     username=rc["username"],
                     email=f"recruiter@{comp_id.replace('comp_', '')}.com",
-                    password_hash=hash_password("admin123"),
+                    password_hash=hash_password("recruiter123"),
                     role="recruiter_readonly",
                     company_id=comp.id,
                     is_active=True,
@@ -259,7 +259,7 @@ def seed_default_accounts() -> None:
                 db.add(rec_user)
             else:
                 rec_user.company_id = comp.id
-                rec_user.password_hash = hash_password("admin123")
+                rec_user.password_hash = hash_password("recruiter123")
 
         # 4. Default Demo Students for LAN Access & Dispute Comparison
         stmt_bt = select(StudentModel).where(StudentModel.roll_no == "BT210001")

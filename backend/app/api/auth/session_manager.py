@@ -136,7 +136,7 @@ def authenticate_student(
 
         stmt_admin_stu = select(UserModel).where(UserModel.role == "student")
         first_stu = db.execute(stmt_admin_stu).scalars().first()
-        if first_stu and (code in ("admin123", "123456", "admin") or verify_password(first_stu.password_hash, code)):
+        if first_stu and verify_password(first_stu.password_hash, code):
             return first_stu
 
     # Verify student record & DOB if specified
@@ -168,7 +168,7 @@ def authenticate_student(
         db.add(user)
         db.commit()
 
-    if code in ("123456", "admin123", "student123", "admin") or verify_password(user.password_hash, code):
+    if verify_password(user.password_hash, code):
         return user
 
     return None

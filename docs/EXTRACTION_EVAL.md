@@ -6,7 +6,7 @@
 - **Announcements Fully Extracted (Zero Manual Entry)**: **25 / 25** (100.0%)
 - **Target Requirement**: At least 20 of 25 announcements without manual re-typing (Criterion 3).
 - **Target Status**: **PASSED** (Achieved 25/25 fully offline).
-- **Total Benchmark Execution Time**: 0.366 seconds (14.6 ms/document).
+- **Total Benchmark Execution Time**: 0.161 seconds (6.4 ms/document).
 - **Cloud/Network Calls**: 0 (100% offline regex & semantic dictionary architecture).
 - **LLM Dependency**: None (LLM Adapter OFF by default; target strictly achieved deterministically).
 
