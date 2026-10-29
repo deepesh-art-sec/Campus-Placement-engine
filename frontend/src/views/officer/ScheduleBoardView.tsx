@@ -162,8 +162,10 @@ export const ScheduleBoardView: React.FC<ScheduleBoardViewProps> = ({ initialDri
         }
       }
     }
-    const crossDriveClashes = items.filter((it: any) => it.has_clash).length;
-    setClashCount(collisions + crossDriveClashes);
+    const uniqueCrossDriveClashes = new Set(
+      items.filter((it: any) => it.has_clash).map((it: any) => it.clash_detail || it.student_id)
+    ).size;
+    setClashCount(collisions + uniqueCrossDriveClashes);
   };
 
   useEffect(() => {
@@ -199,9 +201,15 @@ export const ScheduleBoardView: React.FC<ScheduleBoardViewProps> = ({ initialDri
       clearInterval(timer);
       setProgress(100);
 
-      setSuccess(
-        `Schedule generated successfully: ${res.students_scheduled || 0} students scheduled across venues with 0 clashes!`
-      );
+      if (res.clash_count === 0) {
+        setSuccess(
+          `Schedule generated successfully: ${res.students_scheduled || 0} students scheduled across venues with 0 clashes verified!`
+        );
+      } else {
+        setError(
+          `Schedule generated with ${res.clash_count} unresolved clashes. Please review conflicting drives.`
+        );
+      }
 
       setTimeout(() => {
         setScheduling(false);

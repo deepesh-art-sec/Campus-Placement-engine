@@ -153,7 +153,7 @@ def generate_schedule(
 
     panels = [
         SchedulerPanel(
-            id=f"panel_{i+1}",
+            id=f"panel_{drive_entity.id}_{i+1}",
             drive_id=drive_entity.id,
             round_number=1,
             name=f"Technical Panel {i+1}",
@@ -288,6 +288,7 @@ def generate_schedule(
 
 
 @router.get("/{drive_id}")
+@router.get("/{drive_id}/grid")
 def get_drive_schedule(
     drive_id: str,
     db: Session = Depends(get_db),

@@ -111,11 +111,15 @@ export const CoordinatorScheduleView: React.FC<CoordinatorScheduleViewProps> = (
     if (!driveId) return;
     try {
       setLoading(true);
-      const res = await api.get<ScheduleSlot[]>(`/api/schedules/${driveId}/grid`);
+      const res = await api.get<ScheduleSlot[]>(`/api/schedules/${driveId}`);
       setSlots(res || []);
-      setClashCount(0);
+      const uniqueCrossDriveClashes = new Set(
+        (res || []).filter((it: any) => it.has_clash).map((it: any) => it.clash_detail || it.student_id)
+      ).size;
+      setClashCount(uniqueCrossDriveClashes);
     } catch {
       setSlots([]);
+      setClashCount(0);
     } finally {
       setLoading(false);
     }
@@ -189,20 +193,24 @@ export const CoordinatorScheduleView: React.FC<CoordinatorScheduleViewProps> = (
       </div>
 
       {/* Verification Badge Banner */}
-      <div className="p-4 bg-white rounded-2xl border border-slate-200 shadow-xs flex items-center justify-between">
+      <div className={`p-4 bg-white rounded-2xl border shadow-xs flex items-center justify-between ${clashCount === 0 ? "border-slate-200" : "border-amber-300 bg-amber-50/50"}`}>
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-emerald-100 text-emerald-700 flex items-center justify-center">
-            <ShieldCheck className="w-6 h-6" />
+          <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${clashCount === 0 ? "bg-emerald-100 text-emerald-700" : "bg-amber-100 text-amber-700"}`}>
+            {clashCount === 0 ? <ShieldCheck className="w-6 h-6" /> : <AlertTriangle className="w-6 h-6" />}
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <h3 className="text-sm font-bold text-slate-900">0 Clashes Verified</h3>
-              <span className="text-[10px] font-bold bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-full uppercase">
+              <h3 className="text-sm font-bold text-slate-900">
+                {clashCount === 0 ? "0 Clashes Verified" : `${clashCount} Clashes Detected`}
+              </h3>
+              <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full uppercase ${clashCount === 0 ? "bg-emerald-100 text-emerald-800" : "bg-amber-100 text-amber-800"}`}>
                 CP-SAT Discrete Solver
               </span>
             </div>
             <p className="text-xs text-slate-500 mt-0.5">
-              Strict interval scheduling: each shortlisted student occupies exactly one cabin slot per round with zero collision.
+              {clashCount === 0
+                ? "Strict interval scheduling: each shortlisted student occupies exactly one cabin slot per round with zero collision."
+                : "Active schedule conflicts detected across drives. Please coordinate with the Placement Officer."}
             </p>
           </div>
         </div>

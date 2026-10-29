@@ -136,7 +136,7 @@
     "tenth_percentage_min": 60.0,
     "twelfth_percentage_min": 60.0,
     "active_backlogs_max": 0,
-    "historical_backlogs_max": null,
+    "historical_backlogs_max": 1,
     "allowed_branches": [
       "CSE",
       "IT",
@@ -280,7 +280,7 @@
     "tenth_percentage_min": 60.0,
     "twelfth_percentage_min": 60.0,
     "active_backlogs_max": 0,
-    "historical_backlogs_max": null,
+    "historical_backlogs_max": 0,
     "allowed_branches": [
       "Mechanical Engineering",
       "Civil Engineering",
@@ -383,10 +383,10 @@
     "tenth_percentage_min": 60.0,
     "twelfth_percentage_min": 60.0,
     "active_backlogs_max": 0,
-    "historical_backlogs_max": null,
+    "historical_backlogs_max": 1,
     "allowed_branches": [
       "Mechanical Engineering",
-      "Electrical and Electronics Engineering"
+      "EEE"
     ],
     "gap_years_max": 1,
     "rounds_count": 4
@@ -505,7 +505,7 @@
     "tenth_percentage_min": 60.0,
     "twelfth_percentage_min": 60.0,
     "active_backlogs_max": 0,
-    "historical_backlogs_max": null,
+    "historical_backlogs_max": 0,
     "allowed_branches": [
       "CSE",
       "IT",

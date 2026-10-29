@@ -872,11 +872,6 @@ def portal_get_schedule(
     )
     slots = list(db.execute(stmt).scalars().all())
 
-    # Fallback to active demo slots if this specific user has none
-    if not slots:
-        stmt_any = select(SlotModel).order_by(SlotModel.start_time.asc()).limit(3)
-        slots = list(db.execute(stmt_any).scalars().all())
-
     now = datetime.datetime.utcnow()
     # Find next upcoming slot index
     next_upcoming_idx = 0
@@ -892,7 +887,8 @@ def portal_get_schedule(
         for j in range(len(slots)):
             if i != j:
                 other = slots[j]
-                if slot.start_time < other.end_time and slot.end_time > other.start_time:
+                # Overlap strictly when start < other.end and end > other.start
+                if max(slot.start_time, other.start_time) < min(slot.end_time, other.end_time):
                     has_clash = True
 
         schedule_out.append({
@@ -930,7 +926,8 @@ def portal_get_clashes(
         for j in range(i + 1, len(schedule)):
             s1 = schedule[i]
             s2 = schedule[j]
-            if s1["start_time"] == s2["start_time"]:
+            # Strict overlap check (back-to-back interviews do not clash)
+            if s1["start_iso"] < s2["end_iso"] and s2["start_iso"] < s1["end_iso"]:
                 clashing_pairs.append({
                     "drive_a": s1["company_name"],
                     "round_a": s1["round_name"],

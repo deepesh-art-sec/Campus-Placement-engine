@@ -229,6 +229,9 @@ class DSaturHeuristicScheduler:
         saturation_map: dict[str, set[int]] = collections.defaultdict(set)
 
         # Precise multi-entity busy sets: (date, slot, entity_id)
+        slots_per_day = int((config.day_end_hour - config.day_start_hour) * 60 / config.slot_duration_minutes)
+        buffer_slots = int(math.ceil(config.transition_buffer_minutes / config.slot_duration_minutes))
+
         busy_rooms: set[tuple[datetime.date, int, str]] = set()
         busy_panels: set[tuple[datetime.date, int, str]] = set()
         busy_students: set[tuple[datetime.date, int, str]] = set()
@@ -258,9 +261,6 @@ class DSaturHeuristicScheduler:
                 if rid:
                     for slot_idx in range(s_slot, e_slot):
                         busy_rooms.add((ext_date, slot_idx, rid))
-
-        slots_per_day = int((config.day_end_hour - config.day_start_hour) * 60 / config.slot_duration_minutes)
-        buffer_slots = int(math.ceil(config.transition_buffer_minutes / config.slot_duration_minutes))
 
         lunch_slot_start = int((config.lunch_start_hour - config.day_start_hour) * 60 / config.slot_duration_minutes)
         lunch_slots_count = int(config.lunch_duration_minutes / config.slot_duration_minutes)
