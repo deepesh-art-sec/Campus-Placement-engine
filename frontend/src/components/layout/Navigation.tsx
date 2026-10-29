@@ -233,13 +233,13 @@ export const Navigation: React.FC<NavigationProps> = ({
 
   return (
     <aside
-      className={`bg-[#080e1c] border-r border-[#1b2b4d] shrink-0 flex flex-col transition-all duration-200 select-none z-20 ${
+      className={`bg-[#080e1c] border-r border-[#1b2b4d] shrink-0 flex flex-col h-full max-h-full overflow-hidden sticky top-0 transition-all duration-200 select-none z-20 ${
         isCollapsed ? "w-16" : "w-64"
       }`}
       aria-label="Officer Dashboard Left Navigation"
     >
       {/* Sidebar Header and Collapse Toggle */}
-      <div className="p-3.5 border-b border-[#1b2b4d] flex items-center justify-between text-slate-300">
+      <div className="p-3.5 border-b border-[#1b2b4d] flex items-center justify-between text-slate-300 shrink-0 sticky top-0 bg-[#080e1c] z-10">
         {!isCollapsed && (
           <div className="flex items-center gap-2">
             <span className="text-[10px] font-black tracking-widest text-emerald-400 uppercase font-mono">
@@ -258,7 +258,7 @@ export const Navigation: React.FC<NavigationProps> = ({
       </div>
 
       {/* Nav List with Officer Modules */}
-      <nav className="flex-1 overflow-y-auto px-2 py-3 space-y-1 custom-scrollbar">
+      <nav className="flex-1 min-h-0 overflow-y-auto px-2 py-3 space-y-1 custom-scrollbar">
         {modules.map((mod) => {
           const Icon = mod.icon;
           const isMainActive = activeTab === mod.id;
@@ -346,7 +346,7 @@ export const Navigation: React.FC<NavigationProps> = ({
 
       {/* Sidebar Footer with Institutional Compliance Badges */}
       {!isCollapsed && (
-        <div className="p-3 border-t border-[#1b2b4d] bg-[#050a14]/60 text-[11px] text-slate-400 space-y-1 font-mono">
+        <div className="p-3 border-t border-[#1b2b4d] bg-[#050a14]/95 text-[11px] text-slate-400 space-y-1 font-mono shrink-0 sticky bottom-0 z-10">
           <div className="flex items-center gap-1.5 text-emerald-400 font-bold">
             <CheckCircle2 className="w-3.5 h-3.5" />
             <span>Air-Gap Ready</span>

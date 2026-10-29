@@ -284,9 +284,9 @@ const MainContent: React.FC = () => {
   // 1. Candidate Portal
   if (user.role === "student") {
     return (
-      <div className="min-h-screen bg-[#060b14] text-slate-100 flex flex-col">
+      <div className="h-screen h-[100dvh] max-h-screen overflow-hidden bg-[#060b14] text-slate-100 flex flex-col">
         <Header onNavigateToAudit={() => {}} />
-        <div className="flex-1 flex overflow-hidden">
+        <div className="flex-1 flex overflow-hidden min-h-0 min-w-0 w-full relative">
           <StudentPortal />
         </div>
       </div>
@@ -296,9 +296,9 @@ const MainContent: React.FC = () => {
   // 2. Recruiter Portal
   if (user.role === "recruiter_readonly" || user.role === "recruiter") {
     return (
-      <div className="min-h-screen bg-[#060b14] text-slate-100 flex flex-col">
+      <div className="h-screen h-[100dvh] max-h-screen overflow-hidden bg-[#060b14] text-slate-100 flex flex-col">
         <Header onNavigateToAudit={() => {}} />
-        <div className="flex-1 flex overflow-hidden">
+        <div className="flex-1 flex overflow-hidden min-h-0 min-w-0 w-full relative">
           <RecruiterPortal />
         </div>
       </div>
@@ -308,12 +308,12 @@ const MainContent: React.FC = () => {
   // 3. Coordinator Dashboard (Modules 1 - 12)
   if (user.role === "coordinator") {
     return (
-      <div className="min-h-screen bg-[#060b14] text-slate-100 flex flex-col">
+      <div className="h-screen h-[100dvh] max-h-screen overflow-hidden bg-[#060b14] text-slate-100 flex flex-col">
         <Header
           onOpenTour={() => setIsTourOpen(true)}
           onNavigateToAudit={() => setCoordTab("notifications")}
         />
-        <div className="flex-1 flex overflow-hidden">
+        <div className="flex-1 flex overflow-hidden min-h-0 min-w-0 w-full relative">
           <CoordinatorNavigation
             activeTab={coordTab}
             onSelectTab={setCoordTab}
@@ -357,12 +357,12 @@ const MainContent: React.FC = () => {
 
   // 4. Officer Workspace (Full Executive Authority)
   return (
-    <div className="min-h-screen bg-[#060b14] text-slate-100 flex flex-col">
+    <div className="h-screen h-[100dvh] max-h-screen overflow-hidden bg-[#060b14] text-slate-100 flex flex-col">
       <Header
         onOpenTour={() => setIsTourOpen(true)}
         onNavigateToAudit={() => setActiveTab("offline_audit")}
       />
-      <div className="flex-1 flex overflow-hidden">
+      <div className="flex-1 flex overflow-hidden min-h-0 min-w-0 w-full relative">
         <Navigation
           activeTab={activeTab}
           onSelectTab={handleTabSelect}

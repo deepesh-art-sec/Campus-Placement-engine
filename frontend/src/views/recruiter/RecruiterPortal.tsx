@@ -425,16 +425,16 @@ export const RecruiterPortal: React.FC = () => {
   ];
 
   return (
-    <div className="flex-1 flex overflow-hidden w-full h-full">
+    <div className="flex-1 flex overflow-hidden w-full h-full min-h-0 min-w-0">
       {/* Left Vertical Navigation Sidebar (Identical to Coordinator and Officer) */}
       <aside
-        className={`bg-[#080e1c] border-r border-[#1b2b4d] shrink-0 flex flex-col transition-all duration-200 select-none z-20 ${
+        className={`bg-[#080e1c] border-r border-[#1b2b4d] shrink-0 flex flex-col h-full max-h-full overflow-hidden sticky top-0 transition-all duration-200 select-none z-20 ${
           isSidebarCollapsed ? "w-16" : "w-64"
         }`}
         aria-label="Recruiter Dashboard Left Navigation"
       >
         {/* Sidebar Header with Module Index and Collapse Toggle */}
-        <div className="p-3.5 border-b border-[#1b2b4d] flex items-center justify-between text-slate-300">
+        <div className="p-3.5 border-b border-[#1b2b4d] flex items-center justify-between text-slate-300 shrink-0 sticky top-0 bg-[#080e1c] z-10">
           {!isSidebarCollapsed && (
             <div className="min-w-0">
               <div className="flex items-center gap-1.5">
@@ -459,7 +459,7 @@ export const RecruiterPortal: React.FC = () => {
         </div>
 
         {/* Vertical Nav List */}
-        <nav className="flex-1 overflow-y-auto px-2 py-3 space-y-1 custom-scrollbar">
+        <nav className="flex-1 min-h-0 overflow-y-auto px-2 py-3 space-y-1 custom-scrollbar">
           {navItems.map((item) => {
             const Icon = item.icon;
             const isActive = activeTab === item.id;
@@ -496,7 +496,7 @@ export const RecruiterPortal: React.FC = () => {
 
         {/* Sidebar Footer */}
         {!isSidebarCollapsed && (
-          <div className="p-3 border-t border-[#1b2b4d] text-[10px] text-slate-500 text-center font-mono">
+          <div className="p-3 border-t border-[#1b2b4d] bg-[#050a14]/95 text-[10px] text-slate-500 text-center font-mono shrink-0 sticky bottom-0 z-10">
             Tenant Isolated • Corporate Portal
           </div>
         )}

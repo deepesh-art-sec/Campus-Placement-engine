@@ -20,7 +20,7 @@ export const Header: React.FC<HeaderProps> = ({ onOpenTour, onNavigateToAudit })
   const externalCalls = auditTracker.getExternalCount();
 
   return (
-    <header className="bg-[#080e1c]/95 backdrop-blur-md border-b border-[#1b2b4d] sticky top-0 z-30 shadow-md no-print transition-all">
+    <header className="bg-[#080e1c]/95 backdrop-blur-md border-b border-[#1b2b4d] sticky top-0 z-30 shadow-md no-print transition-all shrink-0">
       {/* Top Air-Gap & LAN Status Banner */}
       <div className="bg-[#040810] text-slate-300 px-3 sm:px-4 py-1.5 text-xs font-medium flex flex-wrap items-center justify-between gap-1.5 border-b border-[#14223d]">
         <div className="flex items-center gap-2 min-w-0">

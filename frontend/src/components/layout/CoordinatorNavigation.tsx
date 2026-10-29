@@ -78,12 +78,12 @@ export const CoordinatorNavigation: React.FC<CoordinatorNavigationProps> = ({
 
   return (
     <aside
-      className={`bg-[#060b14] border-r border-[#15233e] flex flex-col transition-all duration-300 select-none ${
+      className={`bg-[#060b14] border-r border-[#15233e] shrink-0 flex flex-col h-full max-h-full overflow-hidden sticky top-0 transition-all duration-300 select-none z-20 ${
         isCollapsed ? "w-20" : "w-64"
       }`}
     >
       {/* Role Badge & Collapse Toggle */}
-      <div className="p-4 border-b border-[#15233e] flex items-center justify-between">
+      <div className="p-4 border-b border-[#15233e] flex items-center justify-between shrink-0 sticky top-0 bg-[#060b14] z-10">
         {!isCollapsed && (
           <div>
             <div className="flex items-center gap-1.5">
@@ -97,7 +97,7 @@ export const CoordinatorNavigation: React.FC<CoordinatorNavigationProps> = ({
         )}
         <button
           onClick={() => setIsCollapsed(!isCollapsed)}
-          className="p-1.5 rounded-lg bg-[#0e192d] hover:bg-[#192b4d] text-slate-400 hover:text-white transition"
+          className="p-1.5 rounded-lg bg-[#0e192d] hover:bg-[#192b4d] text-slate-400 hover:text-white transition cursor-pointer"
           title={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
         >
           {isCollapsed ? <ChevronRight className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}
@@ -105,7 +105,7 @@ export const CoordinatorNavigation: React.FC<CoordinatorNavigationProps> = ({
       </div>
 
       {/* Navigation Modules */}
-      <nav className="flex-1 overflow-y-auto p-2 space-y-1">
+      <nav className="flex-1 min-h-0 overflow-y-auto p-2 space-y-1">
         {navItems.map((item) => {
           const Icon = item.icon;
           const isActive = activeTab === item.id;
@@ -153,7 +153,7 @@ export const CoordinatorNavigation: React.FC<CoordinatorNavigationProps> = ({
 
       {/* Security & Access Restriction Footer */}
       {!isCollapsed && (
-        <div className="p-3 border-t border-[#15233e] bg-[#040810]/60 m-2 rounded-xl">
+        <div className="p-3 border-t border-[#15233e] bg-[#040810]/95 m-2 rounded-xl shrink-0 sticky bottom-0 z-10">
           <div className="flex items-center gap-1.5 text-[11px] font-bold text-amber-400">
             <Lock className="w-3.5 h-3.5 text-amber-400" />
             <span>Coordinator Scope</span>
