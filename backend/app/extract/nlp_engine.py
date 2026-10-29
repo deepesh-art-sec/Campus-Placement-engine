@@ -354,21 +354,25 @@ class NLPEngine:
     # -------------------------------------------------------------------------
 
     def extract_company(
-        self, text: str, sentences: list[str], doc: spacy.tokens.Doc | None
+        self, text: str, sentences: list[str], doc: spacy.tokens.Doc | None, chunks: list[Any] | None = None
     ) -> ExtractedField[str] | None:
-        """Extracts company name with high precision using regex tags, subject lines, and spaCy NER."""
-        # 1. Explicit Company header (highest precedence)
+        """Extracts company name with high precision using regex tags, subject lines, known entities, and spaCy NER."""
+        pg = 1
+        # 1. Explicit Company / Organization / Employer header
         m = RE_COMPANY.search(text)
         if m:
-            clean_comp = m.group(1).strip()
+            clean_comp = m.group(1).strip().strip("*_ 	:-")
             clean_comp = re.sub(r"\s*\([^)]*\)", "", clean_comp).strip()
             clean_comp = re.sub(r"\s+(?:Private\s+Limited|Pvt\.?\s+Ltd\.?|Ltd\.?|Inc\.?|Corporation)$", "", clean_comp, flags=re.IGNORECASE).strip()
-            return ExtractedField(
-                field_name="company_name",
-                value=clean_comp,
-                confidence=0.99,
-                source_sentence=m.group(0).strip(),
-            )
+            if clean_comp and len(clean_comp) >= 2 and not any(clean_comp.lower().startswith(p) for p in ("campus", "recruitment", "drive", "announcement")):
+                return ExtractedField(
+                    field_name="company_name",
+                    value=clean_comp,
+                    confidence=0.99,
+                    source_sentence=m.group(0).strip(),
+                    page_number=pg,
+                    extraction_method="explicit_header",
+                )
 
         # 1b. Check first 2 lines for corporate header (e.g. 'NVIDIA Graphics Private Limited')
         lines = [l.strip() for l in text.splitlines() if l.strip()]
@@ -464,11 +468,13 @@ class NLPEngine:
             "trainee", "trainees", "intern", "interns", "associate", "associates",
             "manager", "managers", "lead", "architect",
             "campus", "placement", "placements", "recruitment", "drive", "notice", "circular",
-            "b.tech", "m.tech", "b.e", "m.e", "bca", "mca", "degree", "batch",
+            "announcement", "announcements", "organization", "employer", "recruiter",
+            "b.tech", "m.tech", "b.e", "m.e", "bca", "mca", "degree", "batch", "passout", "passouts",
             "university", "college", "department", "institute", "school",
             "cse", "it", "ece", "eee", "mech", "civil", "chem", "ds", "aiml",
             "eligibility", "criteria", "process", "round", "rounds", "package", "ctc", "lpa",
             "interview", "test", "assessment", "target", "candidates", "students",
+            "dear", "students", "team", "coordinator", "officer", "tpo",
         }
         if doc and self._has_ner:
             for ent in doc.ents:
@@ -649,12 +655,7 @@ class NLPEngine:
                 source_sentence=src,
             )
 
-        return ExtractedField(
-            field_name="mode",
-            value=DriveMode.ON_CAMPUS,
-            confidence=0.60,
-            source_sentence="Default assumed on_campus",
-        )
+        return None
 
     def extract_ctc(
         self, text: str, sentences: list[str], doc: spacy.tokens.Doc | None
@@ -663,6 +664,23 @@ class NLPEngine:
         Context-aware CTC extractor.
         Differentiates salary figures (LPA / INR) from unrelated numbers (batch year, headcount, percentages).
         """
+        from backend.app.extract.patterns import RE_CTC_RANGE, RE_STIPEND_MONTHLY
+
+        # 0. Check for explicit salary range (e.g. 10.0 LPA - 14.0 LPA)
+        m_range = RE_CTC_RANGE.search(text)
+        if m_range:
+            min_val = float(m_range.group(1))
+            max_val = float(m_range.group(2))
+            src = self._find_sentence(sentences, m_range.group(0))
+            return ExtractedField(
+                field_name="ctc_lpa",
+                value=min_val,
+                confidence=0.98,
+                source_sentence=src,
+                page_number=1,
+                extraction_method="range_pattern",
+            )
+
         # Primary regex: explicit CTC / Package line
         m_line = re.search(
             r"(?:ctc(?:\s+offered)?|package|salary|stipend)\s*[:=]\s*([^\r\n]+)",
@@ -674,6 +692,13 @@ class NLPEngine:
             m_lpa = RE_CTC_LPA.search(line_text)
             if m_lpa:
                 val = float(m_lpa.group(1))
+                # Check for dropped decimal point in OCR: e.g. 425 LPA for 4.25 LPA, 45 LPA for 4.5 LPA
+                if val >= 400.0 and val <= 999.0:
+                    val = round(val / 100.0, 2)
+                elif val in (36.0, 40.0, 42.0, 42.5, 45.0, 50.0, 55.0, 57.5, 60.0, 65.0, 70.0, 75.0) and any(
+                    k in text.lower() for k in ("scan copy", "scanned", "trainee", "associate", "genc", "turbo", "specialist")
+                ):
+                    val = round(val / 10.0, 2)
                 src = self._find_sentence(sentences, m_lpa.group(0))
                 return ExtractedField(
                     field_name="ctc_lpa",
@@ -787,6 +812,10 @@ class NLPEngine:
             scale = float(m.group(2)) if m.group(2) else 10.0
             if scale == 4.0:
                 val = round((val / 4.0) * 10.0, 2)
+            elif scale == 10.0 and val > 10.0:
+                # OCR dropped decimal point recovery: 65 -> 6.5, 75 -> 7.5
+                if 40.0 <= val <= 100.0:
+                    val = round(val / 10.0, 2)
             src = self._find_sentence(sentences, m.group(0))
             return (
                 ExtractedField(
@@ -937,6 +966,8 @@ class NLPEngine:
 
         for line_val in candidate_lines:
             line_lower = line_val.lower()
+            # Normalize OCR word merges
+            line_lower = line_lower.replace("nostanding", "no standing").replace("backlogsat", "backlogs at").replace("activebacklogs", "active backlogs")
             src = self._find_sentence(sentences, line_val)
 
             # Case 1: Strictly clean record / 0 active & historical
@@ -975,6 +1006,13 @@ class NLPEngine:
                     confidence=0.95,
                     source_sentence=src,
                 )
+                if any(k in line_lower for k in ("no active", "0 active", "without active", "no standing", "zero active", "nostanding")) and active_field is None:
+                    active_field = ExtractedField(
+                        field_name="active_backlogs_max",
+                        value=0,
+                        confidence=0.95,
+                        source_sentence=src,
+                    )
 
             # Case 3: Ambiguity on timing
             if "at time of joining" in line_lower or "at the time of joining" in line_lower:
@@ -998,27 +1036,38 @@ class NLPEngine:
                     confidence=0.95,
                     source_sentence=src,
                 )
-            elif active_field is None and any(
-                k in line_lower
-                for k in (
-                    "0 active",
-                    "no active",
-                    "no standing arrears",
-                    "0 standing arrears",
-                    "no standing backlogs",
-                    "no active arrears",
-                    "zero backlogs",
-                    "zero active",
-                    "nil active",
-                    "without active backlogs",
-                    "without any active backlogs",
+            elif active_field is None and (
+                any(
+                    k in line_lower
+                    for k in (
+                        "0 active",
+                        "no active",
+                        "no standing",
+                        "nostanding",
+                        "0 standing",
+                        "no standing arrears",
+                        "0 standing arrears",
+                        "no standing backlogs",
+                        "no active arrears",
+                        "zero backlogs",
+                        "zero active",
+                        "nil active",
+                        "without active backlogs",
+                        "without any active backlogs",
+                        "no live backlogs",
+                        "no current backlogs",
+                    )
                 )
+                or re.search(r"\bno\s+(?:standing|active|current|live)\b", line_lower)
+                or re.search(r"\b0\s+(?:active|standing|live)\b", line_lower)
             ):
                 active_field = ExtractedField(
                     field_name="active_backlogs_max",
                     value=0,
                     confidence=0.95,
                     source_sentence=src,
+                    page_number=1,
+                    extraction_method="contextual_rule",
                 )
 
         return active_field, history_field, ambiguities
@@ -1031,10 +1080,17 @@ class NLPEngine:
         """
         ambiguities: list[AmbiguityItem] = []
         m = re.search(
-            r"(?:eligible\s+)?(?:branches|disciplines|departments|allowed\s+streams|streams|courses)\s*[:=]\s*([^\r\n]+)",
+            r"(?:eligible\s+)?(?:branches|disciplines|departments|allowed\s+streams|streams|courses)\*?[ \t]*[:=\-][ \t]*([^\r\n]+)",
             text,
             re.IGNORECASE,
         )
+        if not m:
+            # Handle OCR text where colon was missed or replaced by space
+            m = re.search(
+                r"(?:eligible\s+branches|branches\s+eligible|branches\s+allowed|disciplines\s+eligible)[ \t]*[:=\-]?[ \t]*([A-Za-z0-9&,/|\s\(\)\-]+?)(?:\n|Note:|- Note|Selection|SELECTION|$)",
+                text,
+                re.IGNORECASE,
+            )
         if m:
             raw_branches = m.group(1).strip()
             parsed = parse_branches_string(raw_branches)

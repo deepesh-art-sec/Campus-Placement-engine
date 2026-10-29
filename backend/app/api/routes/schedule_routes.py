@@ -25,6 +25,7 @@ from backend.app.scheduler.models import (
     SchedulerRound,
     ScheduleStatus,
 )
+from backend.app.scheduler.clash_service import detect_db_slot_clashes
 from backend.app.storage.database import get_db
 from backend.app.storage.models.entities import (
     DriveModel,
@@ -232,9 +233,19 @@ def get_drive_schedule(
     drive_id: str,
     db: Session = Depends(get_db),
 ) -> list[dict[str, Any]]:
-    """Retrieves schedule slots for a drive."""
+    """Retrieves schedule slots for a drive with cross-drive conflict detection."""
     stmt = select(SlotModel).where(SlotModel.drive_id == drive_id).order_by(SlotModel.start_time.asc())
     slots = db.execute(stmt).scalars().all()
+    all_clashes = detect_db_slot_clashes(db)
+
+    clash_map: dict[str, str] = {}
+    for c in all_clashes:
+        if c.get("status") == "unresolved":
+            if c.get("drive_a_id") == drive_id:
+                clash_map[c["student_roll"]] = f"Conflicts with {c['drive_b_company']} ({c['drive_b_time']})"
+            elif c.get("drive_b_id") == drive_id:
+                clash_map[c["student_roll"]] = f"Conflicts with {c['drive_a_company']} ({c['drive_a_time']})"
+
     return [
         {
             "id": s.id,
@@ -247,6 +258,8 @@ def get_drive_schedule(
             "time_slot": s.start_time.strftime("%H:%M"),
             "start_time": s.start_time.strftime("%d-%b-%Y %H:%M"),
             "end_time": s.end_time.strftime("%H:%M"),
+            "has_clash": (s.student and s.student.roll_no in clash_map) or False,
+            "clash_detail": clash_map.get(s.student.roll_no) if s.student else None,
         }
         for s in slots
     ]

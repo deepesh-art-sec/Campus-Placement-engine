@@ -269,20 +269,7 @@ class DeterministicExtractor:
                 confidence=0.88,
                 source_sentence=sentences[0] if sentences else "",
             )
-        elif any(k in text_lower for k in ("coding", "technical assessment", "software", "developer", "programming", "cse", "it", "algorithm")):
-            return ExtractedField(
-                field_name="role",
-                value="Software Development Engineer",
-                confidence=0.85,
-                source_sentence=sentences[0] if sentences else "",
-            )
-        else:
-            return ExtractedField(
-                field_name="role",
-                value="Graduate Engineer Trainee",
-                confidence=0.80,
-                source_sentence=sentences[0] if sentences else "",
-            )
+        return None
 
     def _extract_location(self, text: str, sentences: list[str]) -> ExtractedField[str] | None:
         m = RE_LOCATION.search(text)
@@ -306,12 +293,7 @@ class DeterministicExtractor:
                     confidence=0.88,
                     source_sentence=src,
                 )
-        return ExtractedField(
-            field_name="location",
-            value="Pan India / Remote",
-            confidence=0.75,
-            source_sentence=sentences[0] if sentences else "",
-        )
+        return None
 
     def _extract_drive_date(self, text: str, sentences: list[str]) -> ExtractedField[datetime.date] | None:
         m = RE_DRIVE_DATE.search(text)

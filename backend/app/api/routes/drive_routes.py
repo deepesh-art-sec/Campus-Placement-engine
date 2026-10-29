@@ -19,6 +19,7 @@ from backend.app.domain.models import DriveMode, DriveStatus
 from backend.app.storage.database import get_db
 import json
 from backend.app.importers.canonical_maps import parse_allowed_branches
+from backend.app.scheduler.clash_service import count_unresolved_clashes
 from backend.app.storage.models.entities import (
     CompanyModel,
     DriveModel,
@@ -113,16 +114,8 @@ def get_overview_metrics(
         ).scalars().all()
     )
 
-    # Unresolved clashes across all slots
-    slots = db.execute(select(SlotModel)).scalars().all()
-    clashes_count = 0
-    for i in range(len(slots)):
-        for j in range(i + 1, len(slots)):
-            if (
-                slots[i].student_id == slots[j].student_id
-                and slots[i].start_time == slots[j].start_time
-            ):
-                clashes_count += 1
+    # Unresolved clashes across published drive slots (deduplicated & filtered)
+    clashes_count = count_unresolved_clashes(db)
 
     # Stale versions (drives where requirements were never locked or versions > 1)
     stale_versions = len([d for d in all_drives if d.version > 1 and d.status != "published"])

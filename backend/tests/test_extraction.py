@@ -152,6 +152,7 @@ def test_document_loader_docx(loader: DocumentLoader) -> None:
 
 
 def test_scanned_pdf_error_when_ocr_disabled(loader: DocumentLoader) -> None:
+    loader.ocr_enabled = False
     # A dummy PDF without text layer
     import io
 

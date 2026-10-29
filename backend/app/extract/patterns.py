@@ -105,18 +105,38 @@ def parse_branches_string(branch_str: str) -> list[str]:
     if any(k in clean_lower for k in ("all branches", "any branch", "all disciplines", "open to all branches", "open to all disciplines", "all engineering disciplines")):
         return ["All Branches"]
 
-    # Protect composite phrases before splitting
+    # Protect composite phrases and protect 'AI & ML' from splitting on '&'
     normalized_text = branch_str
+    # Replace AI & ML variants with safe non-splitting token
+    normalized_text = re.sub(r"\bai\s*(?:and|&)\s*ml\b", "__AIML_TOKEN__", normalized_text, flags=re.IGNORECASE)
+    normalized_text = re.sub(r"\bartificial\s+intelligence(?:\s*(?:and|&)\s*machine\s+learning)?\b", "__AIML_TOKEN__", normalized_text, flags=re.IGNORECASE)
+
     for pattern, canonical in COMPOSITE_BRANCH_PHRASES:
         normalized_text = pattern.sub(canonical, normalized_text)
 
-    # Split by comma, slash, vertical bar, or standalone 'and' / '&'
-    raw_tokens = re.split(r"[,/|]|(?:\s+\band\b\s+)|(?:\s*&\s*)", normalized_text)
+    # Split by comma, slash, vertical bar, whitespace if no punctuation, or standalone 'and' / '&'
+    if not re.search(r"[,/|]", normalized_text) and " and " not in normalized_text and " & " not in normalized_text:
+        # Check if space-separated branch codes e.g. 'CSE IT ECE EEE'
+        raw_tokens = re.split(r"[,/|]|(?:\s+\band\b\s+)|(?:\s*&\s*)|\s+", normalized_text)
+    else:
+        raw_tokens = re.split(r"[,/|]|(?:\s+\band\b\s+)|(?:\s*&\s*)", normalized_text)
+
     result: list[str] = []
+    # Expand tokens that contain multiple concatenated acronyms e.g. 'CSE IT' or 'ECE EEE'
+    expanded_tokens = []
     for token in raw_tokens:
+        sub_words = token.strip().split()
+        if len(sub_words) > 1 and all(w.upper() in ("CSE", "CS", "IT", "ECE", "EEE", "MECH", "CIVIL", "CHEM", "BT") for w in sub_words):
+            expanded_tokens.extend(sub_words)
+        else:
+            expanded_tokens.append(token)
+
+    for token in expanded_tokens:
         tok_clean = token.strip()
         if not tok_clean:
             continue
+        if tok_clean == "__AIML_TOKEN__":
+            tok_clean = "AI & ML"
         norm = normalize_branch_token(tok_clean)
         if norm and norm not in result:
             result.append(norm)
@@ -193,6 +213,10 @@ RE_CTC_LINE = re.compile(
     r"(?:ctc(?:\s+offered)?|package|salary|stipend)[ \t]*[:=]?[ \t]*([^\r\n]+)",
     re.IGNORECASE,
 )
+RE_CTC_RANGE = re.compile(
+    r"(?:inr|rs\.?|₹)?\s*(\d+(?:\.\d+)?)\s*(?:-|to)\s*(\d+(?:\.\d+)?)\s*(?:lpa|lakhs?(?:\s+per\s+annum)?|lac)",
+    re.IGNORECASE,
+)
 RE_CTC_LPA = re.compile(
     r"(?:inr|rs\.?|₹)?\s*(\d+(?:\.\d+)?)\s*(?:lpa|lakhs?(?:\s+per\s+annum)?|lac)",
     re.IGNORECASE,
@@ -201,10 +225,22 @@ RE_CTC_NUMERIC_INR = re.compile(
     r"(?:inr|rs\.?|₹)\s*(\d{1,2}(?:,\d{2})*,\d{3})(?:\s*(?:per\s+annum|\/-\s*ctc))?",
     re.IGNORECASE,
 )
+RE_STIPEND_MONTHLY = re.compile(
+    r"(?:stipend|internship\s+stipend)[ \t]*[:=]?[ \t]*(?:inr|rs\.?|₹)?\s*(\d{1,2}(?:,\d{2})*,\d{3}|\d{4,6})\s*(?:\/|\s*per\s*)?(?:month|pm|mo)?",
+    re.IGNORECASE,
+)
+RE_DRIVE_TIME = re.compile(
+    r"(?:drive\s+time|interview\s+time|reporting\s+time|time)\s*[:=]\s*(\d{1,2}(?::\d{2})?\s*(?:am|pm)(?:\s*(?:to|-)\s*\d{1,2}(?::\d{2})?\s*(?:am|pm))?)",
+    re.IGNORECASE,
+)
+RE_CGPA_RANGE = re.compile(
+    r"(?:cgpa|gpa|pointer)\s*(?:between|range)?\s*[:=]?\s*(\d+(?:\.\d+)?)\s*(?:-|to)\s*(\d+(?:\.\d+)?)",
+    re.IGNORECASE,
+)
 
 # Company, Date, Mode, Role, Location
 RE_COMPANY = re.compile(
-    r"^[ \t]*(?:[-*•]|\d+\.|\*\*)*[ \t]*(?:company(?:\s+name)?|client)\*?[ \t]*[:=][ \t]*([^\r\n]+)",
+    r"^[ \t]*(?:[-*•]|\d+\.|\*\*)*[ \t]*(?:company(?:\s+name)?|client|organization|employer|recruiter|corporate)\*?[ \t]*[:=][ \t]*([^\r\n]+)",
     re.IGNORECASE | re.MULTILINE,
 )
 RE_ROLE = re.compile(

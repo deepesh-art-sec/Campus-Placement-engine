@@ -35,8 +35,11 @@ class ExtractedField(BaseModel, Generic[T]):
     value: T
     confidence: float = Field(ge=0.0, le=1.0)
     source_sentence: str
+    page_number: int | None = 1
+    extraction_method: str = "regex_rule"
     is_ambiguous: bool = False
     ambiguity_reason: str | None = None
+    is_missing: bool = False
 
 
 class AmbiguityItem(BaseModel):
@@ -75,10 +78,13 @@ class ExtractedFieldReview(BaseModel):
     extracted_value: Any
     confidence: float = Field(ge=0.0, le=1.0)
     source_sentence: str
+    page_number: int | None = 1
+    extraction_method: str = "regex_rule"
     status: FieldReviewStatus = FieldReviewStatus.PENDING
     correction: Any | None = None
     is_ambiguous: bool = False
     ambiguity_reason: str | None = None
+    is_missing: bool = False
     officer_notes: str | None = None
 
 
@@ -103,9 +109,12 @@ class ExtractedRequirements(BaseModel):
     # Drive Metadata
     company_name: ExtractedField[str] | None = None
     drive_date: ExtractedField[datetime.date] | None = None
+    drive_time: ExtractedField[str] | None = None
     application_deadline: ExtractedField[datetime.date] | None = None
     mode: ExtractedField[DriveMode] | None = None
     ctc_lpa: ExtractedField[float] | None = None
+    ctc_min_lpa: ExtractedField[float] | None = None
+    ctc_max_lpa: ExtractedField[float] | None = None
     stipend_monthly: ExtractedField[float] | None = None
     role: ExtractedField[str] | None = None
     location: ExtractedField[str] | None = None
@@ -114,6 +123,7 @@ class ExtractedRequirements(BaseModel):
 
     # Academic Criteria
     cgpa_min: ExtractedField[float] | None = None
+    cgpa_max: ExtractedField[float] | None = None
     tenth_percentage_min: ExtractedField[float] | None = None
     twelfth_percentage_min: ExtractedField[float] | None = None
     diploma_percentage_min: ExtractedField[float] | None = None
@@ -125,7 +135,13 @@ class ExtractedRequirements(BaseModel):
     gap_years_max: ExtractedField[int] | None = None
     allow_gap_during_degree: ExtractedField[bool] | None = None
 
+    # Skills & Restrictions
+    skills_required: ExtractedField[list[str]] | None = None
+    experience_required: ExtractedField[str] | None = None
+    other_restrictions: ExtractedField[list[str]] | None = None
+
     # Processing metadata
+    page_count: int = 1
     raw_text: str = ""
     source_sentences: list[str] = Field(default_factory=list)
     ambiguities: list[AmbiguityItem] = Field(default_factory=list)

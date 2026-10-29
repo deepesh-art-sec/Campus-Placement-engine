@@ -126,6 +126,8 @@ class ExtractedFieldDetail(BaseModel):
     extracted_value: Any = None
     confidence: float = 1.0
     source_sentence: str = ""
+    page_number: int | None = 1
+    extraction_method: str = "regex_rule"
     is_ambiguous: bool = False
     is_missing: bool = False
     is_uncertain: bool = False
@@ -407,6 +409,8 @@ async def parse_announcement(
                 extracted_value=val,
                 confidence=field_obj.confidence,
                 source_sentence=field_obj.source_sentence or "",
+                page_number=getattr(field_obj, "page_number", 1) or 1,
+                extraction_method=getattr(field_obj, "extraction_method", "regex_rule"),
                 is_ambiguous=field_obj.is_ambiguous,
                 is_missing=False,
                 is_uncertain=is_uncertain,

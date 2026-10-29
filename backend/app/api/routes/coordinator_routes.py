@@ -23,6 +23,7 @@ from backend.app.api.auth.dependencies import (
 )
 from backend.app.api.logging.audit_service import AuditService
 from backend.app.storage.database import get_db
+from backend.app.scheduler.clash_service import count_unresolved_clashes, detect_db_slot_clashes
 from backend.app.storage.models.entities import (
     CoordinatorRequestModel,
     DriveAttendanceModel,
@@ -116,15 +117,7 @@ def get_coordinator_overview_metrics(
     )
 
     # Clashes count
-    slots = db.execute(select(SlotModel)).scalars().all()
-    clashes_count = 0
-    for i in range(len(slots)):
-        for j in range(i + 1, len(slots)):
-            if (
-                slots[i].student_id == slots[j].student_id
-                and slots[i].start_time == slots[j].start_time
-            ):
-                clashes_count += 1
+    clashes_count = count_unresolved_clashes(db)
 
     # Coordinator Requests status breakdown
     reqs = db.execute(select(CoordinatorRequestModel)).scalars().all()
@@ -712,6 +705,15 @@ def reject_pending_result(
 # -----------------------------------------------------------------------------
 # 5. Clash Preference (Module 6)
 # -----------------------------------------------------------------------------
+
+@router.get("/clashes")
+def get_coordinator_clashes(
+    current_user: UserModel = Depends(require_officer_or_coordinator),
+    db: Session = Depends(get_db),
+) -> list[dict[str, Any]]:
+    """Retrieves all cross-drive student schedule clashes with resolution status."""
+    return detect_db_slot_clashes(db)
+
 
 @router.post("/clashes/preference")
 def record_clash_preference(
