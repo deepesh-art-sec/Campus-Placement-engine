@@ -50,6 +50,7 @@ const MainContent: React.FC = () => {
   // Officer Navigation
   const [activeTab, setActiveTab] = useState<NavTabId>("drives");
   const [activeDriveId, setActiveDriveId] = useState<string | undefined>();
+  const [selectedAnnouncementFilename, setSelectedAnnouncementFilename] = useState<string | undefined>();
   const [isTourOpen, setIsTourOpen] = useState(false);
 
   // Coordinator Navigation (Modules 1-12)
@@ -374,12 +375,16 @@ const MainContent: React.FC = () => {
           )}
           {activeTab === "create_drive" && (
             <DriveCreationReview
+              initialAnnouncementFilename={selectedAnnouncementFilename}
               onSuccess={(driveId) => handleTabSelect("eligibility", driveId)}
             />
           )}
           {activeTab === "announcements" && (
             <AnnouncementsLibraryView
-              onNavigateToExtract={() => setActiveTab("create_drive")}
+              onNavigateToExtract={(filename) => {
+                setSelectedAnnouncementFilename(filename);
+                setActiveTab("create_drive");
+              }}
               onNavigateToDrive={(id) => {
                 setActiveDriveId(id);
                 setActiveTab("drives");

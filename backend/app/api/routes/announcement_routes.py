@@ -12,8 +12,9 @@ import os
 import uuid
 from typing import Any
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status
 from fastapi.responses import FileResponse
+from backend.app.extract.deterministic_extractor import DeterministicExtractor
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
@@ -25,6 +26,7 @@ from backend.app.storage.models.entities import CompanyModel, DriveModel, DriveR
 router = APIRouter(prefix="/api/announcements", tags=["25 Announcements Library"])
 
 _loader = DocumentLoader()
+_extractor = DeterministicExtractor()
 
 
 def _get_announcements_dir() -> str:
@@ -183,6 +185,66 @@ def download_announcement_file(
     )
 
 
+@router.post("/upload")
+async def upload_announcement(
+    file: UploadFile = File(...),
+    current_user: UserModel = Depends(require_officer_or_coordinator),
+) -> dict[str, Any]:
+    """Uploads, validates, stores, and deterministically parses a new announcement document."""
+    orig_name = file.filename or "announcement.txt"
+    ext = orig_name.rsplit(".", 1)[-1].lower() if "." in orig_name else "txt"
+    if ext not in ("pdf", "docx", "eml", "txt"):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Unsupported format '.{ext}'. Supported formats: PDF, DOCX, EML, TXT.",
+        )
+
+    ann_dir = _get_announcements_dir()
+    safe_name = os.path.basename(orig_name).replace(" ", "_")
+    dest_path = os.path.join(ann_dir, safe_name)
+
+    contents = await file.read()
+    with open(dest_path, "wb") as f_out:
+        f_out.write(contents)
+
+    full_text = _loader.load_from_bytes(contents, safe_name)
+    extracted = _extractor.extract(full_text)
+
+    name_part = safe_name.rsplit(".", 1)[0].replace("_", " ").title()
+    company_name = extracted.company_name.value if extracted.company_name else name_part
+
+    gt = _get_ground_truth()
+    gt_entry = {
+        "company_name": company_name,
+        "ctc_lpa": extracted.ctc_lpa.value if extracted.ctc_lpa else 10.0,
+        "cgpa_min": extracted.cgpa_min.value if extracted.cgpa_min else 6.0,
+        "drive_date": extracted.drive_date.value.isoformat() if extracted.drive_date else "2026-11-20",
+        "mode": extracted.mode.value if extracted.mode else "on_campus",
+        "allowed_branches": extracted.allowed_branches.value if extracted.allowed_branches else ["All Branches"],
+        "active_backlogs_max": extracted.active_backlogs_max.value if extracted.active_backlogs_max is not None else 0,
+        "tenth_percentage_min": extracted.tenth_percentage_min.value if extracted.tenth_percentage_min else 60.0,
+        "twelfth_percentage_min": extracted.twelfth_percentage_min.value if extracted.twelfth_percentage_min else 60.0,
+        "rounds_count": len(extracted.rounds) if extracted.rounds else 3,
+    }
+    gt[safe_name] = gt_entry
+    gt_path = os.path.join(ann_dir, "ground_truth_labels.json")
+    try:
+        with open(gt_path, "w", encoding="utf-8") as f_gt:
+            json.dump(gt, f_gt, indent=2)
+    except Exception:
+        pass
+
+    return {
+        "filename": safe_name,
+        "company_name": company_name,
+        "format": ext.upper(),
+        "size_bytes": len(contents),
+        "text": full_text,
+        "extracted": gt_entry,
+        "message": f"Announcement '{safe_name}' successfully ingested and parsed!",
+    }
+
+
 @router.post("/{filename}/instant-drive")
 def create_drive_from_announcement(
     filename: str,
@@ -202,7 +264,22 @@ def create_drive_from_announcement(
     ground_truth = _get_ground_truth()
     gt = ground_truth.get(filename, {})
 
-    name_part = filename.split("_", 1)[1].rsplit(".", 1)[0].replace("_", " ").title()
+    name_part = filename.split("_", 1)[-1].rsplit(".", 1)[0].replace("_", " ").title()
+    if not gt or "company_name" not in gt:
+        with open(file_path, "rb") as fp:
+            dyn_text = _loader.load_from_bytes(fp.read(), filename)
+        dyn_ext = _extractor.extract(dyn_text)
+        gt = {
+            "company_name": dyn_ext.company_name.value if dyn_ext.company_name else name_part,
+            "ctc_lpa": dyn_ext.ctc_lpa.value if dyn_ext.ctc_lpa else 12.0,
+            "cgpa_min": dyn_ext.cgpa_min.value if dyn_ext.cgpa_min else 6.0,
+            "drive_date": dyn_ext.drive_date.value.isoformat() if dyn_ext.drive_date else "2026-11-20",
+            "mode": dyn_ext.mode.value if dyn_ext.mode else "on_campus",
+            "allowed_branches": dyn_ext.allowed_branches.value if dyn_ext.allowed_branches else ["All Branches"],
+            "active_backlogs_max": dyn_ext.active_backlogs_max.value if dyn_ext.active_backlogs_max is not None else 0,
+            "tenth_percentage_min": dyn_ext.tenth_percentage_min.value if dyn_ext.tenth_percentage_min else 60.0,
+            "twelfth_percentage_min": dyn_ext.twelfth_percentage_min.value if dyn_ext.twelfth_percentage_min else 60.0,
+        }
     company_name = gt.get("company_name", name_part.split()[0])
     drive_id = f"drv_{uuid.uuid4().hex[:8]}"
 

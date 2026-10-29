@@ -30,6 +30,7 @@ import {
 interface DriveCreationReviewProps {
   onSuccess: (driveId: string) => void;
   initialMode?: "manual" | "nlp";
+  initialAnnouncementFilename?: string;
 }
 
 const ALL_CAMPUS_BRANCHES = [
@@ -47,9 +48,10 @@ const ALL_CAMPUS_BRANCHES = [
 export const DriveCreationReview: React.FC<DriveCreationReviewProps> = ({
   onSuccess,
   initialMode = "nlp",
+  initialAnnouncementFilename,
 }) => {
   // Mode switcher: "manual" or "nlp"
-  const [creationMode, setCreationMode] = useState<"manual" | "nlp">(initialMode);
+  const [creationMode, setCreationMode] = useState<"manual" | "nlp">(initialAnnouncementFilename ? "nlp" : initialMode);
 
   // -------------------------------------------------------------
   // Manual Drive Creation State
@@ -120,6 +122,12 @@ export const DriveCreationReview: React.FC<DriveCreationReviewProps> = ({
       })
       .catch(() => {});
   }, []);
+
+  useEffect(() => {
+    if (initialAnnouncementFilename && samples.length > 0) {
+      handleSelectSample(initialAnnouncementFilename);
+    }
+  }, [initialAnnouncementFilename, samples]);
 
   const handleSelectSample = (sampleFilename: string) => {
     const s = samples.find((x) => x.filename === sampleFilename);
@@ -274,15 +282,32 @@ export const DriveCreationReview: React.FC<DriveCreationReviewProps> = ({
     if (!parseResult) return;
     try {
       setError(null);
-      const ctcVal = parseResult.fields["ctc_lpa"]?.extracted_value || 12.0;
+      const ctcVal = parseResult.fields["ctc_lpa"]?.extracted_value ?? 12.0;
+      const cgpaVal = parseResult.fields["cgpa_min"]?.extracted_value;
+      const tenthVal = parseResult.fields["tenth_percentage_min"]?.extracted_value;
+      const twelfthVal = parseResult.fields["twelfth_percentage_min"]?.extracted_value;
+      const activeBacklogsVal = parseResult.fields["active_backlogs_max"]?.extracted_value;
+      const gapYearsVal = parseResult.fields["gap_years_max"]?.extracted_value;
+      const branchesVal = parseResult.fields["allowed_branches"]?.extracted_value;
+      const roleVal = parseResult.fields["role"]?.extracted_value || parseResult.job_role;
+      const locVal = parseResult.fields["location"]?.extracted_value;
+
       const res = await api.post<any>("/api/drives", {
         company_name: parseResult.company_name || companyName,
         drive_date: parseResult.fields["drive_date"]?.extracted_value || "2026-11-25",
         mode: parseResult.fields["mode"]?.extracted_value || "on_campus",
         ctc_lpa: typeof ctcVal === "number" ? ctcVal : parseFloat(ctcVal) || 12.0,
+        job_role: roleVal || undefined,
+        job_location: locVal || undefined,
+        min_cgpa: cgpaVal !== undefined && cgpaVal !== null ? Number(cgpaVal) : 6.0,
+        min_tenth_percentage: tenthVal !== undefined && tenthVal !== null ? Number(tenthVal) : 60.0,
+        min_twelfth_percentage: twelfthVal !== undefined && twelfthVal !== null ? Number(twelfthVal) : undefined,
+        allowed_branches: Array.isArray(branchesVal) && branchesVal.length > 0 ? branchesVal : ["CSE", "IT", "ECE"],
+        max_active_backlogs: activeBacklogsVal !== undefined && activeBacklogsVal !== null ? Number(activeBacklogsVal) : 0,
+        max_gap_years: gapYearsVal !== undefined && gapYearsVal !== null ? Number(gapYearsVal) : 1,
       });
 
-      setSuccessMsg(`Recruitment drive for ${res.company_name} created successfully!`);
+      setSuccessMsg(`Recruitment drive for ${res.company_name} created successfully with full extracted eligibility criteria!`);
       onSuccess(res.id);
     } catch (err: any) {
       setError(err.message || "Failed to create recruitment drive.");

@@ -128,6 +128,18 @@ RE_TENTH_AND_TWELFTH = re.compile(
     r"(?:10th\s*(?:&|and)\s*12th|x\s*(?:&|and)\s*xii)\s*(?:percentage)?\s*[:=]?\s*(?:minimum\s+)?(\d+(?:\.\d+)?)\s*%",
     re.IGNORECASE,
 )
+RE_PERCENT_BEFORE_TENTH_AND_TWELFTH = re.compile(
+    r"(?:minimum\s+|min\s+|at\s+least\s+)?(\d+(?:\.\d+)?)\s*%\s*(?:in|aggregate\s+in|across|in\s+both)?\s*(?:10th|x|class\s+10|ssc)\s*(?:&|and|,)\s*(?:12th|xii|class\s+12|hsc|intermediate)",
+    re.IGNORECASE,
+)
+RE_PERCENT_BEFORE_TENTH = re.compile(
+    r"(?:minimum\s+|min\s+|at\s+least\s+)?(\d+(?:\.\d+)?)\s*%\s*(?:in|for)?\s*(?:10th|x|class\s+10|ssc)",
+    re.IGNORECASE,
+)
+RE_PERCENT_BEFORE_TWELFTH = re.compile(
+    r"(?:minimum\s+|min\s+|at\s+least\s+)?(\d+(?:\.\d+)?)\s*%\s*(?:in|for)?\s*(?:12th|xii|class\s+12|hsc|intermediate)",
+    re.IGNORECASE,
+)
 RE_TENTH_EXPLICIT = re.compile(
     r"(?:10th|class\s+10|ssc|matriculation)\s*(?:percentage)?\s*[:=]?\s*(?:minimum\s+)?(\d+(?:\.\d+)?)\s*%",
     re.IGNORECASE,
@@ -176,12 +188,20 @@ RE_COMPANY = re.compile(
     r"^(?:company(?:\s+name)?|client)[ \t]*[:=][ \t]*([^\r\n]+)",
     re.IGNORECASE | re.MULTILINE,
 )
+RE_ROLE = re.compile(
+    r"^(?:job\s+role|role|position|profile|designation|title)[ \t]*[:=][ \t]*([^\r\n]+)",
+    re.IGNORECASE | re.MULTILINE,
+)
+RE_LOCATION = re.compile(
+    r"^(?:job\s+location|location|posting\s+location|work\s+location|venue)[ \t]*[:=][ \t]*([^\r\n]+)",
+    re.IGNORECASE | re.MULTILINE,
+)
 RE_SUBJECT_COMPANY = re.compile(
     r"Subject:\s*(?:Campus\s+Recruitment\s+(?:Announcement|Drive):\s*)?([^(\n]+?)(?:\s*\([^)]*\))?$",
     re.IGNORECASE | re.MULTILINE,
 )
 RE_DRIVE_DATE = re.compile(
-    r"(?:drive\s+date|date\s+of\s+drive)[ \t]*[:=][ \t]*([0-9]{4}-[0-9]{2}-[0-9]{2}|\d{1,2}(?:st|nd|rd|th)?\s+[A-Za-z]+\s+\d{4})",
+    r"(?:drive\s+date|date\s+of\s+placement\s+drive|date\s+of\s+drive|interview\s+date|placement\s+date|drive\s+scheduled\s+date|date)[ \t]*[:=][ \t]*([^\r\n,;]+)",
     re.IGNORECASE,
 )
 RE_DRIVE_MODE = re.compile(
@@ -226,8 +246,16 @@ def parse_date_string(date_str: str) -> datetime.date | None:
         pass
 
     # Try common formats
-    clean_verbal = re.sub(r"(st|nd|rd|th)", "", clean)
-    for fmt in ("%d %b %Y", "%d %B %Y", "%Y/%m/%d", "%d-%m-%Y"):
+    clean_verbal = re.sub(r"(st|nd|rd|th)", "", clean).replace(",", " ").strip()
+    clean_verbal = re.sub(r"\s+", " ", clean_verbal)
+    for fmt in (
+        "%d %b %Y", "%d %B %Y",
+        "%d-%b-%Y", "%d-%B-%Y",
+        "%d/%m/%Y", "%d-%m-%Y",
+        "%Y/%m/%d", "%Y-%m-%d",
+        "%B %d %Y", "%b %d %Y",
+        "%m/%d/%Y", "%m-%d-%Y",
+    ):
         try:
             return datetime.datetime.strptime(clean_verbal, fmt).date()
         except ValueError:

@@ -27,6 +27,8 @@ from backend.app.extract.patterns import (
     RE_CGPA_INVERTED,
     RE_CGPA_NO_CUTOFF,
     RE_COMPANY,
+    RE_ROLE,
+    RE_LOCATION,
     RE_CTC_LPA,
     RE_CTC_NUMERIC_INR,
     RE_DEGREE,
@@ -38,6 +40,9 @@ from backend.app.extract.patterns import (
     RE_ROUND_LINE,
     RE_SUBJECT_COMPANY,
     RE_TENTH_AND_TWELFTH,
+    RE_PERCENT_BEFORE_TENTH_AND_TWELFTH,
+    RE_PERCENT_BEFORE_TENTH,
+    RE_PERCENT_BEFORE_TWELFTH,
     RE_TENTH_EXPLICIT,
     RE_THROUGHOUT_PERCENTAGE,
     RE_TWELFTH_EXPLICIT,
@@ -64,6 +69,8 @@ class DeterministicExtractor:
 
         # 1. Metadata
         company = self._extract_company(cleaned, sentences)
+        role = self._extract_role(cleaned, sentences)
+        location = self._extract_location(cleaned, sentences)
         drive_date = self._extract_drive_date(cleaned, sentences)
         mode = self._extract_mode(cleaned, sentences)
         ctc_lpa = self._extract_ctc(cleaned, sentences)
@@ -89,7 +96,7 @@ class DeterministicExtractor:
         # Calculate overall confidence
         extracted_fields = [
             f for f in (
-                company, drive_date, mode, ctc_lpa, cgpa_min, tenth_pct, twelfth_pct,
+                company, role, location, drive_date, mode, ctc_lpa, cgpa_min, tenth_pct, twelfth_pct,
                 active_backlogs, hist_backlogs, branches, programs, gap_years,
             ) if f is not None
         ]
@@ -131,6 +138,8 @@ class DeterministicExtractor:
 
         return ExtractedRequirements(
             company_name=company,
+            role=role,
+            location=location,
             drive_date=drive_date,
             mode=mode,
             ctc_lpa=ctc_lpa,
@@ -185,6 +194,32 @@ class DeterministicExtractor:
 
         return None
 
+    def _extract_role(self, text: str, sentences: list[str]) -> ExtractedField[str] | None:
+        m = RE_ROLE.search(text)
+        if m:
+            val = m.group(1).strip()
+            src = self._find_sentence(sentences, val)
+            return ExtractedField(
+                field_name="role",
+                value=val,
+                confidence=0.95,
+                source_sentence=src,
+            )
+        return None
+
+    def _extract_location(self, text: str, sentences: list[str]) -> ExtractedField[str] | None:
+        m = RE_LOCATION.search(text)
+        if m:
+            val = m.group(1).strip()
+            src = self._find_sentence(sentences, val)
+            return ExtractedField(
+                field_name="location",
+                value=val,
+                confidence=0.92,
+                source_sentence=src,
+            )
+        return None
+
     def _extract_drive_date(self, text: str, sentences: list[str]) -> ExtractedField[datetime.date] | None:
         m = RE_DRIVE_DATE.search(text)
         if m:
@@ -210,6 +245,18 @@ class DeterministicExtractor:
                 field_name="mode",
                 value=mode,
                 confidence=0.95,
+                source_sentence=src,
+            )
+        # Fallback: scan for on-campus / virtual / hybrid mentions anywhere in document
+        m_fallback = re.search(r"\b(on[- ]campus|in[- ]person|virtual|hybrid|online)\b", text, re.IGNORECASE)
+        if m_fallback:
+            raw_mode = m_fallback.group(1).strip()
+            mode = parse_mode_string(raw_mode)
+            src = self._find_sentence(sentences, raw_mode)
+            return ExtractedField(
+                field_name="mode",
+                value=mode,
+                confidence=0.90,
                 source_sentence=src,
             )
         return None
@@ -337,7 +384,7 @@ class DeterministicExtractor:
             return tenth, twelfth, ambiguities
 
         # Combined 10th and 12th pattern
-        m_both = RE_TENTH_AND_TWELFTH.search(text)
+        m_both = RE_TENTH_AND_TWELFTH.search(text) or RE_PERCENT_BEFORE_TENTH_AND_TWELFTH.search(text)
         if m_both:
             val = float(m_both.group(1))
             src = self._find_sentence(sentences, m_both.group(0))
@@ -356,7 +403,7 @@ class DeterministicExtractor:
             return tenth, twelfth, ambiguities
 
         # Separate 10th
-        m_10 = RE_TENTH_EXPLICIT.search(text)
+        m_10 = RE_TENTH_EXPLICIT.search(text) or RE_PERCENT_BEFORE_TENTH.search(text)
         if m_10:
             val = float(m_10.group(1))
             src = self._find_sentence(sentences, m_10.group(0))
@@ -368,7 +415,7 @@ class DeterministicExtractor:
             )
 
         # Separate 12th
-        m_12 = RE_TWELFTH_EXPLICIT.search(text)
+        m_12 = RE_TWELFTH_EXPLICIT.search(text) or RE_PERCENT_BEFORE_TWELFTH.search(text)
         if m_12:
             val = float(m_12.group(1))
             src = self._find_sentence(sentences, m_12.group(0))
@@ -388,91 +435,104 @@ class DeterministicExtractor:
         active_field: ExtractedField[int] | None = None
         history_field: ExtractedField[int] | None = None
 
-        m_line = RE_BACKLOG_LINE.search(text)
-        if not m_line:
+        # Find lines or sentences mentioning backlogs or arrears
+        candidate_lines = []
+        for line in text.splitlines():
+            if re.search(r"\b(?:backlogs?|arrears?)\b", line, re.IGNORECASE):
+                candidate_lines.append(line.strip())
+        for sent in sentences:
+            if re.search(r"\b(?:backlogs?|arrears?)\b", sent, re.IGNORECASE) and sent not in candidate_lines:
+                candidate_lines.append(sent.strip())
+
+        if not candidate_lines:
             return None, None, ambiguities
 
-        line_val = m_line.group(1).strip()
-        line_lower = line_val.lower()
-        src = self._find_sentence(sentences, line_val)
+        # Analyze each candidate context
+        for line_val in candidate_lines:
+            line_lower = line_val.lower()
+            src = self._find_sentence(sentences, line_val)
 
-        # Case 1: Strictly 0 / Clean record / Zero throughout / No history of backlogs
-        if any(
-            k in line_lower
-            for k in (
-                "no active or historical backlogs",
-                "strictly no history of backlogs",
-                "no history of backlogs",
-                "zero backlogs throughout",
-                "strictly clean academic record",
-                "clean academic history",
-            )
-        ):
-            active_field = ExtractedField(
-                field_name="active_backlogs_max",
-                value=0,
-                confidence=0.98,
-                source_sentence=src,
-            )
-            history_field = ExtractedField(
-                field_name="historical_backlogs_max",
-                value=0,
-                confidence=0.98,
-                source_sentence=src,
-            )
-            return active_field, history_field, ambiguities
-
-        # Case 2: Max cleared / history backlogs permitted
-        # e.g. "Maximum 1 cleared backlog permitted, 0 active" or "no active backlogs, max 1 cleared"
-        m_cleared = re.search(r"max(?:imum)?\s*(\d+)\s*cleared", line_lower)
-        if m_cleared:
-            hist_count = int(m_cleared.group(1))
-            history_field = ExtractedField(
-                field_name="historical_backlogs_max",
-                value=hist_count,
-                confidence=0.95,
-                source_sentence=src,
-            )
-
-        # Check active backlogs count
-        if "at time of joining" in line_lower:
-            ambiguities.append(
-                AmbiguityItem(
-                    field_name="backlog_timing",
-                    raw_text=line_val,
-                    source_sentence=src,
-                    reason="Backlog status specified 'at time of joining' rather than drive date.",
-                    suggested_action="Verify if students with current backlogs are allowed to sit for interview.",
+            # Case 1: Strictly clean record / 0 active & historical
+            if any(
+                k in line_lower
+                for k in (
+                    "no active or historical backlogs",
+                    "strictly no history of backlogs",
+                    "no history of backlogs",
+                    "zero backlogs throughout",
+                    "strictly clean academic record",
+                    "clean academic history",
                 )
-            )
+            ):
+                active_field = ExtractedField(
+                    field_name="active_backlogs_max",
+                    value=0,
+                    confidence=0.98,
+                    source_sentence=src,
+                )
+                history_field = ExtractedField(
+                    field_name="historical_backlogs_max",
+                    value=0,
+                    confidence=0.98,
+                    source_sentence=src,
+                )
+                return active_field, history_field, ambiguities
 
-        m_active_num = re.search(r"max(?:imum)?\s*(\d+)\s*active", line_lower)
-        if m_active_num:
-            active_count = int(m_active_num.group(1))
-            active_field = ExtractedField(
-                field_name="active_backlogs_max",
-                value=active_count,
-                confidence=0.95,
-                source_sentence=src,
-            )
-        elif any(
-            k in line_lower
-            for k in (
-                "0 active",
-                "no active",
-                "no standing arrears",
-                "0 standing arrears",
-                "no standing backlogs",
-                "no active arrears",
-                "zero backlogs at the time",
-            )
-        ):
-            active_field = ExtractedField(
-                field_name="active_backlogs_max",
-                value=0,
-                confidence=0.95,
-                source_sentence=src,
-            )
+            # Case 2: Max cleared / history backlogs permitted
+            m_cleared = re.search(r"(?:max(?:imum)?|up\s+to)?\s*(\d+)\s*(?:cleared|history|historical)\s*(?:backlogs?|arrears?)?", line_lower)
+            if m_cleared and history_field is None:
+                hist_count = int(m_cleared.group(1))
+                history_field = ExtractedField(
+                    field_name="historical_backlogs_max",
+                    value=hist_count,
+                    confidence=0.95,
+                    source_sentence=src,
+                )
+
+            # Case 3: Ambiguity on timing
+            if "at time of joining" in line_lower or "at the time of joining" in line_lower:
+                ambiguities.append(
+                    AmbiguityItem(
+                        field_name="backlog_timing",
+                        raw_text=line_val,
+                        source_sentence=src,
+                        reason="Backlog status specified 'at time of joining' rather than drive date.",
+                        suggested_action="Verify if students with current backlogs are allowed to sit for interview.",
+                    )
+                )
+
+            # Case 4: Active backlogs count
+            m_active_num = re.search(r"(?:max(?:imum)?|up\s+to)?\s*(\d+)\s*active\s*(?:backlogs?|arrears?)?", line_lower)
+            if m_active_num and active_field is None:
+                active_count = int(m_active_num.group(1))
+                active_field = ExtractedField(
+                    field_name="active_backlogs_max",
+                    value=active_count,
+                    confidence=0.95,
+                    source_sentence=src,
+                )
+            elif active_field is None and any(
+                k in line_lower
+                for k in (
+                    "0 active",
+                    "no active",
+                    "no standing arrears",
+                    "0 standing arrears",
+                    "no standing backlogs",
+                    "no active arrears",
+                    "zero backlogs",
+                    "zero active",
+                    "nil active",
+                    "without active backlogs",
+                    "without any active backlogs",
+                )
+            ):
+                active_field = ExtractedField(
+                    field_name="active_backlogs_max",
+                    value=0,
+                    confidence=0.95,
+                    source_sentence=src,
+                )
 
         return active_field, history_field, ambiguities
 
@@ -558,34 +618,53 @@ class DeterministicExtractor:
     def _extract_gap_years(
         self, text: str, sentences: list[str]
     ) -> tuple[ExtractedField[int] | None, ExtractedField[bool] | None]:
-        m_gap = RE_GAP_YEARS.search(text)
-        if not m_gap:
+        candidate_lines = []
+        for line in text.splitlines():
+            if re.search(r"\b(?:gap|gaps)\b", line, re.IGNORECASE):
+                candidate_lines.append(line.strip())
+        for sent in sentences:
+            if re.search(r"\b(?:gap|gaps)\b", sent, re.IGNORECASE) and sent not in candidate_lines:
+                candidate_lines.append(sent.strip())
+
+        if not candidate_lines:
             return None, None
 
-        raw_val = m_gap.group(1).strip()
-        src = self._find_sentence(sentences, raw_val)
+        for raw_val in candidate_lines:
+            src = self._find_sentence(sentences, raw_val)
+            val_lower = raw_val.lower()
 
-        max_gap = 0
-        m_num = RE_MAX_GAP_NUM.search(raw_val)
-        if m_num:
-            max_gap = int(m_num.group(1))
+            max_gap = 0
+            # Matches "Maximum 1 year of education gap" or "1 year gap" or "gap: max 1 year"
+            m_num = (
+                re.search(r"(?:maximum|max|up\s+to)?\s*(\d+)\s*(?:years?|yrs?)(?:\s+of)?\s+(?:education\s+)?gap", val_lower)
+                or re.search(r"(?:education\s+)?gap(?:\s+limit)?[ \t]*[:=]?[ \t]*(?:maximum|max|up\s+to)?\s*(\d+)", val_lower)
+                or RE_MAX_GAP_NUM.search(raw_val)
+            )
+            if m_num:
+                max_gap = int(m_num.group(1))
 
-        allow_during_degree = not ("no gaps during engineering" in raw_val.lower() or "no gap during degree" in raw_val.lower())
+            allow_during_degree = not (
+                "no gaps during engineering" in val_lower
+                or "no gap during degree" in val_lower
+                or "no gaps during degree" in val_lower
+            )
 
-        gap_field = ExtractedField(
-            field_name="gap_years_max",
-            value=max_gap,
-            confidence=0.95,
-            source_sentence=src,
-        )
-        allow_field = ExtractedField(
-            field_name="allow_gap_during_degree",
-            value=allow_during_degree,
-            confidence=0.95,
-            source_sentence=src,
-        )
+            gap_field = ExtractedField(
+                field_name="gap_years_max",
+                value=max_gap,
+                confidence=0.95,
+                source_sentence=src,
+            )
+            allow_field = ExtractedField(
+                field_name="allow_gap_during_degree",
+                value=allow_during_degree,
+                confidence=0.95,
+                source_sentence=src,
+            )
 
-        return gap_field, allow_field
+            return gap_field, allow_field
+
+        return None, None
 
     def _extract_rounds(self, text: str, sentences: list[str]) -> list[ExtractedRound]:
         rounds: list[ExtractedRound] = []
