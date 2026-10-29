@@ -203,6 +203,7 @@ export const DriveCreationReview: React.FC<DriveCreationReviewProps> = ({
     }
 
     setFile(selectedFile);
+    setParseResult(null);
     setError(null);
 
     // Auto-infer full clean company name
@@ -1084,8 +1085,30 @@ export const DriveCreationReview: React.FC<DriveCreationReviewProps> = ({
                   Announcement Document Transfer (Drag & Drop)
                 </label>
 
+                {/* Permanent hidden input so ref is always mounted even when file is active */}
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept=".txt,.pdf,.docx,.eml,.csv,.xlsx"
+                  onChange={(e) => {
+                    if (e.target.files && e.target.files.length > 0) {
+                      handleFileSelected(e.target.files[0]);
+                    }
+                  }}
+                  className="hidden"
+                />
+
                 {file ? (
-                  <div className="p-4 bg-gradient-to-r from-slate-50 via-blue-50/20 to-emerald-50/40 border-2 border-emerald-400/80 rounded-2xl shadow-xs transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                  <div
+                    onDragOver={handleDragOver}
+                    onDragLeave={handleDragLeave}
+                    onDrop={handleDrop}
+                    className={`p-4 bg-gradient-to-r from-slate-50 via-blue-50/20 to-emerald-50/40 border-2 rounded-2xl shadow-xs transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-3 ${
+                      isDragging
+                        ? "border-emerald-500 bg-emerald-100/70 ring-4 ring-emerald-500/20 scale-[1.01]"
+                        : "border-emerald-400/80"
+                    }`}
+                  >
                     <div className="flex items-center gap-3.5 min-w-0">
                       <div className="w-12 h-12 rounded-xl bg-white border border-slate-200 flex items-center justify-center shrink-0 shadow-xs">
                         {file.name.toLowerCase().endsWith(".pdf") ? (
@@ -1112,7 +1135,7 @@ export const DriveCreationReview: React.FC<DriveCreationReviewProps> = ({
                           <span>•</span>
                           <span className="text-emerald-700 font-semibold flex items-center gap-1">
                             <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" />
-                            File Loaded & Ready for Extraction
+                            {isDragging ? "Drop new file to replace document" : "File Loaded & Ready for Extraction"}
                           </span>
                         </div>
                       </div>
@@ -1121,8 +1144,13 @@ export const DriveCreationReview: React.FC<DriveCreationReviewProps> = ({
                     <div className="flex items-center gap-2 shrink-0">
                       <button
                         type="button"
-                        onClick={() => fileInputRef.current?.click()}
-                        className="px-3 py-1.5 text-xs font-bold text-slate-700 bg-white hover:bg-slate-100 border border-slate-200 rounded-xl transition-all cursor-pointer shadow-2xs"
+                        onClick={() => {
+                          if (fileInputRef.current) {
+                            fileInputRef.current.value = "";
+                            fileInputRef.current.click();
+                          }
+                        }}
+                        className="px-3 py-1.5 text-xs font-bold text-slate-700 bg-white hover:bg-slate-100 border border-slate-200 hover:border-slate-300 rounded-xl transition-all cursor-pointer shadow-2xs"
                       >
                         Change File
                       </button>
@@ -1130,6 +1158,7 @@ export const DriveCreationReview: React.FC<DriveCreationReviewProps> = ({
                         type="button"
                         onClick={() => {
                           setFile(null);
+                          setParseResult(null);
                           if (fileInputRef.current) fileInputRef.current.value = "";
                         }}
                         className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition-all cursor-pointer"
@@ -1144,24 +1173,18 @@ export const DriveCreationReview: React.FC<DriveCreationReviewProps> = ({
                     onDragOver={handleDragOver}
                     onDragLeave={handleDragLeave}
                     onDrop={handleDrop}
-                    onClick={() => fileInputRef.current?.click()}
+                    onClick={() => {
+                      if (fileInputRef.current) {
+                        fileInputRef.current.value = "";
+                        fileInputRef.current.click();
+                      }
+                    }}
                     className={`border-2 border-dashed rounded-2xl p-6 text-center transition-all cursor-pointer select-none ${
                       isDragging
                         ? "border-emerald-500 bg-emerald-50/80 ring-4 ring-emerald-500/10 scale-[1.01] shadow-lg shadow-emerald-500/10"
                         : "border-slate-300 hover:border-emerald-500/70 hover:bg-slate-50/70 bg-slate-50/40"
                     }`}
                   >
-                    <input
-                      ref={fileInputRef}
-                      type="file"
-                      accept=".txt,.pdf,.docx,.eml,.csv,.xlsx"
-                      onChange={(e) => {
-                        if (e.target.files && e.target.files.length > 0) {
-                          handleFileSelected(e.target.files[0]);
-                        }
-                      }}
-                      className="hidden"
-                    />
 
                     <div className="flex flex-col items-center justify-center space-y-2.5">
                       <div

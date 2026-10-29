@@ -110,7 +110,76 @@ export async function request<T>(
   return (await response.text()) as unknown as T;
 }
 
+
+export async function downloadFile(
+  url: string,
+  defaultFilename: string = "export.csv"
+): Promise<string> {
+  const headers = new Headers();
+  const token = getCsrfToken();
+  if (token) {
+    headers.set("X-CSRF-Token", token);
+  }
+
+  const response = await fetch(url, {
+    method: "GET",
+    headers,
+    credentials: "include",
+  });
+
+  auditTracker.record(url, "GET", response.status);
+
+  if (!response.ok) {
+    let errorDetail = `Export failed with status ${response.status}`;
+    try {
+      const rawText = await response.text();
+      try {
+        const errJson = JSON.parse(rawText);
+        errorDetail = errJson.detail || JSON.stringify(errJson);
+      } catch {
+        errorDetail = rawText || errorDetail;
+      }
+    } catch {
+      // keep default errorDetail
+    }
+    throw new Error(errorDetail);
+  }
+
+  // Auto-refresh CSRF cookie if returned
+  const returnedCsrf = response.headers.get("X-CSRF-Token");
+  if (returnedCsrf) {
+    cachedCsrfToken = returnedCsrf;
+  }
+
+  // Extract filename from Content-Disposition header if available
+  let filename = defaultFilename;
+  const disposition = response.headers.get("Content-Disposition");
+  if (disposition) {
+    const filenameMatch = disposition.match(/filename\*?=(?:UTF-8'')?["']?([^"';]+)["']?/i);
+    if (filenameMatch && filenameMatch[1]) {
+      filename = decodeURIComponent(filenameMatch[1].trim());
+    }
+  }
+
+  const blob = await response.blob();
+  const blobUrl = window.URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.style.display = "none";
+  a.href = blobUrl;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+
+  setTimeout(() => {
+    window.URL.revokeObjectURL(blobUrl);
+    a.remove();
+  }, 1000);
+
+  return filename;
+}
+
 export const api = {
+  download: (url: string, defaultFilename?: string) => downloadFile(url, defaultFilename),
   get: <T>(url: string, signal?: AbortSignal) => request<T>(url, { method: "GET", signal }),
   post: <T>(url: string, body?: any, signal?: AbortSignal) => {
     const isFormData = body instanceof FormData;

@@ -35,6 +35,7 @@ from backend.app.api.routes import (
     export_routes,
     extract_routes,
     imats_routes,
+    message_routes,
     policy_routes,
     publish_routes,
     recruiter_routes,
@@ -173,6 +174,7 @@ app.include_router(announcement_routes.router)
 app.include_router(backup_routes.router)
 app.include_router(user_routes.router)
 app.include_router(coordinator_routes.router)
+app.include_router(message_routes.router)
 
 
 @app.get("/api/health")

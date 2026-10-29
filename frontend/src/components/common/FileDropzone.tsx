@@ -64,7 +64,12 @@ export const FileDropzone: React.FC<FileDropzoneProps> = ({
           ? "border-emerald-400 bg-emerald-950/20 shadow-lg shadow-emerald-950/40"
           : "border-[#1e3258] hover:border-emerald-500/50 bg-[#080e1c]"
       } ${disabled ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}`}
-      onClick={() => !disabled && fileInputRef.current?.click()}
+      onClick={() => {
+        if (!disabled && fileInputRef.current) {
+          fileInputRef.current.value = "";
+          fileInputRef.current.click();
+        }
+      }}
     >
       <input
         ref={fileInputRef}
@@ -91,12 +96,42 @@ export const FileDropzone: React.FC<FileDropzoneProps> = ({
         </div>
 
         {selectedFile && (
-          <div className="flex items-center gap-2 p-2 bg-[#0d1527] border border-[#1e3258] rounded-xl text-xs text-slate-200 mt-2">
-            <FileText className="w-4 h-4 text-emerald-400" />
-            <span className="font-mono truncate max-w-xs">{selectedFile.name}</span>
-            <span className="text-[10px] text-slate-400">
-              ({(selectedFile.size / 1024).toFixed(1)} KB)
-            </span>
+          <div
+            className="flex items-center justify-between gap-3 p-2.5 bg-[#0d1527] border border-[#1e3258] rounded-xl text-xs text-slate-200 mt-2 max-w-md w-full"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center gap-2 min-w-0">
+              <FileText className="w-4 h-4 text-emerald-400 shrink-0" />
+              <span className="font-mono truncate">{selectedFile.name}</span>
+              <span className="text-[10px] text-slate-400 shrink-0">
+                ({(selectedFile.size / 1024).toFixed(1)} KB)
+              </span>
+            </div>
+            <div className="flex items-center gap-1.5 shrink-0">
+              <button
+                type="button"
+                onClick={() => {
+                  if (fileInputRef.current) {
+                    fileInputRef.current.value = "";
+                    fileInputRef.current.click();
+                  }
+                }}
+                className="px-2 py-1 text-[11px] font-bold text-slate-200 bg-slate-800 hover:bg-slate-700 rounded-lg transition-colors cursor-pointer"
+              >
+                Change File
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setSelectedFile(null);
+                  if (fileInputRef.current) fileInputRef.current.value = "";
+                }}
+                className="p-1 text-slate-400 hover:text-rose-400 rounded-lg hover:bg-rose-950/30 transition-colors cursor-pointer"
+                title="Remove file"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+            </div>
           </div>
         )}
       </div>

@@ -175,23 +175,9 @@ export const StudentRegistryView: React.FC = () => {
       const url = branchFilter && branchFilter !== "all"
         ? `/api/students/export/csv?branch=${encodeURIComponent(branchFilter)}`
         : "/api/students/export/csv";
-      const response = await fetch(url, {
-        credentials: "include",
-      });
-      if (!response.ok) {
-        throw new Error(`Export failed with status ${response.status}`);
-      }
-      const blob = await response.blob();
-      const blobUrl = window.URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = blobUrl;
-      a.download = `student_academic_roster_${new Date().toISOString().slice(0, 10)}.csv`;
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      window.URL.revokeObjectURL(blobUrl);
-    } catch {
-      window.open("/api/students/export/csv", "_blank");
+      await api.download(url, `student_academic_roster_${new Date().toISOString().slice(0, 10)}.csv`);
+    } catch (err: any) {
+      console.error("Export error:", err);
     } finally {
       setExportingCsv(false);
     }

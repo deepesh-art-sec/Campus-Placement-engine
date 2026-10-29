@@ -65,24 +65,12 @@ export const CoordinatorReportsExportView: React.FC = () => {
   const handleExportStudentsCsv = async () => {
     try {
       setDownloading("students_csv");
-      const token = localStorage.getItem("token");
-      const response = await fetch("/api/students/export/csv", {
-        credentials: "include",
-        headers: token ? { Authorization: `Bearer ${token}` } : {},
-      });
-      if (!response.ok) throw new Error("Failed to download student master CSV.");
-
-      const blob = await response.blob();
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = `student_roster_${new Date().toISOString().slice(0, 10)}.csv`;
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      window.URL.revokeObjectURL(url);
-
-      setSuccessMsg(`Student Master Roster CSV exported successfully. Audit log recorded.`);
+      setError(null);
+      const filename = await api.download(
+        "/api/exports/students/csv",
+        `student_roster_${new Date().toISOString().slice(0, 10)}.csv`
+      );
+      setSuccessMsg(`Student Master Roster CSV exported successfully (${filename}). Audit log recorded.`);
     } catch (err: any) {
       setError(err?.message || "Failed to export student CSV.");
     } finally {
@@ -94,29 +82,16 @@ export const CoordinatorReportsExportView: React.FC = () => {
     if (!selectedDriveId) return;
     try {
       setDownloading(asCsv ? "company_csv" : "company_xlsx");
-      const token = localStorage.getItem("token");
-      const response = await fetch(`/api/exports/company-format/${selectedDriveId}?as_csv=${asCsv}`, {
-        method: "GET",
-        credentials: "include",
-        headers: token ? { Authorization: `Bearer ${token}` } : {},
-      });
-
-      if (!response.ok) throw new Error("Failed to generate company-format export.");
-
-      const blob = await response.blob();
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
+      setError(null);
       const curDrive = drives.find((d) => d.id === selectedDriveId);
       const compName = curDrive ? curDrive.company_name.replace(/\s+/g, "_") : "company";
-      a.download = `${compName}_shortlist.${asCsv ? "csv" : "xlsx"}`;
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      window.URL.revokeObjectURL(url);
-
+      const defaultName = `${compName}_shortlist.${asCsv ? "csv" : "xlsx"}`;
+      const filename = await api.download(
+        `/api/exports/company/${selectedDriveId}?as_csv=${asCsv}`,
+        defaultName
+      );
       setSuccessMsg(
-        `Shortlist exported in official ${asCsv ? "CSV" : "XLSX"} format. Audit log recorded.`
+        `Shortlist exported in official ${asCsv ? "CSV" : "XLSX"} format (${filename}). Audit log recorded.`
       );
     } catch (err: any) {
       setError(err?.message || "Failed to generate company format export.");

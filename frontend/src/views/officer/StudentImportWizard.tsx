@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import { api } from "../../api/client";
 import { Badge } from "../../components/common/Badge";
 import { AlertBanner } from "../../components/common/AlertBanner";
@@ -20,6 +20,8 @@ interface StudentImportWizardProps {
 export const StudentImportWizard: React.FC<StudentImportWizardProps> = ({ onSuccess }) => {
   const [step, setStep] = useState<1 | 2 | 3 | 4>(1);
   const [file, setFile] = useState<File | null>(null);
+  const [isDragging, setIsDragging] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
   const [report, setReport] = useState<any | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -40,6 +42,25 @@ export const StudentImportWizard: React.FC<StudentImportWizardProps> = ({ onSucc
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       setFile(e.target.files[0]);
+      setError(null);
+    }
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(false);
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(false);
+    if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+      setFile(e.dataTransfer.files[0]);
       setError(null);
     }
   };
@@ -128,27 +149,67 @@ export const StudentImportWizard: React.FC<StudentImportWizardProps> = ({ onSucc
       {/* Step 1: Upload */}
       {step === 1 && (
         <div className="bg-white p-8 rounded-2xl border border-slate-200 shadow-xs text-center space-y-6">
-          <div className="max-w-md mx-auto border-2 border-dashed border-slate-300 rounded-2xl p-8 hover:border-brand-500 transition-colors bg-slate-50">
+          <div
+            onDragOver={handleDragOver}
+            onDragLeave={handleDragLeave}
+            onDrop={handleDrop}
+            onClick={() => {
+              if (fileInputRef.current) {
+                fileInputRef.current.value = "";
+                fileInputRef.current.click();
+              }
+            }}
+            className={`max-w-md mx-auto border-2 border-dashed rounded-2xl p-8 transition-all cursor-pointer ${
+              isDragging
+                ? "border-emerald-500 bg-emerald-50/80 ring-4 ring-emerald-500/10 scale-[1.01]"
+                : "border-slate-300 hover:border-brand-500 bg-slate-50"
+            }`}
+          >
             <FileSpreadsheet className="w-12 h-12 text-slate-400 mx-auto mb-3" />
-            <h3 className="text-sm font-bold text-slate-800">Drop student spreadsheet here</h3>
-            <p className="text-xs text-slate-500 mt-1 mb-4">Accepts .xlsx, .xls, or .csv roster files</p>
+            <h3 className="text-sm font-bold text-slate-800">
+              {isDragging ? "Drop student spreadsheet here" : "Drag & drop student spreadsheet here"}
+            </h3>
+            <p className="text-xs text-slate-500 mt-1 mb-4">
+              or <span className="text-brand-600 font-bold hover:underline">click to browse</span> (.xlsx, .xls, .csv)
+            </p>
             <input
+              ref={fileInputRef}
               type="file"
               accept=".csv,.xlsx,.xls"
               onChange={handleFileChange}
-              className="text-xs text-slate-500 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-brand-50 file:text-brand-700 hover:file:bg-brand-100 cursor-pointer"
+              className="hidden"
             />
           </div>
 
           {file && (
-            <div className="flex items-center justify-between p-3 bg-emerald-50 border border-emerald-200 rounded-xl max-w-md mx-auto">
-              <span className="text-xs font-bold text-emerald-900 truncate">{file.name}</span>
-              <button
-                onClick={() => setStep(2)}
-                className="flex items-center gap-1.5 px-3 py-1.5 bg-brand-600 hover:bg-brand-700 text-white text-xs font-semibold rounded-lg shadow-xs"
-              >
-                Next <ArrowRight className="w-3.5 h-3.5" />
-              </button>
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3.5 bg-emerald-50 border border-emerald-200 rounded-xl max-w-md mx-auto shadow-2xs">
+              <div className="flex items-center gap-2.5 min-w-0">
+                <FileSpreadsheet className="w-5 h-5 text-emerald-600 shrink-0" />
+                <div className="min-w-0 text-left">
+                  <div className="text-xs font-bold text-emerald-950 truncate max-w-xs">{file.name}</div>
+                  <div className="text-[10px] text-emerald-700 font-mono">{(file.size / 1024).toFixed(1)} KB • Loaded</div>
+                </div>
+              </div>
+              <div className="flex items-center gap-2 shrink-0">
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (fileInputRef.current) {
+                      fileInputRef.current.value = "";
+                      fileInputRef.current.click();
+                    }
+                  }}
+                  className="px-3 py-1.5 text-xs font-bold text-slate-700 bg-white hover:bg-slate-100 border border-slate-200 hover:border-slate-300 rounded-lg transition-colors cursor-pointer"
+                >
+                  Change File
+                </button>
+                <button
+                  onClick={() => setStep(2)}
+                  className="flex items-center gap-1.5 px-3 py-1.5 bg-brand-600 hover:bg-brand-700 text-white text-xs font-semibold rounded-lg shadow-xs cursor-pointer"
+                >
+                  Next <ArrowRight className="w-3.5 h-3.5" />
+                </button>
+              </div>
             </div>
           )}
         </div>

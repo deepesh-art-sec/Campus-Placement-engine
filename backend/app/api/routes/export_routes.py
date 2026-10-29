@@ -1,13 +1,20 @@
 """
 Company-Format and Institutional Roster Export Routes.
+Supports official XLSX and CSV exports for candidate shortlists,
+interview schedules, student master rosters, and status verification sheets.
 """
 
 from __future__ import annotations
 
+import csv
+import io
 import json
 from typing import Any
 
 from fastapi import APIRouter, Depends, File, Form, HTTPException, Response, UploadFile, status
+import openpyxl
+from openpyxl.styles import Alignment, Font, PatternFill
+from openpyxl.utils import get_column_letter
 from sqlalchemy import select
 from sqlalchemy.orm import Session, selectinload
 
@@ -31,11 +38,17 @@ from backend.app.storage.models.entities import (
 from backend.app.storage.repositories.mappers import student_entity_to_domain
 
 router = APIRouter(prefix="/api/exports", tags=["Exports & Company Templates"])
+export_alias_router = APIRouter(prefix="/api/export", tags=["Exports & Company Templates"])
 
 _output_queue = OutputQueueService()
 
 
+# -----------------------------------------------------------------------------
+# 1. Company Template Mappings
+# -----------------------------------------------------------------------------
+
 @router.post("/sample-mapping", response_model=CompanyExportMapping)
+@export_alias_router.post("/sample-mapping", response_model=CompanyExportMapping)
 async def upload_sample_and_create_mapping(
     file: UploadFile = File(...),
     company_id: str = Form(...),
@@ -57,6 +70,7 @@ async def upload_sample_and_create_mapping(
 
 
 @router.get("/company-mappings")
+@export_alias_router.get("/company-mappings")
 def list_company_mappings(
     current_user: UserModel = Depends(require_officer_or_coordinator),
     db: Session = Depends(get_db),
@@ -78,6 +92,7 @@ def list_company_mappings(
 
 
 @router.post("/company-mapping/save")
+@export_alias_router.post("/company-mapping/save")
 def save_company_mapping(
     mapping: CompanyExportMapping,
     current_user: UserModel = Depends(require_officer_or_coordinator),
@@ -115,16 +130,26 @@ def save_company_mapping(
     return {"message": f"Mapping for '{mapping.company_name}' successfully saved."}
 
 
+# -----------------------------------------------------------------------------
+# 2. Company Shortlist Export (XLSX / CSV)
+# -----------------------------------------------------------------------------
+
 @router.api_route("/company-format/{drive_id}", methods=["GET", "POST"])
 @router.api_route("/company/{drive_id}", methods=["GET", "POST"])
 @router.api_route("/shortlist/{drive_id}", methods=["GET", "POST"])
+@export_alias_router.api_route("/company-format/{drive_id}", methods=["GET", "POST"])
+@export_alias_router.api_route("/company/{drive_id}", methods=["GET", "POST"])
+@export_alias_router.api_route("/shortlist/{drive_id}", methods=["GET", "POST"])
 def export_company_format(
     drive_id: str,
     as_csv: bool = False,
+    format: str | None = None,
     current_user: UserModel = Depends(require_officer_or_coordinator),
     db: Session = Depends(get_db),
 ) -> Response:
     """Exports candidate shortlist and schedule in exact company template format."""
+    is_csv = as_csv or (format is not None and format.lower() == "csv")
+
     stmt_drv = select(DriveModel).where(DriveModel.id == drive_id)
     drive_entity = db.execute(stmt_drv).scalar_one_or_none()
     if not drive_entity:
@@ -135,7 +160,7 @@ def export_company_format(
     map_entity = db.execute(stmt_map).scalar_one_or_none()
 
     if map_entity:
-        col_data = json.loads(map_entity.column_mappings_json)
+        col_data = json.loads(map_entity.column_mappings_json or "{}")
         mapping = CompanyExportMapping(
             company_id=map_entity.company_id,
             company_name=map_entity.company_name,
@@ -143,7 +168,7 @@ def export_company_format(
             date_format=map_entity.date_format,
             column_order=col_data.get("order", []),
             canonical_mapping=col_data.get("mapping", {}),
-            column_widths=json.loads(map_entity.column_widths_json),
+            column_widths=json.loads(map_entity.column_widths_json or "{}"),
         )
     else:
         # Default institutional layout
@@ -172,9 +197,12 @@ def export_company_format(
     eligible_decisions = db.execute(dec_stmt).scalars().all()
     shortlist_ids = [d.student_id for d in eligible_decisions]
 
-    student_entities = db.execute(
-        select(StudentModel).where(StudentModel.id.in_(shortlist_ids))
-    ).scalars().all() if shortlist_ids else db.execute(select(StudentModel).limit(10)).scalars().all()
+    if shortlist_ids:
+        student_entities = db.execute(
+            select(StudentModel).where(StudentModel.id.in_(shortlist_ids)).order_by(StudentModel.roll_no.asc())
+        ).scalars().all()
+    else:
+        student_entities = db.execute(select(StudentModel).order_by(StudentModel.roll_no.asc()).limit(20)).scalars().all()
 
     students = [student_entity_to_domain(s) for s in student_entities]
 
@@ -199,29 +227,240 @@ def export_company_format(
     AuditService.record_export(
         db=db,
         actor=current_user.username,
-        export_type="COMPANY_CUSTOM_XLSX" if not as_csv else "COMPANY_CUSTOM_CSV",
+        export_type="COMPANY_CUSTOM_CSV" if is_csv else "COMPANY_CUSTOM_XLSX",
         company_id=drive_entity.company_id,
         candidate_count=len(students),
     )
 
     clean_comp = drive_entity.company_name.replace(" ", "_")
-    if as_csv:
+    if is_csv:
         csv_text = export_to_company_csv(students, scheduled_items, mapping)
         return Response(
             content=csv_text,
             media_type="text/csv",
-            headers={"Content-Disposition": f"attachment; filename={clean_comp}_shortlist.csv"},
+            headers={
+                "Content-Disposition": f'attachment; filename="{clean_comp}_shortlist.csv"',
+                "Access-Control-Expose-Headers": "Content-Disposition",
+                "Cache-Control": "no-cache, no-store, must-revalidate",
+            },
         )
 
     xlsx_bytes = export_to_company_xlsx(students, scheduled_items, mapping)
     return Response(
         content=xlsx_bytes,
         media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-        headers={"Content-Disposition": f"attachment; filename={clean_comp}_shortlist.xlsx"},
+        headers={
+            "Content-Disposition": f'attachment; filename="{clean_comp}_shortlist.xlsx"',
+            "Access-Control-Expose-Headers": "Content-Disposition",
+            "Cache-Control": "no-cache, no-store, must-revalidate",
+        },
     )
 
 
+# -----------------------------------------------------------------------------
+# 3. Interview Schedule Export (XLSX / CSV)
+# -----------------------------------------------------------------------------
+
+@router.api_route("/schedule/{drive_id}", methods=["GET", "POST"])
+@export_alias_router.api_route("/schedule/{drive_id}", methods=["GET", "POST"])
+def export_drive_schedule(
+    drive_id: str,
+    as_csv: bool = False,
+    format: str | None = None,
+    current_user: UserModel = Depends(require_officer_or_coordinator),
+    db: Session = Depends(get_db),
+) -> Response:
+    """Exports full interview schedule roster with slots, cabins, panels, and candidates."""
+    is_csv = as_csv or (format is not None and format.lower() == "csv")
+
+    stmt_drv = select(DriveModel).where(DriveModel.id == drive_id)
+    drive_entity = db.execute(stmt_drv).scalar_one_or_none()
+    if not drive_entity:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Drive not found.")
+
+    slots = db.execute(
+        select(SlotModel)
+        .options(selectinload(SlotModel.room), selectinload(SlotModel.panel))
+        .where(SlotModel.drive_id == drive_id)
+        .order_by(SlotModel.start_time.asc())
+    ).scalars().all()
+
+    student_cache = {s.id: s for s in db.execute(select(StudentModel)).scalars().all()}
+    clean_comp = drive_entity.company_name.replace(" ", "_")
+
+    headers = [
+        "Round",
+        "Slot Time",
+        "Assigned Cabin / Venue",
+        "Evaluation Panel",
+        "Candidate Roll No",
+        "Candidate Name",
+        "Branch",
+        "CGPA",
+    ]
+
+    rows = []
+    for sl in slots:
+        stu = student_cache.get(sl.student_id)
+        rows.append([
+            f"Round {sl.round_number}",
+            sl.start_time.strftime("%d-%b-%Y %H:%M") if sl.start_time else "TBD",
+            sl.room.name if sl.room else "Cabin 1",
+            sl.panel.name if sl.panel else "Panel A",
+            stu.roll_no if stu else "N/A",
+            stu.name if stu else "Candidate",
+            stu.branch if stu else "Engineering",
+            f"{stu.cgpa:.2f}" if (stu and stu.cgpa is not None) else "N/A",
+        ])
+
+    AuditService.record_export(
+        db=db,
+        actor=current_user.username,
+        export_type="DRIVE_SCHEDULE_CSV" if is_csv else "DRIVE_SCHEDULE_XLSX",
+        company_id=drive_entity.company_id,
+        candidate_count=len(rows),
+    )
+
+    if is_csv:
+        output = io.StringIO()
+        writer = csv.writer(output)
+        writer.writerow(headers)
+        writer.writerows(rows)
+        return Response(
+            content=output.getvalue(),
+            media_type="text/csv",
+            headers={
+                "Content-Disposition": f'attachment; filename="{clean_comp}_schedule.csv"',
+                "Access-Control-Expose-Headers": "Content-Disposition",
+                "Cache-Control": "no-cache, no-store, must-revalidate",
+            },
+        )
+
+    # Generate styled XLSX
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    assert ws is not None
+    ws.title = "Interview_Schedule"
+
+    header_font = Font(name="Calibri", size=11, bold=True, color="FFFFFF")
+    header_fill = PatternFill(start_color="1E3A8A", end_color="1E3A8A", fill_type="solid")
+    center_align = Alignment(horizontal="center", vertical="center")
+
+    ws.append(headers)
+    for col_idx in range(1, len(headers) + 1):
+        cell = ws.cell(row=1, column=col_idx)
+        cell.font = header_font
+        cell.fill = header_fill
+        cell.alignment = center_align
+
+    for r in rows:
+        ws.append(r)
+
+    # Set column widths
+    for col in ws.columns:
+        max_len = max(len(str(cell.value or "")) for cell in col)
+        col_letter = get_column_letter(col[0].column)
+        ws.column_dimensions[col_letter].width = max(max_len + 3, 14)
+
+    buf = io.BytesIO()
+    wb.save(buf)
+    buf.seek(0)
+    return Response(
+        content=buf.getvalue(),
+        media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        headers={
+            "Content-Disposition": f'attachment; filename="{clean_comp}_schedule.xlsx"',
+            "Access-Control-Expose-Headers": "Content-Disposition",
+            "Cache-Control": "no-cache, no-store, must-revalidate",
+        },
+    )
+
+
+# -----------------------------------------------------------------------------
+# 4. Student Master Roster Export (CSV)
+# -----------------------------------------------------------------------------
+
+@router.get("/students/csv")
+@export_alias_router.get("/students/csv")
+def export_students_csv_alias(
+    branch: str | None = None,
+    current_user: UserModel = Depends(require_officer_or_coordinator),
+    db: Session = Depends(get_db),
+) -> Response:
+    """Exports full student master roster with academic profile and backlog records."""
+    stmt = (
+        select(StudentModel)
+        .options(
+            selectinload(StudentModel.backlogs),
+            selectinload(StudentModel.gap_years),
+            selectinload(StudentModel.offers),
+        )
+        .order_by(StudentModel.roll_no.asc())
+    )
+    if branch and branch != "all":
+        stmt = stmt.where(StudentModel.branch == branch)
+
+    students = db.execute(stmt).scalars().all()
+
+    output = io.StringIO()
+    writer = csv.writer(output)
+    writer.writerow([
+        "Student ID",
+        "Roll Number",
+        "Full Name",
+        "Email",
+        "Program",
+        "Branch Code",
+        "CGPA",
+        "10th %",
+        "12th %",
+        "Active Backlogs",
+        "Cleared Backlogs",
+        "Existing Offers Count",
+    ])
+
+    for s in students:
+        active_b = sum(1 for b in (s.backlogs or []) if b.status == "active")
+        cleared_b = sum(1 for b in (s.backlogs or []) if b.status == "cleared")
+        writer.writerow([
+            s.id,
+            s.roll_no,
+            s.name,
+            s.email,
+            s.program,
+            s.branch,
+            f"{s.cgpa:.2f}",
+            f"{s.tenth_percentage:.1f}",
+            f"{(s.twelfth_percentage or 0.0):.1f}",
+            active_b,
+            cleared_b,
+            len(s.offers or []),
+        ])
+
+    AuditService.record_export(
+        db=db,
+        actor=current_user.username,
+        export_type="STUDENT_MASTER_CSV",
+        candidate_count=len(students),
+    )
+
+    return Response(
+        content=output.getvalue(),
+        media_type="text/csv",
+        headers={
+            "Content-Disposition": 'attachment; filename="institutional_student_master_roster.csv"',
+            "Access-Control-Expose-Headers": "Content-Disposition",
+            "Cache-Control": "no-cache, no-store, must-revalidate",
+        },
+    )
+
+
+# -----------------------------------------------------------------------------
+# 5. Recruiter Roster & Candidate Status PDF
+# -----------------------------------------------------------------------------
+
 @router.get("/recruiter-roster/{drive_id}")
+@export_alias_router.get("/recruiter-roster/{drive_id}")
 def export_recruiter_roster(
     drive_id: str,
     current_user: UserModel = Depends(require_officer_or_coordinator),
@@ -276,6 +515,7 @@ def export_recruiter_roster(
 
 
 @router.get("/student-pdf/{student_id}")
+@export_alias_router.get("/student-pdf/{student_id}")
 def export_student_pdf(
     student_id: str,
     current_user: UserModel = Depends(get_current_user),
@@ -310,24 +550,9 @@ def export_student_pdf(
     return Response(
         content=pdf_bytes,
         media_type="application/pdf",
-        headers={"Content-Disposition": f"attachment; filename=placement_status_{domain_stu.roll_no}.pdf"},
+        headers={
+            "Content-Disposition": f'attachment; filename="placement_status_{domain_stu.roll_no}.pdf"',
+            "Access-Control-Expose-Headers": "Content-Disposition",
+            "Cache-Control": "no-cache, no-store, must-revalidate",
+        },
     )
-
-
-# -----------------------------------------------------------------------------
-# Alias Router for /api/export (Singular) Prefix
-# -----------------------------------------------------------------------------
-export_alias_router = APIRouter(prefix="/api/export", tags=["Exports & Company Templates"])
-
-
-@export_alias_router.api_route("/company-format/{drive_id}", methods=["GET", "POST"])
-@export_alias_router.api_route("/company/{drive_id}", methods=["GET", "POST"])
-@export_alias_router.api_route("/shortlist/{drive_id}", methods=["GET", "POST"])
-def export_company_alias(
-    drive_id: str,
-    as_csv: bool = False,
-    current_user: UserModel = Depends(require_officer_or_coordinator),
-    db: Session = Depends(get_db),
-) -> Response:
-    """Alias for company format export supporting /api/export prefix."""
-    return export_company_format(drive_id=drive_id, as_csv=as_csv, current_user=current_user, db=db)

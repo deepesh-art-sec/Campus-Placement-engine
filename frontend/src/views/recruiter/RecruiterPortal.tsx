@@ -176,6 +176,18 @@ export const RecruiterPortal: React.FC = () => {
   const [inquiries, setInquiries] = useState<RecruiterInquiry[]>([]);
   const [attendance, setAttendance] = useState<AttendanceData | null>(null);
   const [resultsList, setResultsList] = useState<ResultCandidate[]>([]);
+  const [downloadingFile, setDownloadingFile] = useState<string | null>(null);
+
+  const handleRecruiterDownload = async (url: string, defaultName: string) => {
+    try {
+      setDownloadingFile(url);
+      await api.download(url, defaultName);
+    } catch (err: any) {
+      alert(err?.message || "File download failed.");
+    } finally {
+      setDownloadingFile(null);
+    }
+  };
 
   // Search & Filters for Shortlist
   const [searchQuery, setSearchQuery] = useState("");
@@ -661,14 +673,15 @@ export const RecruiterPortal: React.FC = () => {
               </p>
             </div>
 
-            <a
-              href="/api/recruiter/export/shortlist.csv"
-              download
-              className="flex items-center gap-1.5 px-3.5 py-2 bg-gradient-to-r from-blue-600 to-emerald-600 hover:from-blue-500 hover:to-emerald-500 text-white text-xs font-bold rounded-xl border border-emerald-400/30 shadow-md transition-all self-start sm:self-auto cursor-pointer"
+            <button
+              type="button"
+              onClick={() => handleRecruiterDownload("/api/recruiter/export/shortlist.csv", "company_shortlist.csv")}
+              disabled={downloadingFile === "/api/recruiter/export/shortlist.csv"}
+              className="flex items-center gap-1.5 px-3.5 py-2 bg-gradient-to-r from-blue-600 to-emerald-600 hover:from-blue-500 hover:to-emerald-500 text-white text-xs font-bold rounded-xl border border-emerald-400/30 shadow-md transition-all self-start sm:self-auto cursor-pointer disabled:opacity-50"
             >
-              <Download className="w-3.5 h-3.5" />
-              <span>Export CSV</span>
-            </a>
+              <Download className={`w-3.5 h-3.5 ${downloadingFile === "/api/recruiter/export/shortlist.csv" ? "animate-bounce" : ""}`} />
+              <span>{downloadingFile === "/api/recruiter/export/shortlist.csv" ? "Exporting..." : "Export CSV"}</span>
+            </button>
           </div>
 
           {/* Search & Filter Bar */}
@@ -912,14 +925,15 @@ export const RecruiterPortal: React.FC = () => {
                 </button>
               </div>
 
-              <a
-                href="/api/recruiter/export/schedule.csv"
-                download
-                className="flex items-center gap-1.5 px-3 py-1.5 bg-[#111d38] hover:bg-[#162447] text-slate-200 hover:text-white border border-[#1b2b4d] text-xs font-bold rounded-xl transition-all cursor-pointer"
+              <button
+                type="button"
+                onClick={() => handleRecruiterDownload("/api/recruiter/export/schedule.csv", "interview_schedule.csv")}
+                disabled={downloadingFile === "/api/recruiter/export/schedule.csv"}
+                className="flex items-center gap-1.5 px-3 py-1.5 bg-[#111d38] hover:bg-[#162447] text-slate-200 hover:text-white border border-[#1b2b4d] text-xs font-bold rounded-xl transition-all cursor-pointer disabled:opacity-50"
               >
-                <Download className="w-3.5 h-3.5 text-emerald-400" />
-                <span>Export CSV</span>
-              </a>
+                <Download className={`w-3.5 h-3.5 text-emerald-400 ${downloadingFile === "/api/recruiter/export/schedule.csv" ? "animate-bounce" : ""}`} />
+                <span>{downloadingFile === "/api/recruiter/export/schedule.csv" ? "Exporting..." : "Export CSV"}</span>
+              </button>
             </div>
           </div>
 
@@ -1119,14 +1133,15 @@ export const RecruiterPortal: React.FC = () => {
                 </div>
               </div>
 
-              <a
-                href="/api/recruiter/export/shortlist.csv"
-                download
-                className="w-full py-2.5 bg-gradient-to-r from-blue-600 via-teal-600 to-emerald-600 hover:from-blue-500 hover:via-teal-500 hover:to-emerald-500 text-white font-bold text-xs rounded-xl shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer"
+              <button
+                type="button"
+                onClick={() => handleRecruiterDownload("/api/recruiter/export/shortlist.csv", "company_shortlist.csv")}
+                disabled={downloadingFile === "/api/recruiter/export/shortlist.csv"}
+                className="w-full py-2.5 bg-gradient-to-r from-blue-600 via-teal-600 to-emerald-600 hover:from-blue-500 hover:via-teal-500 hover:to-emerald-500 text-white font-bold text-xs rounded-xl shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
               >
-                <Download className="w-4 h-4" />
-                <span>Download Shortlist (.CSV)</span>
-              </a>
+                <Download className={`w-4 h-4 ${downloadingFile === "/api/recruiter/export/shortlist.csv" ? "animate-bounce" : ""}`} />
+                <span>{downloadingFile === "/api/recruiter/export/shortlist.csv" ? "Downloading Shortlist..." : "Download Shortlist (.CSV)"}</span>
+              </button>
             </div>
 
             <div className="bg-[#0d1527] p-6 rounded-3xl border border-[#1b2b4d] space-y-4">
@@ -1155,14 +1170,15 @@ export const RecruiterPortal: React.FC = () => {
                 </div>
               </div>
 
-              <a
-                href="/api/recruiter/export/schedule.csv"
-                download
-                className="w-full py-2.5 bg-[#111d38] hover:bg-[#162447] text-white font-bold text-xs rounded-xl border border-[#1b2b4d] hover:border-blue-500/50 shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer"
+              <button
+                type="button"
+                onClick={() => handleRecruiterDownload("/api/recruiter/export/schedule.csv", "interview_schedule.csv")}
+                disabled={downloadingFile === "/api/recruiter/export/schedule.csv"}
+                className="w-full py-2.5 bg-[#111d38] hover:bg-[#162447] text-white font-bold text-xs rounded-xl border border-[#1b2b4d] hover:border-blue-500/50 shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
               >
-                <Download className="w-4 h-4" />
-                <span>Download Schedule (.CSV)</span>
-              </a>
+                <Download className={`w-4 h-4 ${downloadingFile === "/api/recruiter/export/schedule.csv" ? "animate-bounce" : ""}`} />
+                <span>{downloadingFile === "/api/recruiter/export/schedule.csv" ? "Downloading Schedule..." : "Download Schedule (.CSV)"}</span>
+              </button>
             </div>
           </div>
         </div>
