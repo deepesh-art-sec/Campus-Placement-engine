@@ -60,8 +60,8 @@ const MainContent: React.FC = () => {
   const [authRole, setAuthRole] = useState<"officer" | "coordinator" | "student" | "recruiter">("officer");
   const [username, setUsername] = useState("admin");
   const [password, setPassword] = useState("admin123");
-  const [studentRoll, setStudentRoll] = useState("admin");
-  const [studentCode, setStudentCode] = useState("admin123");
+  const [studentRoll, setStudentRoll] = useState("BT210001");
+  const [studentCode, setStudentCode] = useState("123456");
   const [authLoading, setAuthLoading] = useState(false);
 
   const handleTabSelect = (tab: string, driveId?: string) => {
@@ -87,7 +87,7 @@ const MainContent: React.FC = () => {
       setPassword("recruiter123");
     } else {
       setStudentRoll("BT210001");
-      setStudentCode("student123");
+      setStudentCode("123456");
     }
   };
 
@@ -152,7 +152,7 @@ const MainContent: React.FC = () => {
             </div>
 
             {/* Role Switcher Tabs */}
-            <div className="grid grid-cols-4 gap-1 bg-[#080e1c] p-1.5 rounded-2xl border border-[#1b2b4d]">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5 bg-[#080e1c] p-1.5 rounded-2xl border border-[#1b2b4d]">
               <button
                 type="button"
                 onClick={() => handleRoleSwitch("officer")}
@@ -227,7 +227,7 @@ const MainContent: React.FC = () => {
                       value={studentCode}
                       onChange={(e) => setStudentCode(e.target.value)}
                       className="w-full px-4 py-2.5 bg-[#080e1c] border border-[#1e3258] rounded-xl text-sm font-semibold text-white focus:bg-[#0d1527] focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-all"
-                      placeholder="Default: student123"
+                      placeholder="Default: 123456"
                     />
                   </div>
                 </>
@@ -317,7 +317,7 @@ const MainContent: React.FC = () => {
             activeTab={coordTab}
             onSelectTab={setCoordTab}
           />
-          <main className="flex-1 min-w-0 p-4 sm:p-6 lg:p-8 overflow-y-auto">
+          <main className="flex-1 min-w-0 p-2.5 sm:p-4 md:p-6 lg:p-8 overflow-y-auto max-w-full">
             {coordTab === "overview" && (
               <CoordinatorOverviewView onNavigateTab={handleCoordTabSelect} />
             )}
@@ -368,7 +368,7 @@ const MainContent: React.FC = () => {
           userRole={user.role}
         />
 
-        <main className="flex-1 min-w-0 p-4 sm:p-6 lg:p-8 overflow-y-auto">
+        <main className="flex-1 min-w-0 p-2.5 sm:p-4 md:p-6 lg:p-8 overflow-y-auto max-w-full">
           {activeTab === "drives" && (
             <DrivesDashboard onNavigateTab={handleTabSelect} />
           )}

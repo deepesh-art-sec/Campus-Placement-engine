@@ -89,23 +89,23 @@ export const CoordinatorEligibilityView: React.FC<CoordinatorEligibilityViewProp
   const policyBlockedCount = decisions.filter((d) => d.status === "policy_blocked").length;
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+    <div className="space-y-6 max-w-full min-w-0">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4 min-w-0">
         <div>
           <div className="flex items-center gap-3">
-            <h1 className="text-2xl font-black text-slate-900 tracking-tight">Eligibility Explainer List</h1>
+            <h1 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">Eligibility Explainer List</h1>
             <Badge variant="brand">Student Inquiries Desk</Badge>
           </div>
-          <p className="text-sm text-slate-500 mt-1">
+          <p className="text-xs sm:text-sm text-slate-500 mt-1">
             Read-only evaluation records. Use the one-line plain language explanations to answer candidate inquiries at the placement desk.
           </p>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <select
             value={selectedDriveId}
             onChange={(e) => setSelectedDriveId(e.target.value)}
-            className="px-3.5 py-2 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-800 shadow-xs cursor-pointer"
+            className="px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-800 shadow-xs cursor-pointer max-w-[220px] sm:max-w-none truncate"
           >
             {drives.map((d) => (
               <option key={d.id} value={d.id}>
@@ -128,27 +128,27 @@ export const CoordinatorEligibilityView: React.FC<CoordinatorEligibilityViewProp
       </div>
 
       {/* Metrics Row */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-xs">
-          <span className="text-xs font-semibold text-slate-500 uppercase">Total Evaluated</span>
-          <span className="text-2xl font-black text-slate-900 block mt-1">{decisions.length}</span>
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-2 sm:gap-4">
+        <div className="bg-white p-3 sm:p-4 rounded-2xl border border-slate-200 shadow-xs">
+          <span className="text-[11px] sm:text-xs font-semibold text-slate-500 uppercase">Total Evaluated</span>
+          <span className="text-xl sm:text-2xl font-black text-slate-900 block mt-1">{decisions.length}</span>
         </div>
-        <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-xs">
-          <span className="text-xs font-semibold text-emerald-600 uppercase">Eligible</span>
-          <span className="text-2xl font-black text-emerald-700 block mt-1">{eligibleCount}</span>
+        <div className="bg-white p-3 sm:p-4 rounded-2xl border border-slate-200 shadow-xs">
+          <span className="text-[11px] sm:text-xs font-semibold text-emerald-600 uppercase">Eligible</span>
+          <span className="text-xl sm:text-2xl font-black text-emerald-700 block mt-1">{eligibleCount}</span>
         </div>
-        <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-xs">
-          <span className="text-xs font-semibold text-rose-600 uppercase">Academically Ineligible</span>
-          <span className="text-2xl font-black text-rose-700 block mt-1">{ineligibleCount}</span>
+        <div className="bg-white p-3 sm:p-4 rounded-2xl border border-slate-200 shadow-xs">
+          <span className="text-[11px] sm:text-xs font-semibold text-rose-600 uppercase">Academically Ineligible</span>
+          <span className="text-xl sm:text-2xl font-black text-rose-700 block mt-1">{ineligibleCount}</span>
         </div>
-        <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-xs">
-          <span className="text-xs font-semibold text-amber-600 uppercase">Policy Blocked</span>
-          <span className="text-2xl font-black text-amber-700 block mt-1">{policyBlockedCount}</span>
+        <div className="bg-white p-3 sm:p-4 rounded-2xl border border-slate-200 shadow-xs">
+          <span className="text-[11px] sm:text-xs font-semibold text-amber-600 uppercase">Policy Blocked</span>
+          <span className="text-xl sm:text-2xl font-black text-amber-700 block mt-1">{policyBlockedCount}</span>
         </div>
       </div>
 
       {/* Search and Filters */}
-      <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-xs flex flex-col sm:flex-row items-center justify-between gap-3">
+      <div className="bg-white p-3 sm:p-4 rounded-2xl border border-slate-200 shadow-xs flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 max-w-full min-w-0 overflow-hidden">
         <div className="relative w-full sm:w-80">
           <Search className="w-4 h-4 text-slate-400 absolute left-3 top-3" />
           <input
@@ -160,12 +160,12 @@ export const CoordinatorEligibilityView: React.FC<CoordinatorEligibilityViewProp
           />
         </div>
 
-        <div className="flex items-center gap-1.5 overflow-x-auto w-full sm:w-auto">
+        <div className="flex items-center gap-1.5 overflow-x-auto w-full sm:w-auto pb-1 sm:pb-0 max-w-full">
           {["all", "eligible", "ineligible", "policy_blocked"].map((st) => (
             <button
               key={st}
               onClick={() => setStatusFilter(st)}
-              className={`px-3 py-1.5 rounded-xl text-xs font-bold capitalize transition-colors cursor-pointer ${
+              className={`shrink-0 px-2.5 sm:px-3 py-1.5 rounded-xl text-xs font-bold capitalize transition-colors cursor-pointer ${
                 statusFilter === st ? "bg-slate-900 text-white" : "bg-slate-100 text-slate-600 hover:bg-slate-200"
               }`}
             >
@@ -185,7 +185,7 @@ export const CoordinatorEligibilityView: React.FC<CoordinatorEligibilityViewProp
           No candidate evaluations match your filter criteria.
         </div>
       ) : (
-        <div className="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden">
+        <div className="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-x-auto">
           <table className="w-full text-left border-collapse text-xs">
             <thead>
               <tr className="bg-slate-50 border-b border-slate-200 text-slate-600 font-bold uppercase tracking-wider">

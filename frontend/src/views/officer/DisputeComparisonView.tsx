@@ -154,7 +154,7 @@ export const DisputeComparisonView: React.FC = () => {
           </div>
 
           {/* Side-by-Side Comparison Table */}
-          <div className="border border-slate-200 rounded-2xl overflow-hidden">
+          <div className="border border-slate-200 rounded-2xl overflow-x-auto">
             <table className="w-full text-left border-collapse text-xs">
               <thead>
                 <tr className="bg-slate-50 border-b border-slate-200 font-bold text-slate-700">

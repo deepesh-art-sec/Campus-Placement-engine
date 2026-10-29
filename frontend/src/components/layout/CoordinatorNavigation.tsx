@@ -52,7 +52,7 @@ export const CoordinatorNavigation: React.FC<CoordinatorNavigationProps> = ({
   onSelectTab,
   unreadCount = 0,
 }) => {
-  const [isCollapsed, setIsCollapsed] = useState(false);
+  const [isCollapsed, setIsCollapsed] = useState(() => typeof window !== "undefined" && window.innerWidth < 1024);
 
   const navItems: NavItem[] = [
     { num: "01", id: "overview", label: "Overview", icon: Home },

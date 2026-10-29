@@ -290,7 +290,8 @@ export const UsersRolesView: React.FC = () => {
               No staff or recruiter accounts found. Click "Create Account" above to provision one.
             </div>
           ) : (
-            <table className="w-full text-left border-collapse text-xs">
+            <div className="overflow-x-auto">
+              <table className="w-full text-left border-collapse text-xs">
               <thead>
                 <tr className="bg-slate-50 border-b border-slate-200 text-slate-600 font-bold uppercase tracking-wider">
                   <th className="px-5 py-3.5">Username</th>
@@ -366,6 +367,7 @@ export const UsersRolesView: React.FC = () => {
                 ))}
               </tbody>
             </table>
+            </div>
           )}
         </div>
       )}
@@ -527,6 +529,7 @@ export const UsersRolesView: React.FC = () => {
                     100% Ready for Distribution
                   </span>
                 </div>
+                <div className="overflow-x-auto">
                 <table className="w-full text-left border-collapse text-xs">
                   <thead>
                     <tr className="bg-slate-100/70 border-b border-slate-200 text-slate-600 font-bold uppercase tracking-wider">
@@ -564,6 +567,7 @@ export const UsersRolesView: React.FC = () => {
                     ))}
                   </tbody>
                 </table>
+                </div>
               </div>
             )}
           </div>

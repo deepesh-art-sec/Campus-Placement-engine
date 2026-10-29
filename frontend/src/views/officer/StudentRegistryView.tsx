@@ -377,7 +377,8 @@ export const StudentRegistryView: React.FC = () => {
             <span>Showing {filtered.length} of {students.length} students</span>
             <span>All records encrypted & cached offline</span>
           </div>
-          <table className="w-full text-left border-collapse text-xs">
+          <div className="overflow-x-auto">
+            <table className="w-full text-left border-collapse text-xs">
             <thead>
               <tr className="bg-slate-50 border-b border-slate-200 text-slate-600 font-bold uppercase tracking-wider">
                 <th
@@ -484,6 +485,7 @@ export const StudentRegistryView: React.FC = () => {
               ))}
             </tbody>
           </table>
+          </div>
           {filtered.length > 100 && (
             <div className="p-3 bg-slate-50 border-t border-slate-200 text-center text-xs font-bold text-slate-500">
               Showing first 100 results ({filtered.length} total matched). Use the filters above to narrow down.

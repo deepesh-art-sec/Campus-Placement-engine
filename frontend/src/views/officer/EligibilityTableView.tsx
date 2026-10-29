@@ -244,7 +244,7 @@ export const EligibilityTableView: React.FC<EligibilityTableViewProps> = ({ init
           No candidates evaluated yet for this drive. Click "Evaluate Candidates" above to compute live status.
         </div>
       ) : (
-        <div className="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden">
+        <div className="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-x-auto">
           <table className="w-full text-left border-collapse">
             <thead>
               <tr className="bg-slate-50 border-b border-slate-200 text-xs font-bold text-slate-600 uppercase tracking-wider">
