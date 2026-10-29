@@ -129,18 +129,30 @@ def record_recruitment_result(
 
     # 6. Update student offers in DB if offered/accepted
     if req.event_type in (OfferLifecycleEventType.OFFERED, OfferLifecycleEventType.ACCEPTED):
-        offer_entity = OfferModel(
-            id=str(uuid.uuid4()),
-            student_id=student.id,
-            company=drive_entity.company_name,
-            ctc_lpa=lifecycle_event.ctc_lpa,
-            fixed_pay_lpa=lifecycle_event.fixed_pay_lpa,
-            offer_date=req.offer_date,
-            source="on_campus",
-            is_dream=(lifecycle_event.ctc_lpa >= STRICT_ONE_OFFER_POLICY.dream_threshold_lpa),
-            status="accepted" if req.event_type == OfferLifecycleEventType.ACCEPTED else "offered",
+        stmt_off = select(OfferModel).where(
+            OfferModel.student_id == student.id,
+            OfferModel.company == drive_entity.company_name,
         )
-        db.add(offer_entity)
+        existing_offer = db.execute(stmt_off).scalars().first()
+        if existing_offer:
+            existing_offer.ctc_lpa = lifecycle_event.ctc_lpa
+            existing_offer.fixed_pay_lpa = lifecycle_event.fixed_pay_lpa
+            existing_offer.offer_date = req.offer_date
+            existing_offer.is_dream = (lifecycle_event.ctc_lpa >= STRICT_ONE_OFFER_POLICY.dream_threshold_lpa)
+            existing_offer.status = "accepted" if req.event_type == OfferLifecycleEventType.ACCEPTED else "offered"
+        else:
+            offer_entity = OfferModel(
+                id=str(uuid.uuid4()),
+                student_id=student.id,
+                company=drive_entity.company_name,
+                ctc_lpa=lifecycle_event.ctc_lpa,
+                fixed_pay_lpa=lifecycle_event.fixed_pay_lpa,
+                offer_date=req.offer_date,
+                source="on_campus",
+                is_dream=(lifecycle_event.ctc_lpa >= STRICT_ONE_OFFER_POLICY.dream_threshold_lpa),
+                status="accepted" if req.event_type == OfferLifecycleEventType.ACCEPTED else "offered",
+            )
+            db.add(offer_entity)
         db.commit()
 
     return {

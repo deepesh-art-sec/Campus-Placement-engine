@@ -503,59 +503,95 @@ def confirm_save_extracted_drive(
     # 2. Normalize branches to canonical codes
     canonical_branches = normalize_branches(req.allowed_branches)
 
-    # 3. Create Drive
-    drive_id = f"drv_{uuid.uuid4().hex[:8]}"
-    drive = DriveModel(
-        id=drive_id,
-        company_id=company.id,
-        company_name=req.company_name,
-        drive_date=req.drive_date,
-        mode=req.mode,
-        status="draft",
-        ctc_lpa=req.ctc_lpa,
-        version=1,
+    # 3. Create or reuse existing drive idempotently
+    stmt_drive = select(DriveModel).where(
+        DriveModel.company_id == company.id,
+        DriveModel.drive_date == req.drive_date,
     )
-    db.add(drive)
-    db.flush()
+    existing_drive = db.execute(stmt_drive).scalars().first()
+    if existing_drive:
+        drive = existing_drive
+        drive.mode = req.mode
+        drive.ctc_lpa = req.ctc_lpa
+        drive_id = drive.id
+    else:
+        drive_id = f"drv_{uuid.uuid4().hex[:8]}"
+        drive = DriveModel(
+            id=drive_id,
+            company_id=company.id,
+            company_name=req.company_name,
+            drive_date=req.drive_date,
+            mode=req.mode,
+            status="draft",
+            ctc_lpa=req.ctc_lpa,
+            version=1,
+        )
+        db.add(drive)
+        db.flush()
 
-    # 4. Create Version 1 Requirement Set
-    req_version = DriveRequirementVersionModel(
-        id=f"req_{uuid.uuid4().hex[:8]}",
-        drive_id=drive_id,
-        version_number=1,
-        raw_source_text=req.raw_source_text or f"Confirmed announcement extraction for {req.company_name}",
-        parse_confidence=1.0,
-        min_cgpa=req.min_cgpa,
-        min_tenth_percentage=req.min_tenth_percentage,
-        min_twelfth_percentage=req.min_twelfth_percentage,
-        allowed_branches_json=json.dumps(canonical_branches),
-        allowed_programs_json=json.dumps(["B.Tech"]),
-        max_active_backlogs=req.max_active_backlogs,
-        max_gap_years=req.max_gap_years,
-        created_at=datetime.datetime.utcnow(),
-    )
-    db.add(req_version)
+    # 4. Create or update Requirement Set
+    stmt_req = select(DriveRequirementVersionModel).where(
+        DriveRequirementVersionModel.drive_id == drive_id
+    ).order_by(DriveRequirementVersionModel.version_number.desc())
+    existing_req = db.execute(stmt_req).scalars().first()
+    if existing_req:
+        req_version = existing_req
+        req_version.min_cgpa = req.min_cgpa
+        req_version.min_tenth_percentage = req.min_tenth_percentage
+        req_version.min_twelfth_percentage = req.min_twelfth_percentage
+        req_version.allowed_branches_json = json.dumps(canonical_branches)
+        req_version.max_active_backlogs = req.max_active_backlogs
+        req_version.max_gap_years = req.max_gap_years
+    else:
+        req_version = DriveRequirementVersionModel(
+            id=f"req_{uuid.uuid4().hex[:8]}",
+            drive_id=drive_id,
+            version_number=1,
+            raw_source_text=req.raw_source_text or f"Confirmed announcement extraction for {req.company_name}",
+            parse_confidence=1.0,
+            min_cgpa=req.min_cgpa,
+            min_tenth_percentage=req.min_tenth_percentage,
+            min_twelfth_percentage=req.min_twelfth_percentage,
+            allowed_branches_json=json.dumps(canonical_branches),
+            allowed_programs_json=json.dumps(["B.Tech"]),
+            max_active_backlogs=req.max_active_backlogs,
+            max_gap_years=req.max_gap_years,
+            created_at=datetime.datetime.utcnow(),
+        )
+        db.add(req_version)
 
-    # 5. Record Event
-    event = EventModel(
-        id=f"evt_{uuid.uuid4().hex[:12]}",
-        aggregate_type="drive",
-        aggregate_id=drive_id,
-        event_type="ANNOUNCEMENT_EXTRACTION_CONFIRMED",
-        payload_json=json.dumps({
-            "drive_id": drive_id,
-            "company_name": req.company_name,
-            "job_role": req.job_role,
-            "ctc_lpa": req.ctc_lpa,
-            "min_cgpa": req.min_cgpa,
-            "allowed_branches": canonical_branches,
-            "max_active_backlogs": req.max_active_backlogs,
-            "confirmed_by": current_user.username,
-        }),
-        actor=current_user.username,
-        timestamp=datetime.datetime.utcnow(),
+    # 5. Record Event (idempotent update or insert)
+    stmt_event = select(EventModel).where(
+        EventModel.aggregate_type == "drive",
+        EventModel.aggregate_id == drive_id,
+        EventModel.event_type == "ANNOUNCEMENT_EXTRACTION_CONFIRMED",
     )
-    db.add(event)
+    existing_event = db.execute(stmt_event).scalars().first()
+    payload_str = json.dumps({
+        "drive_id": drive_id,
+        "company_name": req.company_name,
+        "job_role": req.job_role,
+        "ctc_lpa": req.ctc_lpa,
+        "min_cgpa": req.min_cgpa,
+        "allowed_branches": canonical_branches,
+        "max_active_backlogs": req.max_active_backlogs,
+        "confirmed_by": current_user.username,
+    })
+    if existing_event:
+        existing_event.payload_json = payload_str
+        existing_event.timestamp = datetime.datetime.utcnow()
+        event = existing_event
+    else:
+        event = EventModel(
+            id=f"evt_{uuid.uuid4().hex[:12]}",
+            aggregate_type="drive",
+            aggregate_id=drive_id,
+            event_type="ANNOUNCEMENT_EXTRACTION_CONFIRMED",
+            payload_json=payload_str,
+            actor=current_user.username,
+            timestamp=datetime.datetime.utcnow(),
+        )
+        db.add(event)
 
     db.commit()
 

@@ -367,7 +367,7 @@ class TestExtractionIntegrationPipeline:
             assert req_v.max_active_backlogs == 0
             assert "CSE" in json.loads(req_v.allowed_branches_json)
 
-            event = db.execute(select(EventModel).where(EventModel.aggregate_id == drive_id)).scalar_one_or_none()
+            event = db.execute(select(EventModel).where(EventModel.aggregate_id == drive_id)).scalars().first()
             assert event is not None
             assert event.event_type == "ANNOUNCEMENT_EXTRACTION_CONFIRMED"
         finally:
@@ -396,11 +396,13 @@ class TestExtractionIntegrationPipeline:
         res2 = client.post("/api/extract/confirm-save", json=payload, headers={"X-CSRF-Token": csrf})
         assert res2.status_code == 201
 
-        # Check in DB that CompanyModel was not duplicated
+        # Check in DB that neither CompanyModel nor DriveModel was duplicated
         db: Session = SessionLocal()
         try:
             companies = db.execute(select(CompanyModel).where(CompanyModel.name == company_unique)).scalars().all()
             assert len(companies) == 1, "Duplicate CompanyModel records created for identical company name!"
+            drives = db.execute(select(DriveModel).where(DriveModel.company_name == company_unique)).scalars().all()
+            assert len(drives) == 1, "Duplicate DriveModel records created for identical company on same date!"
         finally:
             db.close()
 
