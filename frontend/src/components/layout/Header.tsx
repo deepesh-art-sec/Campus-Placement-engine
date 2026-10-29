@@ -1,18 +1,44 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import {
   LogOut,
   HelpCircle,
   Cpu,
+  Inbox,
 } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
+import { api } from "../../api/client";
 
 interface HeaderProps {
   onOpenTour?: () => void;
   onNavigateToAudit?: () => void;
+  onOpenMessageBox?: () => void;
 }
 
-export const Header: React.FC<HeaderProps> = ({ onOpenTour }) => {
+export const Header: React.FC<HeaderProps> = ({ onOpenTour, onOpenMessageBox }) => {
   const { user, logout } = useAuth();
+  const [pendingCount, setPendingCount] = useState<number>(0);
+
+  useEffect(() => {
+    if (user?.role === "officer") {
+      let active = true;
+      const checkPending = () => {
+        api.get<{ total_pending: number }>("/api/officer/inbox/summary")
+          .then((res) => {
+            if (active && res && typeof res.total_pending === "number") {
+              setPendingCount(res.total_pending);
+            }
+          })
+          .catch(() => {});
+      };
+
+      checkPending();
+      const timer = setInterval(checkPending, 15000); // 15s refresh
+      return () => {
+        active = false;
+        clearInterval(timer);
+      };
+    }
+  }, [user]);
 
   return (
     <header className="bg-[#080e1c]/95 backdrop-blur-md border-b border-[#1b2b4d] sticky top-0 z-30 shadow-md no-print transition-all shrink-0">
@@ -42,6 +68,24 @@ export const Header: React.FC<HeaderProps> = ({ onOpenTour }) => {
         </div>
 
         <div className="flex items-center gap-1.5 sm:gap-3 shrink-0">
+          {/* Message Box Button for Placement Officer */}
+          {onOpenMessageBox && user?.role === "officer" && (
+            <button
+              type="button"
+              onClick={onOpenMessageBox}
+              className="flex items-center gap-1.5 text-xs font-bold text-slate-200 hover:text-emerald-300 bg-[#111d38] hover:bg-[#162447] px-2.5 sm:px-3 py-1.5 rounded-xl transition-all border border-[#1b2b4d] hover:border-emerald-500/40 cursor-pointer shadow-xs"
+              title="Open Officer Message Box & Approval Hub"
+            >
+              <Inbox className="w-4 h-4 text-emerald-400" />
+              <span className="hidden sm:inline">Message Box</span>
+              {pendingCount > 0 && (
+                <span className="px-1.5 py-0.2 bg-amber-500 text-black text-[10px] font-black rounded-full animate-pulse shadow-xs">
+                  {pendingCount}
+                </span>
+              )}
+            </button>
+          )}
+
           {onOpenTour && user?.role === "officer" && (
             <button
               type="button"

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { api } from "../../api/client";
 import {
   Home,
+  Inbox,
   Users,
   Shield,
   Briefcase,
@@ -25,6 +26,7 @@ import {
 
 export type NavTabId =
   | "drives"
+  | "message_box"
   | "create_drive"
   | "announcements"
   | "students"
@@ -74,19 +76,24 @@ export const Navigation: React.FC<NavigationProps> = ({
   const [isCollapsed, setIsCollapsed] = useState(() => typeof window !== "undefined" && window.innerWidth < 1024);
   const [liveStudentCount, setLiveStudentCount] = useState<number | null>(null);
   const [liveClashCount, setLiveClashCount] = useState<number>(0);
+  const [livePendingCount, setLivePendingCount] = useState<number>(0);
 
   useEffect(() => {
     let active = true;
     Promise.all([
       api.get<{ total: number }>("/api/students?limit=1").catch(() => null),
       api.get<{ unresolved_clashes: number }>("/api/drives/overview-metrics").catch(() => null),
-    ]).then(([stuRes, metRes]) => {
+      api.get<{ total_pending: number }>("/api/officer/inbox/summary").catch(() => null),
+    ]).then(([stuRes, metRes, inbRes]) => {
       if (!active) return;
       if (stuRes && typeof stuRes.total === "number") {
         setLiveStudentCount(stuRes.total);
       }
       if (metRes && typeof metRes.unresolved_clashes === "number") {
         setLiveClashCount(metRes.unresolved_clashes);
+      }
+      if (inbRes && typeof inbRes.total_pending === "number") {
+        setLivePendingCount(inbRes.total_pending);
       }
     });
     return () => {
@@ -110,6 +117,15 @@ export const Navigation: React.FC<NavigationProps> = ({
       label: "Home / Overview",
       accessibleName: "Recruitment Drives",
       icon: Home,
+    },
+    {
+      moduleNum: "IN",
+      id: "message_box",
+      label: "Message Box & Approvals",
+      accessibleName: "Officer Message Box and Approval Hub",
+      icon: Inbox,
+      badge: livePendingCount > 0 ? `${livePendingCount} Pending` : undefined,
+      badgeVariant: "warning",
     },
     {
       moduleNum: "02",

@@ -19,6 +19,7 @@ import { WhatIfPublishView } from "./views/officer/WhatIfPublishView";
 import { ResultEntryView } from "./views/officer/ResultEntryView";
 import { DisputeComparisonView } from "./views/officer/DisputeComparisonView";
 import { CompanyExportView } from "./views/officer/CompanyExportView";
+import { OfficerMessageBoxView } from "./views/officer/OfficerMessageBoxView";
 import { UsersRolesView } from "./views/officer/UsersRolesView";
 import { AuditBackupSettingsView } from "./views/officer/AuditBackupSettingsView";
 import { AuditHistoryView } from "./views/officer/AuditHistoryView";
@@ -361,6 +362,7 @@ const MainContent: React.FC = () => {
       <Header
         onOpenTour={() => setIsTourOpen(true)}
         onNavigateToAudit={() => setActiveTab("offline_audit")}
+        onOpenMessageBox={() => setActiveTab("message_box")}
       />
       <div className="flex-1 flex overflow-hidden min-h-0 min-w-0 w-full relative">
         <Navigation
@@ -370,6 +372,7 @@ const MainContent: React.FC = () => {
         />
 
         <main className="flex-1 min-w-0 p-2.5 sm:p-4 md:p-6 lg:p-8 overflow-y-auto max-w-full">
+          {activeTab === "message_box" && <OfficerMessageBoxView />}
           {activeTab === "drives" && (
             <DrivesDashboard onNavigateTab={handleTabSelect} />
           )}
