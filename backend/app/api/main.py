@@ -44,6 +44,7 @@ from backend.app.api.routes import (
     student_routes,
     user_routes,
     what_if_routes,
+    officer_inbox_routes,
 )
 
 logger = get_logger("placement_api")
@@ -175,6 +176,7 @@ app.include_router(backup_routes.router)
 app.include_router(user_routes.router)
 app.include_router(coordinator_routes.router)
 app.include_router(message_routes.router)
+app.include_router(officer_inbox_routes.router)
 
 
 @app.get("/api/health")
