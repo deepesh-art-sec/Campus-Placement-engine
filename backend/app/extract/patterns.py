@@ -18,6 +18,11 @@ BRANCH_ALIASES: dict[str, str] = {
     "computer science & engineering": "CSE",
     "it": "IT",
     "information technology": "IT",
+    "info tech": "IT",
+    "electronics & comm": "ECE",
+    "electronics and comm": "ECE",
+    "comm": "ECE",
+    "electronics": "ECE",
     "data science": "Data Science",
     "ds": "Data Science",
     "cs - data science": "Data Science",
@@ -53,7 +58,9 @@ CS_ALLIED_BRANCHES = ["CSE", "IT", "Data Science", "AI & ML"]
 
 COMPOSITE_BRANCH_PHRASES: list[tuple[re.Pattern[str], str]] = [
     (re.compile(r"\bcomputer\s+science\s+(?:and|&)\s+engineering\b", re.IGNORECASE), "CSE"),
+    (re.compile(r"\belectronics\s*(?:and|&)\s*comm(?:unication)?(?:\s+engineering)?\b", re.IGNORECASE), "ECE"),
     (re.compile(r"\belectronics\s+(?:and|&)\s+communication(?:\s+engineering)?\b", re.IGNORECASE), "ECE"),
+    (re.compile(r"\binfo(?:rmation)?\s+tech(?:nology)?\b", re.IGNORECASE), "IT"),
     (re.compile(r"\belectrical\s+(?:and|&)\s+electronics(?:\s+engineering)?\b", re.IGNORECASE), "EEE"),
     (re.compile(r"\bdata\s+science\b", re.IGNORECASE), "Data Science"),
     (re.compile(r"\bartificial\s+intelligence(?:\s+(?:and|&)\s+machine\s+learning)?\b", re.IGNORECASE), "AI & ML"),
@@ -77,14 +84,26 @@ def parse_branches_string(branch_str: str) -> list[str]:
     """Parses a raw branch specification into canonical branch list."""
     clean_lower = branch_str.strip().lower()
 
-    if any(k in clean_lower for k in ("all branches", "any branch", "all disciplines", "open to all")):
-        return ["All Branches"]
+    # Check for explicit parenthetical list e.g. "(CSE, IT, ECE)"
+    m_paren = re.search(r"\(([^)]+)\)", branch_str)
+    if m_paren:
+        inside = m_paren.group(1).strip()
+        if any(k in inside.upper() for k in ("CSE", "ECE", "EEE", "MECH", "IT", "CIVIL", "CHEM")):
+            # Parse inside explicitly
+            inside_tokens = re.split(r"[,/|]|(?:\s+\band\b\s+)|(?:\s*&\s*)", inside)
+            res = [normalize_branch_token(t.strip()) for t in inside_tokens if t.strip()]
+            res = [r for r in res if r]
+            if res:
+                return res
 
     if "circuit branches" in clean_lower or "all circuit" in clean_lower:
         return list(CIRCUIT_BRANCHES)
 
     if "cs-allied" in clean_lower or "cs allied" in clean_lower or "all cs" in clean_lower:
         return list(CS_ALLIED_BRANCHES)
+
+    if any(k in clean_lower for k in ("all branches", "any branch", "all disciplines", "open to all branches", "open to all disciplines", "all engineering disciplines")):
+        return ["All Branches"]
 
     # Protect composite phrases before splitting
     normalized_text = branch_str
@@ -183,36 +202,69 @@ RE_CTC_NUMERIC_INR = re.compile(
     re.IGNORECASE,
 )
 
-# Company, Date, Mode
+# Company, Date, Mode, Role, Location
 RE_COMPANY = re.compile(
-    r"^(?:company(?:\s+name)?|client)[ \t]*[:=][ \t]*([^\r\n]+)",
+    r"^[ \t]*(?:[-*•]|\d+\.|\*\*)*[ \t]*(?:company(?:\s+name)?|client)\*?[ \t]*[:=][ \t]*([^\r\n]+)",
     re.IGNORECASE | re.MULTILINE,
 )
 RE_ROLE = re.compile(
-    r"^(?:job\s+role|role|position|profile|designation|title)[ \t]*[:=][ \t]*([^\r\n]+)",
+    r"(?:^[ \t]*(?:[-*•]|\d+\.|\*\*)*[ \t]*)?(?:job\s+role|role|position|profile|designation|job\s+title|title)\*?[ \t]*[:=\-][ \t]*([^\r\n]+)",
     re.IGNORECASE | re.MULTILINE,
 )
+RE_ROLE_CONTEXTUAL = re.compile(
+    r"(?:hiring|recruiting|inviting\s+applications\s+for|role\s+of|profile\s+of|position\s+of)\s+([A-Za-z0-9&/\s\-]{3,40}?)(?:\s+(?:interns?|roles?|positions?|engineers?|profile|freshers|for|at|\.|\n))",
+    re.IGNORECASE,
+)
+COMMON_PLACEMENT_ROLES = [
+    "Software Development Engineer",
+    "Software Engineer",
+    "Associate Software Engineer",
+    "Graduate Engineer Trainee",
+    "Associate Consultant",
+    "Systems Engineer",
+    "Technology Analyst",
+    "Member Technical Staff",
+    "Full Stack Developer",
+    "Frontend Developer",
+    "Backend Developer",
+    "Data Analyst",
+    "Data Scientist",
+    "Machine Learning Engineer",
+    "DevOps Engineer",
+    "Cloud Engineer",
+    "QA Engineer",
+    "Site Reliability Engineer",
+    "Analyst",
+    "Consultant",
+]
+
 RE_LOCATION = re.compile(
-    r"^(?:job\s+location|location|posting\s+location|work\s+location|venue)[ \t]*[:=][ \t]*([^\r\n]+)",
+    r"(?:^[ \t]*(?:[-*•]|\d+\.|\*\*)*[ \t]*)?(?:job\s+location|location|posting\s+location|work\s+location|venue|base\s+location)\*?[ \t]*[:=\-][ \t]*([^\r\n]+)",
     re.IGNORECASE | re.MULTILINE,
 )
+COMMON_LOCATIONS = [
+    "Bengaluru", "Bangalore", "Hyderabad", "Pune", "Gurgaon", "Gurugram",
+    "Noida", "Mumbai", "Chennai", "Delhi", "Delhi NCR", "Kolkata", "Ahmedabad",
+    "Pan India", "Work from Home", "Remote", "Hybrid",
+]
+
 RE_SUBJECT_COMPANY = re.compile(
     r"Subject:\s*(?:Campus\s+Recruitment\s+(?:Announcement|Drive):\s*)?([^(\n]+?)(?:\s*\([^)]*\))?$",
     re.IGNORECASE | re.MULTILINE,
 )
 RE_DRIVE_DATE = re.compile(
-    r"(?:drive\s+date|date\s+of\s+placement\s+drive|date\s+of\s+drive|interview\s+date|placement\s+date|drive\s+scheduled\s+date|date)[ \t]*[:=][ \t]*([^\r\n,;]+)",
-    re.IGNORECASE,
+    r"(?:^[ \t]*(?:[-*•]|\d+\.|\*\*)*[ \t]*)?(?:drive\s+date|date\s+of\s+placement\s+drive|date\s+of\s+drive|interview\s+date|placement\s+date|drive\s+scheduled\s+date|drive\s+schedule|date)\*?[ \t]*[:=][ \t]*([^\r\n,;]+)",
+    re.IGNORECASE | re.MULTILINE,
 )
 RE_DRIVE_MODE = re.compile(
-    r"(?:mode(?:\s+of\s+drive)?)[ \t]*[:=][ \t]*([^\r\n]+)",
-    re.IGNORECASE,
+    r"(?:^[ \t]*(?:[-*•]|\d+\.|\*\*)*[ \t]*)?(?:mode(?:\s+of\s+drive)?|drive\s+mode)\*?[ \t]*[:=][ \t]*([^\r\n]+)",
+    re.IGNORECASE | re.MULTILINE,
 )
 
 # Degree & Batch
 RE_DEGREE = re.compile(
-    r"(?:degree|program|course|qualification)[ \t]*[:=][ \t]*([^\r\n]+)",
-    re.IGNORECASE,
+    r"(?:^[ \t]*(?:[-*•]|\d+\.|\*\*)*[ \t]*)?(?:degree|program|course|qualification)\*?[ \t]*[:=][ \t]*([^\r\n]+)",
+    re.IGNORECASE | re.MULTILINE,
 )
 RE_BATCH = re.compile(
     r"(?:batch\s+of\s+|batch\s*[:=]?\s*|graduating\s+in\s+)(\d{4})",
@@ -221,13 +273,29 @@ RE_BATCH = re.compile(
 
 # Selection Process & Rounds
 RE_ROUND_LINE = re.compile(
-    r"Round\s*(\d+)[ \t]*[:\-][ \t]*([^\r\n]+)",
-    re.IGNORECASE,
+    r"^[ \t]*(?:[-*\u2022]|\*\*)*[ \t]*(?:Round|Phase|Stage)\s*(\d+|[IVXLCDM]+)[ \t]*[:\-][ \t]*([^\r\n]+)",
+    re.IGNORECASE | re.MULTILINE,
 )
 RE_DURATION_MINS = re.compile(
-    r"(\d+)\s*(?:mins|min|minutes)",
+    r"(\d+)\s*(?:mins|min|minutes|hr|hours)",
     re.IGNORECASE,
 )
+
+def roman_to_int(roman: str) -> int:
+    roman_map = {"I": 1, "V": 5, "X": 10, "L": 50, "C": 100, "D": 500, "M": 1000}
+    try:
+        val = 0
+        prev = 0
+        for ch in reversed(roman.upper()):
+            curr = roman_map.get(ch, 0)
+            if curr < prev:
+                val -= curr
+            else:
+                val += curr
+            prev = curr
+        return val if val > 0 else 1
+    except Exception:
+        return 1
 
 # Bond / Service Agreement
 RE_BOND = re.compile(

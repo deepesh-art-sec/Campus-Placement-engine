@@ -103,6 +103,7 @@ class ExtractedRequirements(BaseModel):
     # Drive Metadata
     company_name: ExtractedField[str] | None = None
     drive_date: ExtractedField[datetime.date] | None = None
+    application_deadline: ExtractedField[datetime.date] | None = None
     mode: ExtractedField[DriveMode] | None = None
     ctc_lpa: ExtractedField[float] | None = None
     stipend_monthly: ExtractedField[float] | None = None

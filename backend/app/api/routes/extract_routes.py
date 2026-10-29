@@ -21,6 +21,7 @@ from sqlalchemy.orm import Session
 from backend.app.api.auth.dependencies import require_officer_or_coordinator
 from backend.app.domain.models import DriveMode, DriveStatus
 from backend.app.extract.deterministic_extractor import DeterministicExtractor
+from backend.app.extract.nlp_engine import NLPEngine
 from backend.app.extract.document_loader import (
     CorruptDocumentError,
     DocumentLoader,
@@ -42,7 +43,7 @@ from backend.app.storage.models.entities import (
 
 router = APIRouter(prefix="/api/extract", tags=["Requirement Extraction"])
 
-_extractor = DeterministicExtractor()
+_extractor = NLPEngine()
 _loader = DocumentLoader(ocr_enabled=True)
 _feedback_store = FeedbackStore()
 _review_service = ExtractionReviewService(_feedback_store)
@@ -149,6 +150,7 @@ class ParsedAnnouncementResponse(BaseModel):
     location: str | None = None
     ctc_lpa: float | None = None
     drive_date: str | None = None
+    application_deadline: str | None = None
     mode: str = "on_campus"
     allowed_branches: list[str] = []
     min_cgpa: float | None = None
@@ -172,6 +174,7 @@ class ConfirmSaveExtractionRequest(BaseModel):
     job_role: str | None = None
     job_location: str | None = None
     drive_date: datetime.date = Field(default_factory=lambda: datetime.date.today() + datetime.timedelta(days=14))
+    application_deadline: datetime.date | None = None
     mode: str = "on_campus"
     ctc_lpa: float = Field(default=10.0, ge=0.0)
     min_cgpa: float = Field(default=6.0, ge=0.0, le=10.0)
@@ -373,6 +376,7 @@ async def parse_announcement(
         ("role", extracted.role),
         ("location", extracted.location),
         ("drive_date", extracted.drive_date),
+        ("application_deadline", getattr(extracted, "application_deadline", None)),
         ("mode", extracted.mode),
         ("ctc_lpa", extracted.ctc_lpa),
         ("cgpa_min", extracted.cgpa_min),
@@ -451,6 +455,7 @@ async def parse_announcement(
         location=extracted.location.value if extracted.location else None,
         ctc_lpa=extracted.ctc_lpa.value if extracted.ctc_lpa else None,
         drive_date=extracted.drive_date.value.isoformat() if extracted.drive_date else None,
+        application_deadline=extracted.application_deadline.value.isoformat() if getattr(extracted, "application_deadline", None) else None,
         mode=extracted.mode.value.value if extracted.mode else "on_campus",
         allowed_branches=norm_branches,
         min_cgpa=extracted.cgpa_min.value if extracted.cgpa_min else None,

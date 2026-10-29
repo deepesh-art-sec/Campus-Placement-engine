@@ -85,6 +85,7 @@ export interface ExtractionParseResult {
   location?: string;
   ctc_lpa?: number;
   drive_date?: string;
+  application_deadline?: string;
   mode?: string;
   allowed_branches?: string[];
   min_cgpa?: number;
