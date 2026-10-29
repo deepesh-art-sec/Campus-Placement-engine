@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useAuth } from "../../context/AuthContext";
 import { api } from "../../api/client";
 import { Badge } from "../../components/common/Badge";
+import { AlertBanner } from "../../components/common/AlertBanner";
 import {
   GraduationCap,
   Calendar,
@@ -9,6 +10,9 @@ import {
   Printer,
   Download,
   ChevronDown,
+  Send,
+  CheckCircle,
+  RefreshCw,
   AlertTriangle,
   Briefcase,
   CheckCircle2,
@@ -70,7 +74,9 @@ export const StudentPortal: React.FC = () => {
   const [notifications, setNotifications] = useState<any[]>([]);
 
   // Status Filter state (Home)
-  const [statusFilter, setStatusFilter] = useState<"all" | "eligible" | "ineligible" | "policy_blocked" | "needs_review">("all");
+  const [statusFilter, setStatusFilter] = useState<"all" | "applied" | "eligible" | "ineligible" | "policy_blocked" | "needs_review">("all");
+  const [applyingDriveId, setApplyingDriveId] = useState<string | null>(null);
+  const [applyFeedback, setApplyFeedback] = useState<{ type: "success" | "danger"; message: string } | null>(null);
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
 
   // Correction Request Form state
@@ -113,7 +119,11 @@ export const StudentPortal: React.FC = () => {
         ]);
 
       if (meRes.status === "fulfilled") setStudentInfo(meRes.value);
-      if (drivesRes.status === "fulfilled") setDrives(drivesRes.value || []);
+      if (drivesRes.status === "fulfilled") {
+        const dList = drivesRes.value || [];
+        setDrives(dList);
+        setSelectedDriveDetail((prev: any) => (prev && !dList.some((d: any) => d.id === prev.id) ? null : prev));
+      }
       if (schedRes.status === "fulfilled") setSchedule(schedRes.value || []);
       if (clashRes.status === "fulfilled") setClashData(clashRes.value);
       if (offersRes.status === "fulfilled") setOffersData(offersRes.value);
@@ -189,6 +199,88 @@ export const StudentPortal: React.FC = () => {
       setClashFeedback(err.message || "Failed to submit preference.");
     } finally {
       setClashSubmitting(false);
+    }
+  };
+
+  // Handle drive application submission
+  const handleApplyDrive = async (driveId: string, companyName: string, e?: React.MouseEvent) => {
+    if (e) e.stopPropagation();
+    try {
+      setApplyingDriveId(driveId);
+      setApplyFeedback(null);
+      const res = await api.post<any>(`/api/portal/drives/${driveId}/apply`, {});
+
+      setApplyFeedback({
+        type: "success",
+        message: res.message || `Application for ${companyName} submitted successfully!`,
+      });
+
+      // Update state locally immediately
+      setDrives((prev) =>
+        prev.map((d) =>
+          d.drive_id === driveId
+            ? { ...d, has_applied: true, application_status: "applied", applied_at: new Date().toISOString() }
+            : d
+        )
+      );
+
+      if (selectedDriveDetail && selectedDriveDetail.drive_id === driveId) {
+        setSelectedDriveDetail((prev: any) =>
+          prev
+            ? { ...prev, has_applied: true, application_status: "applied", applied_at: new Date().toISOString() }
+            : null
+        );
+      }
+
+      // Refresh in background
+      fetchAllData();
+    } catch (err: any) {
+      setApplyFeedback({
+        type: "danger",
+        message: err.message || `Failed to apply for ${companyName}. Please verify criteria.`,
+      });
+    } finally {
+      setApplyingDriveId(null);
+    }
+  };
+
+  // Handle drive application withdrawal
+  const handleWithdrawDrive = async (driveId: string, companyName: string, e?: React.MouseEvent) => {
+    if (e) e.stopPropagation();
+    try {
+      setApplyingDriveId(driveId);
+      setApplyFeedback(null);
+      await api.post<any>(`/api/portal/drives/${driveId}/withdraw`, {});
+
+      setApplyFeedback({
+        type: "success",
+        message: `Application for ${companyName} withdrawn successfully.`,
+      });
+
+      setDrives((prev) =>
+        prev.map((d) =>
+          d.drive_id === driveId
+            ? { ...d, has_applied: false, application_status: "withdrawn", applied_at: null }
+            : d
+        )
+      );
+
+      if (selectedDriveDetail && selectedDriveDetail.drive_id === driveId) {
+        setSelectedDriveDetail((prev: any) =>
+          prev
+            ? { ...prev, has_applied: false, application_status: "withdrawn", applied_at: null }
+            : null
+        );
+      }
+
+      fetchAllData();
+    } catch (err: any) {
+      setApplyFeedback({
+        type: "danger",
+        message: err.message || `Failed to withdraw application.`,
+      });
+    } finally {
+      setApplyingDriveId(null);
     }
   };
 
@@ -324,9 +416,15 @@ export const StudentPortal: React.FC = () => {
     URL.revokeObjectURL(url);
   };
 
+  const appliedCount = drives.filter((d) => d.has_applied).length;
+
   // Filter and sort drives
   const filteredDrives = drives
-    .filter((d) => (statusFilter === "all" ? true : d.status === statusFilter))
+    .filter((d) => {
+      if (statusFilter === "all") return true;
+      if (statusFilter === "applied") return d.has_applied === true;
+      return d.status === statusFilter;
+    })
     .sort((a, b) => {
       const d1 = new Date(a.drive_date).getTime();
       const d2 = new Date(b.drive_date).getTime();
@@ -608,6 +706,89 @@ export const StudentPortal: React.FC = () => {
               </div>
             </div>
 
+            {/* Application Action Card */}
+            <div className="bg-[#0d1527] p-5 rounded-3xl border border-[#1b2b4d] shadow-md flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+              <div className="flex items-center gap-3.5">
+                <div
+                  className={`p-3 rounded-2xl shrink-0 ${
+                    selectedDriveDetail.has_applied
+                      ? "bg-emerald-950/80 border border-emerald-500/50 text-emerald-400"
+                      : selectedDriveDetail.status === "eligible"
+                      ? "bg-blue-950/80 border border-blue-500/50 text-blue-400"
+                      : "bg-slate-800/80 border border-slate-700 text-slate-400"
+                  }`}
+                >
+                  <Send className="w-5 h-5" />
+                </div>
+                <div>
+                  <div className="text-xs font-bold text-white flex items-center gap-2">
+                    <span>
+                      {selectedDriveDetail.has_applied
+                        ? "Application Submitted & Registered"
+                        : selectedDriveDetail.status === "eligible"
+                        ? "Ready to Apply for Placement"
+                        : "Application Inactive"}
+                    </span>
+                    {selectedDriveDetail.has_applied && (
+                      <span className="px-2 py-0.5 bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 rounded-full text-[10px] font-bold">
+                        Active Candidate
+                      </span>
+                    )}
+                  </div>
+                  <div className="text-[11px] text-slate-400 mt-0.5">
+                    {selectedDriveDetail.has_applied
+                      ? `Applied on ${new Date(selectedDriveDetail.applied_at || selectedDriveDetail.drive_date).toLocaleDateString()} • Your profile is included in the company recruitment roster`
+                      : selectedDriveDetail.status === "eligible"
+                      ? "You meet all company requirements. Click Apply Now to submit your official application."
+                      : "You do not satisfy academic or college offer criteria for this drive."}
+                  </div>
+                </div>
+              </div>
+
+              <div className="shrink-0 w-full sm:w-auto flex items-center gap-2">
+                {selectedDriveDetail.has_applied ? (
+                  <>
+                    <span className="px-3.5 py-2 bg-emerald-950 text-emerald-300 border border-emerald-500/60 rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-2xs">
+                      <CheckCircle className="w-4 h-4 text-emerald-400" />
+                      <span>Application Active</span>
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => handleWithdrawDrive(selectedDriveDetail.drive_id, selectedDriveDetail.company_name)}
+                      disabled={applyingDriveId === selectedDriveDetail.drive_id}
+                      className="px-3 py-2 bg-[#111d38] hover:bg-rose-950/70 text-slate-300 hover:text-rose-300 border border-[#1b2b4d] hover:border-rose-800/60 rounded-xl text-xs font-semibold cursor-pointer transition-colors"
+                      title="Withdraw application"
+                    >
+                      Withdraw
+                    </button>
+                  </>
+                ) : selectedDriveDetail.status === "eligible" ? (
+                  <button
+                    type="button"
+                    onClick={() => handleApplyDrive(selectedDriveDetail.drive_id, selectedDriveDetail.company_name)}
+                    disabled={applyingDriveId === selectedDriveDetail.drive_id}
+                    className="min-h-[44px] px-5 py-2.5 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold text-xs rounded-xl shadow-md flex items-center justify-center gap-2 cursor-pointer transition-all disabled:opacity-50 w-full sm:w-auto"
+                  >
+                    {applyingDriveId === selectedDriveDetail.drive_id ? (
+                      <>
+                        <RefreshCw className="w-4 h-4 animate-spin" />
+                        <span>Submitting Application...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Send className="w-4 h-4" />
+                        <span>Apply for Drive Now</span>
+                      </>
+                    )}
+                  </button>
+                ) : (
+                  <span className="px-3 py-2 bg-slate-800/60 text-slate-400 border border-slate-700/60 rounded-xl text-xs font-medium cursor-not-allowed">
+                    Not Eligible to Apply
+                  </span>
+                )}
+              </div>
+            </div>
+
             {/* Section A: Company Rules (Side-by-Side Comparison) */}
             <div className="bg-[#0d1527] p-5 rounded-3xl border border-[#1b2b4d] shadow-md space-y-3">
               <div className="flex items-center justify-between pb-2 border-b border-[#1b2b4d]">
@@ -741,6 +922,11 @@ export const StudentPortal: React.FC = () => {
                     <div className="flex items-center gap-2">
                       <h1 className="text-base font-black text-white">{studentInfo?.name || "Candidate"}</h1>
                       <Badge variant="success" size="sm">Verified Candidate</Badge>
+                      {appliedCount > 0 && (
+                        <span className="px-2 py-0.5 bg-emerald-950/80 border border-emerald-500/40 text-emerald-300 rounded-lg text-[11px] font-bold">
+                          {appliedCount} Applied
+                        </span>
+                      )}
                     </div>
                     <div className="text-xs text-slate-400 font-medium mt-0.5">
                       <span>Roll: <strong>{studentInfo?.roll_no || user.username}</strong></span>
@@ -791,6 +977,15 @@ export const StudentPortal: React.FC = () => {
       {/* SCREEN 2: HOME / MY STATUS */}
       {activeTab === "status" && (
         <div className="space-y-4">
+          {/* Action Feedback Banner */}
+          {applyFeedback && (
+            <AlertBanner
+              type={applyFeedback.type}
+              message={applyFeedback.message}
+              onClose={() => setApplyFeedback(null)}
+            />
+          )}
+
           {/* Filter & Sort Controls */}
           <div className="bg-[#0d1527] p-3.5 rounded-2xl border border-[#1b2b4d] space-y-2.5">
             <div className="flex items-center justify-between text-xs font-bold text-slate-300">
@@ -806,7 +1001,7 @@ export const StudentPortal: React.FC = () => {
             </div>
 
             <div className="flex items-center gap-1.5 overflow-x-auto pb-1 text-xs">
-              {(["all", "eligible", "ineligible", "policy_blocked"] as const).map((st) => (
+              {(["all", "applied", "eligible", "ineligible", "policy_blocked"] as const).map((st) => (
                 <button
                   key={st}
                   onClick={() => setStatusFilter(st)}
@@ -816,7 +1011,13 @@ export const StudentPortal: React.FC = () => {
                       : "bg-[#080e1c] text-slate-400 border-[#1b2b4d] hover:text-white"
                   }`}
                 >
-                  {st === "all" ? "All Drives" : st === "policy_blocked" ? "Policy Blocked" : st.replace("_", " ").toUpperCase()}
+                  {st === "all"
+                    ? "All Drives"
+                    : st === "applied"
+                    ? `Applied (${appliedCount})`
+                    : st === "policy_blocked"
+                    ? "Policy Blocked"
+                    : st.replace("_", " ").toUpperCase()}
                 </button>
               ))}
             </div>
@@ -863,12 +1064,20 @@ export const StudentPortal: React.FC = () => {
                           <span>{new Date(d.drive_date).toLocaleDateString()}</span>
                         </div>
                       </div>
-                      <Badge
-                        variant={isEligible ? "success" : isBlocked ? "warning" : "danger"}
-                        size="sm"
-                      >
-                        {d.status === "policy_blocked" ? "POLICY BLOCKED" : d.status.replace("_", " ").toUpperCase()}
-                      </Badge>
+                      <div className="flex items-center gap-2">
+                        {d.has_applied && (
+                          <span className="px-2.5 py-1 bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 rounded-xl text-xs font-bold flex items-center gap-1">
+                            <CheckCircle className="w-3.5 h-3.5" />
+                            <span>Applied</span>
+                          </span>
+                        )}
+                        <Badge
+                          variant={isEligible ? "success" : isBlocked ? "warning" : "danger"}
+                          size="sm"
+                        >
+                          {d.status === "policy_blocked" ? "POLICY BLOCKED" : d.status.replace("_", " ").toUpperCase()}
+                        </Badge>
+                      </div>
                     </div>
 
                     {/* Single 3-Part Plain-English Line */}
@@ -876,9 +1085,40 @@ export const StudentPortal: React.FC = () => {
                       {d.headline_reason}
                     </div>
 
-                    <div className="flex items-center justify-between text-xs text-emerald-400 font-semibold pt-1">
-                      <span>Tap to inspect side-by-side criteria</span>
-                      <ChevronDown className="w-4 h-4" />
+                    <div className="flex items-center justify-between text-xs font-semibold pt-1">
+                      <div className="flex items-center gap-2">
+                        {d.has_applied ? (
+                          <span className="text-emerald-400 font-bold flex items-center gap-1.5">
+                            <CheckCircle className="w-3.5 h-3.5" />
+                            <span>Application Active</span>
+                          </span>
+                        ) : isEligible ? (
+                          <button
+                            type="button"
+                            onClick={(e) => handleApplyDrive(d.drive_id, d.company_name, e)}
+                            disabled={applyingDriveId === d.drive_id}
+                            className="px-3 py-1.5 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold rounded-xl text-xs flex items-center gap-1.5 shadow-sm transition-all"
+                          >
+                            {applyingDriveId === d.drive_id ? (
+                              <>
+                                <RefreshCw className="w-3 h-3 animate-spin" />
+                                <span>Applying...</span>
+                              </>
+                            ) : (
+                              <>
+                                <Send className="w-3 h-3" />
+                                <span>Apply Now</span>
+                              </>
+                            )}
+                          </button>
+                        ) : (
+                          <span className="text-slate-500 text-[11px]">Not Eligible</span>
+                        )}
+                      </div>
+                      <span className="text-emerald-400 hover:text-emerald-300 flex items-center gap-1">
+                        <span>Inspect criteria</span>
+                        <ChevronDown className="w-4 h-4" />
+                      </span>
                     </div>
                   </div>
                 );
@@ -1535,9 +1775,16 @@ export const StudentPortal: React.FC = () => {
                       <span className="font-bold text-slate-900 block">{d.company_name} ({d.ctc_lpa} LPA)</span>
                       <span className="text-slate-600 text-[11px] block">{d.headline_reason}</span>
                     </div>
-                    <span className="font-bold uppercase text-[10px] px-2 py-0.5 bg-slate-100 rounded">
-                      {d.status}
-                    </span>
+                    <div className="flex items-center gap-1.5">
+                      {d.has_applied && (
+                        <span className="font-bold uppercase text-[10px] px-2 py-0.5 bg-emerald-100 text-emerald-800 rounded">
+                          APPLIED
+                        </span>
+                      )}
+                      <span className="font-bold uppercase text-[10px] px-2 py-0.5 bg-slate-100 rounded">
+                        {d.status}
+                      </span>
+                    </div>
                   </div>
                 ))}
               </div>

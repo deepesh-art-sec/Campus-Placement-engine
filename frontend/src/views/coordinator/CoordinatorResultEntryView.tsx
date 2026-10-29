@@ -66,8 +66,10 @@ export const CoordinatorResultEntryView: React.FC = () => {
       const drvList = Array.isArray(dRes) ? dRes : ((dRes as any)?.items || []);
       setDrives(drvList);
       if (drvList.length > 0) {
-        setSelectedDriveId((prev) => prev || drvList[0].id);
+        setSelectedDriveId((prev) => (!prev || !drvList.some((d: any) => d.id === prev) ? drvList[0].id : prev));
         setCtcLpa((prev) => (prev ? prev : (drvList[0].ctc_lpa || 14.0)));
+      } else {
+        setSelectedDriveId("");
       }
       const sList = Array.isArray(sRes) ? sRes : ((sRes as any)?.items || []);
       setStudents(sList);

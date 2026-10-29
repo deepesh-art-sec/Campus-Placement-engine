@@ -35,6 +35,7 @@ from backend.app.storage.models.entities import (
     RoomModel,
     ScheduleModel,
     SlotModel,
+    StudentApplicationModel,
     UserModel,
 )
 
@@ -313,6 +314,14 @@ def get_drive_schedule(
     stmt = select(SlotModel).where(SlotModel.drive_id == drive_id).order_by(SlotModel.start_time.asc())
     slots = db.execute(stmt).scalars().all()
     all_clashes = detect_db_slot_clashes(db, drive_id=drive_id)
+    applied_student_ids = set(
+        db.execute(
+            select(StudentApplicationModel.student_id).where(
+                StudentApplicationModel.drive_id == drive_id,
+                StudentApplicationModel.status == "applied",
+            )
+        ).scalars().all()
+    )
 
     clash_map: dict[str, str] = {}
     room_clash_map: dict[tuple[str, str], str] = {}
@@ -333,6 +342,7 @@ def get_drive_schedule(
             "student_id": s.student_id,
             "student_name": s.student.name if s.student else "Student",
             "roll_no": s.student.roll_no if s.student else "",
+            "has_applied": s.student_id in applied_student_ids,
             "round_name": f"Round {s.round_number}",
             "room_id": s.room_id,
             "room_name": s.room.name if s.room else "Venue",

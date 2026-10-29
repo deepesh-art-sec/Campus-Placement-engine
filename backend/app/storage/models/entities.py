@@ -62,6 +62,7 @@ class StudentModel(Base):
     gap_years = relationship("GapYearModel", back_populates="student", cascade="all, delete-orphan")
     offers = relationship("OfferModel", back_populates="student", cascade="all, delete-orphan")
     eligibility_decisions = relationship("EligibilityDecisionModel", back_populates="student", cascade="all, delete-orphan")
+    applications = relationship("StudentApplicationModel", back_populates="student", cascade="all, delete-orphan")
     slots = relationship("SlotModel", back_populates="student", cascade="all, delete-orphan")
 
 
@@ -160,6 +161,7 @@ class DriveModel(Base):
     panels = relationship("PanelModel", back_populates="drive", cascade="all, delete-orphan")
     eligibility_runs = relationship("EligibilityRunModel", back_populates="drive", cascade="all, delete-orphan")
     eligibility_decisions = relationship("EligibilityDecisionModel", back_populates="drive", cascade="all, delete-orphan")
+    applications = relationship("StudentApplicationModel", back_populates="drive", cascade="all, delete-orphan")
     slots = relationship("SlotModel", back_populates="drive", cascade="all, delete-orphan")
 
 
@@ -249,6 +251,24 @@ class EligibilityDecisionModel(Base):
     run = relationship("EligibilityRunModel", back_populates="decisions")
     student = relationship("StudentModel", back_populates="eligibility_decisions")
     drive = relationship("DriveModel", back_populates="eligibility_decisions")
+
+
+class StudentApplicationModel(Base):
+    __tablename__ = "student_applications"
+
+    id = Column(String(36), primary_key=True)
+    student_id = Column(String(36), ForeignKey("students.id", ondelete="CASCADE"), nullable=False, index=True)
+    drive_id = Column(String(36), ForeignKey("drives.id", ondelete="CASCADE"), nullable=False, index=True)
+    status = Column(String(32), nullable=False, default="applied")  # 'applied', 'withdrawn'
+    applied_at = Column(DateTime, default=datetime.datetime.utcnow, nullable=False)
+    notes = Column(Text, nullable=True)
+
+    __table_args__ = (
+        UniqueConstraint("student_id", "drive_id", name="uq_student_drive_application"),
+    )
+
+    student = relationship("StudentModel", back_populates="applications")
+    drive = relationship("DriveModel", back_populates="applications")
 
 
 class RoomModel(Base):

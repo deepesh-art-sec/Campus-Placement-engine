@@ -59,9 +59,14 @@ export const CoordinatorOnTheDayView: React.FC<CoordinatorOnTheDayViewProps> = (
   const fetchDrives = async () => {
     try {
       const res = await api.get<Drive[]>("/api/drives");
-      setDrives(res || []);
-      if (res && res.length > 0 && !selectedDriveId) {
-        setSelectedDriveId(initialDriveId || res[0].id);
+      const list = res || [];
+      setDrives(list);
+      if (list.length > 0) {
+        if (!selectedDriveId || !list.some((d) => d.id === selectedDriveId)) {
+          setSelectedDriveId(initialDriveId && list.some((d) => d.id === initialDriveId) ? initialDriveId : list[0].id);
+        }
+      } else {
+        setSelectedDriveId("");
       }
     } catch {
       // Handled

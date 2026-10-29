@@ -41,9 +41,14 @@ export const EligibilityTableView: React.FC<EligibilityTableViewProps> = ({ init
     const fetchDrives = async () => {
       try {
         const res = await api.get<Drive[]>("/api/drives");
-        setDrives(res || []);
-        if (res.length > 0 && !selectedDriveId) {
-          setSelectedDriveId(res[0].id);
+        const list = res || [];
+        setDrives(list);
+        if (list.length > 0) {
+          if (!selectedDriveId || !list.some((d) => d.id === selectedDriveId)) {
+            setSelectedDriveId(list[0].id);
+          }
+        } else {
+          setSelectedDriveId("");
         }
       } catch (err: any) {
         setError("Failed to load recruitment drives.");
@@ -126,10 +131,16 @@ export const EligibilityTableView: React.FC<EligibilityTableViewProps> = ({ init
       d.student_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       d.roll_no.toLowerCase().includes(searchQuery.toLowerCase()) ||
       d.branch.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesStatus = statusFilter === "all" || d.status === statusFilter;
+    const matchesStatus =
+      statusFilter === "all"
+        ? true
+        : statusFilter === "applied"
+        ? d.has_applied === true
+        : d.status === statusFilter;
     return matchesSearch && matchesStatus;
   });
 
+  const appliedCount = decisions.filter((d) => d.has_applied).length;
   const eligibleCount = decisions.filter((d) => d.status === "eligible").length;
   const ineligibleCount = decisions.filter((d) => d.status === "ineligible").length;
   const policyBlockedCount = decisions.filter((d) => d.status === "policy_blocked").length;
@@ -185,21 +196,27 @@ export const EligibilityTableView: React.FC<EligibilityTableViewProps> = ({ init
       )}
 
       {/* Metrics Row */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3.5">
         <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-xs">
           <span className="text-xs font-semibold text-slate-500 uppercase">Total Evaluated</span>
           <span className="text-2xl font-black text-slate-900 block mt-1">{decisions.length}</span>
         </div>
-        <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-xs">
-          <span className="text-xs font-semibold text-emerald-600 uppercase">Eligible</span>
-          <span className="text-2xl font-black text-emerald-700 block mt-1">{eligibleCount}</span>
+        <div className="bg-white p-4 rounded-2xl border border-emerald-200 bg-emerald-50/30 shadow-xs">
+          <span className="text-xs font-semibold text-emerald-700 uppercase flex items-center gap-1">
+            <span className="w-2 h-2 rounded-full bg-emerald-500"></span> Applied
+          </span>
+          <span className="text-2xl font-black text-emerald-700 block mt-1">{appliedCount}</span>
         </div>
         <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-xs">
-          <span className="text-xs font-semibold text-rose-600 uppercase">Academically Ineligible</span>
+          <span className="text-xs font-semibold text-teal-600 uppercase">Eligible</span>
+          <span className="text-2xl font-black text-teal-700 block mt-1">{eligibleCount}</span>
+        </div>
+        <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-xs">
+          <span className="text-xs font-semibold text-rose-600 uppercase">Ineligible</span>
           <span className="text-2xl font-black text-rose-700 block mt-1">{ineligibleCount}</span>
         </div>
         <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-xs">
-          <span className="text-xs font-semibold text-amber-600 uppercase">Offer Policy Blocked</span>
+          <span className="text-xs font-semibold text-amber-600 uppercase">Policy Blocked</span>
           <span className="text-2xl font-black text-amber-700 block mt-1">{policyBlockedCount}</span>
         </div>
       </div>
@@ -218,7 +235,7 @@ export const EligibilityTableView: React.FC<EligibilityTableViewProps> = ({ init
         </div>
 
         <div className="flex items-center gap-2 overflow-x-auto w-full sm:w-auto">
-          {["all", "eligible", "ineligible", "policy_blocked"].map((st) => (
+          {["all", "applied", "eligible", "ineligible", "policy_blocked"].map((st) => (
             <button
               key={st}
               onClick={() => setStatusFilter(st)}
@@ -228,7 +245,7 @@ export const EligibilityTableView: React.FC<EligibilityTableViewProps> = ({ init
                   : "bg-slate-100 text-slate-600 hover:bg-slate-200"
               }`}
             >
-              {st.replace("_", " ")}
+              {st === "applied" ? `Applied (${appliedCount})` : st.replace("_", " ")}
             </button>
           ))}
         </div>
@@ -251,6 +268,7 @@ export const EligibilityTableView: React.FC<EligibilityTableViewProps> = ({ init
                 <th className="px-6 py-3.5">Candidate</th>
                 <th className="px-6 py-3.5">Branch & CGPA</th>
                 <th className="px-6 py-3.5">Status</th>
+                <th className="px-6 py-3.5">Application</th>
                 <th className="px-6 py-3.5">Headline Reason</th>
                 <th className="px-6 py-3.5 text-right">Trace</th>
               </tr>
@@ -282,6 +300,16 @@ export const EligibilityTableView: React.FC<EligibilityTableViewProps> = ({ init
                     >
                       {d.status.replace("_", " ")}
                     </Badge>
+                  </td>
+                  <td className="px-6 py-4">
+                    {d.has_applied ? (
+                      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800 border border-emerald-300">
+                        <CheckCircle className="w-3.5 h-3.5 text-emerald-600" />
+                        <span>Applied</span>
+                      </span>
+                    ) : (
+                      <span className="text-xs text-slate-400 font-medium">Not Applied</span>
+                    )}
                   </td>
                   <td className="px-6 py-4 text-xs text-slate-600 max-w-md truncate">
                     {d.reason}
@@ -325,6 +353,24 @@ export const EligibilityTableView: React.FC<EligibilityTableViewProps> = ({ init
                   {selectedStudent.status.replace("_", " ").toUpperCase()}
                 </Badge>
                 <span className="text-xs text-slate-600 font-medium">{selectedStudent.reason}</span>
+              </div>
+            </div>
+
+            <div>
+              <span className="text-xs font-bold text-slate-400 uppercase tracking-wider block mb-1">
+                Drive Application Status
+              </span>
+              <div className="flex items-center gap-2">
+                {selectedStudent.has_applied ? (
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-bold bg-emerald-100 text-emerald-800 border border-emerald-300">
+                    <CheckCircle className="w-3.5 h-3.5 text-emerald-600" />
+                    <span>Applied {selectedStudent.applied_at ? `on ${new Date(selectedStudent.applied_at).toLocaleDateString()}` : "for Drive"}</span>
+                  </span>
+                ) : (
+                  <span className="inline-flex items-center gap-1 px-3 py-1 rounded-xl text-xs font-medium bg-slate-100 text-slate-600 border border-slate-200">
+                    Not Applied
+                  </span>
+                )}
               </div>
             </div>
 

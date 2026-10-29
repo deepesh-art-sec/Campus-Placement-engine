@@ -77,6 +77,9 @@ interface ShortlistCandidate {
   twelfth_percentage: number | null;
   active_backlogs: number;
   gap_years: number;
+  has_applied?: boolean;
+  applied_at?: string | null;
+  application_status?: string;
 }
 
 interface VerificationCriterion {
@@ -93,6 +96,8 @@ interface WhyBreakdown {
     name: string;
     branch: string;
     cgpa: number;
+    has_applied?: boolean;
+    applied_at?: string | null;
   };
   verdict: string;
   company_name: string;
@@ -732,6 +737,7 @@ export const RecruiterPortal: React.FC = () => {
                   <th className="px-5 py-3">Roll No</th>
                   <th className="px-5 py-3">Candidate Full Name</th>
                   <th className="px-5 py-3">Branch</th>
+                  <th className="px-5 py-3 text-center">Application</th>
                   <th className="px-5 py-3 text-right">CGPA</th>
                   <th className="px-5 py-3 text-right">10th %</th>
                   <th className="px-5 py-3 text-right">12th %</th>
@@ -742,7 +748,7 @@ export const RecruiterPortal: React.FC = () => {
               <tbody className="divide-y divide-[#1b2b4d]">
                 {filteredShortlist.length === 0 ? (
                   <tr>
-                    <td colSpan={8} className="p-8 text-center text-slate-400 text-xs">
+                    <td colSpan={9} className="p-8 text-center text-slate-400 text-xs">
                       No candidates match your current search and discipline filters.
                     </td>
                   </tr>
@@ -758,6 +764,16 @@ export const RecruiterPortal: React.FC = () => {
                         {s.name}
                       </td>
                       <td className="px-5 py-3 text-slate-300">{s.branch}</td>
+                      <td className="px-5 py-3 text-center">
+                        {s.has_applied ? (
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-950 text-emerald-300 border border-emerald-500/50">
+                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
+                            Applied
+                          </span>
+                        ) : (
+                          <span className="text-slate-500 text-[10px]">Not Applied</span>
+                        )}
+                      </td>
                       <td className="px-5 py-3 font-mono font-bold text-emerald-300 text-right">{s.cgpa.toFixed(2)}</td>
                       <td className="px-5 py-3 text-slate-300 text-right">{s.tenth_percentage.toFixed(1)}%</td>
                       <td className="px-5 py-3 text-slate-300 text-right">
@@ -837,7 +853,14 @@ export const RecruiterPortal: React.FC = () => {
                 <div className="p-3.5 bg-[#080e1c] rounded-2xl border border-[#1b2b4d] flex items-center justify-between">
                   <div>
                     <span className="text-sm font-bold text-white block">{whyBreakdown.candidate.name}</span>
-                    <span className="text-xs text-slate-400">{whyBreakdown.candidate.branch}</span>
+                    <div className="flex items-center gap-2 mt-0.5">
+                      <span className="text-xs text-slate-400">{whyBreakdown.candidate.branch}</span>
+                      {whyBreakdown.candidate.has_applied && (
+                        <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/40">
+                          Applied
+                        </span>
+                      )}
+                    </div>
                   </div>
                   <div className="text-right">
                     <span className="text-xs font-mono font-bold text-emerald-400 block">{whyBreakdown.candidate.roll_no}</span>

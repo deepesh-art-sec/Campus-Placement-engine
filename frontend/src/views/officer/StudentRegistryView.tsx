@@ -39,6 +39,9 @@ interface DriveStatusItem {
   mode: string;
   status: "eligible" | "ineligible" | "policy_blocked" | "needs_review";
   headline_reason: string;
+  has_applied?: boolean;
+  applied_at?: string | null;
+  application_status?: string;
 }
 
 const CANONICAL_BRANCH_MAP: Record<string, string> = {
@@ -1071,17 +1074,24 @@ export const StudentRegistryView: React.FC = () => {
                               CTC: {ds.ctc_lpa} LPA • {ds.drive_date}
                             </span>
                           </div>
-                          <Badge
-                            variant={
-                              ds.status === "eligible"
-                                ? "success"
-                                : ds.status === "policy_blocked"
-                                ? "warning"
-                                : "danger"
-                            }
-                          >
-                            {ds.status.replace("_", " ")}
-                          </Badge>
+                          <div className="flex items-center gap-1.5">
+                            {ds.has_applied && (
+                              <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-300">
+                                Applied
+                              </span>
+                            )}
+                            <Badge
+                              variant={
+                                ds.status === "eligible"
+                                  ? "success"
+                                  : ds.status === "policy_blocked"
+                                  ? "warning"
+                                  : "danger"
+                              }
+                            >
+                              {ds.status.replace("_", " ")}
+                            </Badge>
+                          </div>
                         </div>
                         <div className="text-[11px] font-medium text-slate-600 pt-1 border-t border-slate-100 flex items-start gap-1">
                           <span className="font-bold text-slate-400 shrink-0">Reason:</span>

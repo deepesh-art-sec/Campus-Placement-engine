@@ -35,6 +35,7 @@ from backend.app.storage.models.entities import (
     DriveModel,
     EligibilityDecisionModel,
     EligibilityRunModel,
+    StudentApplicationModel,
     StudentModel,
     UserModel,
 )
@@ -175,12 +176,23 @@ def get_decisions(
         stmt = stmt.where(EligibilityDecisionModel.status == status_filter)
 
     results = db.execute(stmt).scalars().all()
+    apps = db.execute(
+        select(StudentApplicationModel).where(
+            StudentApplicationModel.drive_id == drive_id,
+            StudentApplicationModel.status == "applied",
+        )
+    ).scalars().all()
+    app_map = {a.student_id: a for a in apps}
     output = []
     for d in results:
         reasons_list = json.loads(d.reasons_json) if d.reasons_json else []
         reason = reasons_list[0] if reasons_list else ""
         rule_ids = json.loads(d.rule_ids_json) if d.rule_ids_json else []
+        app_item = app_map.get(d.student_id)
         output.append({
+            "has_applied": app_item is not None,
+            "applied_at": app_item.applied_at.isoformat() if app_item else None,
+            "application_status": "applied" if app_item else "not_applied",
             "student_id": d.student_id,
             "student_name": d.student.name if d.student else "Unknown",
             "roll_no": d.student.roll_no if d.student else "",
@@ -254,6 +266,13 @@ def get_needs_review_queue(
         EligibilityDecisionModel.status == "needs_review",
     )
     results = db.execute(stmt).scalars().all()
+    apps = db.execute(
+        select(StudentApplicationModel).where(
+            StudentApplicationModel.drive_id == drive_id,
+            StudentApplicationModel.status == "applied",
+        )
+    ).scalars().all()
+    app_map = {a.student_id: a for a in apps}
     queue = []
     for d in results:
         reasons = json.loads(d.reasons_json) if d.reasons_json else []

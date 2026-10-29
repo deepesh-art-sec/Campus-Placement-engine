@@ -110,9 +110,13 @@ export const CoordinatorDashboard: React.FC = () => {
       const data = await api.get<any>("/api/drives");
       const list = Array.isArray(data) ? data : data.drives || [];
       setDrives(list);
-      if (list.length > 0 && !selectedDriveId) {
-        setSelectedDriveId(list[0].id);
-        fetchDriveDetails(list[0].id);
+      if (list.length > 0) {
+        if (!selectedDriveId || !list.some((d: any) => d.id === selectedDriveId)) {
+          setSelectedDriveId(list[0].id);
+          fetchDriveDetails(list[0].id);
+        }
+      } else {
+        setSelectedDriveId("");
       }
     } catch (err) {
       console.error("Failed to load drives", err);

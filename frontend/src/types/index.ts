@@ -35,6 +35,7 @@ export interface Drive {
   version: number;
   requirements_summary?: string;
   requirements?: DriveRequirements;
+  applied_count?: number;
 }
 
 export interface Student {
@@ -146,6 +147,9 @@ export interface EligibilityDecisionItem {
   reason: string;
   passed_rules: string[];
   failed_rules: string[];
+  has_applied?: boolean;
+  applied_at?: string | null;
+  application_status?: string;
 }
 
 export interface ScheduleSlot {
@@ -160,6 +164,7 @@ export interface ScheduleSlot {
   time_slot?: string;
   start_time: string;
   end_time?: string;
+  has_applied?: boolean;
 }
 
 export interface StudentImpactItem {

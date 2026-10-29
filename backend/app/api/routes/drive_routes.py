@@ -21,15 +21,23 @@ import json
 from backend.app.importers.canonical_maps import parse_allowed_branches
 from backend.app.scheduler.clash_service import count_unresolved_clashes
 from backend.app.storage.models.entities import (
+    AttendanceRecordModel,
+    CompanyExportMappingModel,
     CompanyModel,
+    CoordinatorRequestModel,
+    DriveAttendanceModel,
     DriveModel,
     DriveRequirementVersionModel,
     EligibilityDecisionModel,
     EligibilityRunModel,
+    NotificationModel,
+    OfferModel,
     PanelModel,
-    SlotModel,
-    DriveAttendanceModel,
     PendingResultModel,
+    PlacementRequestModel,
+    SlotModel,
+    StudentApplicationModel,
+    StudentModel,
     UserModel,
 )
 
@@ -74,6 +82,7 @@ def list_drives(
             "status": d.status,
             "ctc_lpa": d.ctc_lpa,
             "version": d.version,
+            "applied_count": len([a for a in d.applications if a.status == "applied"]),
             "requirements": {
                 "min_cgpa": latest_req.min_cgpa if latest_req else 6.0,
                 "min_tenth_percentage": latest_req.min_tenth_percentage if latest_req else 60.0,
@@ -156,6 +165,7 @@ def get_drive(
         "status": drive.status,
         "ctc_lpa": drive.ctc_lpa,
         "version": drive.version,
+        "applied_count": len([a for a in drive.applications if a.status == "applied"]),
         "requirements": {
             "min_cgpa": latest_req.min_cgpa if latest_req else 6.0,
             "min_tenth_percentage": latest_req.min_tenth_percentage if latest_req else 60.0,
@@ -255,40 +265,215 @@ def delete_drive(
     current_user: UserModel = Depends(require_officer),
     db: Session = Depends(get_db),
 ) -> dict[str, str]:
-    """Permanently removes a drive record with audit justification (Officer only)."""
+    """Permanently purges a company and its drive across all dashboards (Officer only)."""
     stmt = select(DriveModel).where(DriveModel.id == drive_id)
     drive = db.execute(stmt).scalar_one_or_none()
     if not drive:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Drive not found.")
 
     company_name = drive.company_name
+    company_id = drive.company_id
 
-    # Cleanly remove associated records across all dependent tables
-    db.execute(delete(DriveAttendanceModel).where(DriveAttendanceModel.drive_id == drive_id))
-    db.execute(delete(PendingResultModel).where(PendingResultModel.drive_id == drive_id))
-    db.execute(delete(SlotModel).where(SlotModel.drive_id == drive_id))
-    db.execute(delete(EligibilityDecisionModel).where(EligibilityDecisionModel.drive_id == drive_id))
-    db.execute(delete(EligibilityRunModel).where(EligibilityRunModel.drive_id == drive_id))
-    db.execute(delete(PanelModel).where(PanelModel.drive_id == drive_id))
-    db.execute(delete(DriveRequirementVersionModel).where(DriveRequirementVersionModel.drive_id == drive_id))
+    # 1. Identify all drives associated with this company
+    company_drives = db.execute(
+        select(DriveModel).where(
+            (DriveModel.company_id == company_id) | (DriveModel.company_name == company_name)
+        )
+    ).scalars().all()
+    all_drive_ids = list({d.id for d in company_drives} | {drive_id})
 
-    db.delete(drive)
+    # 2. Cleanly purge dependent records for all target drive IDs
+    for did in all_drive_ids:
+        db.execute(delete(DriveAttendanceModel).where(DriveAttendanceModel.drive_id == did))
+        db.execute(delete(AttendanceRecordModel).where(AttendanceRecordModel.drive_id == did))
+        db.execute(delete(PendingResultModel).where(PendingResultModel.drive_id == did))
+        db.execute(delete(SlotModel).where(SlotModel.drive_id == did))
+        db.execute(delete(EligibilityDecisionModel).where(EligibilityDecisionModel.drive_id == did))
+        db.execute(delete(EligibilityRunModel).where(EligibilityRunModel.drive_id == did))
+        db.execute(delete(PanelModel).where(PanelModel.drive_id == did))
+        db.execute(delete(StudentApplicationModel).where(StudentApplicationModel.drive_id == did))
+        db.execute(delete(DriveRequirementVersionModel).where(DriveRequirementVersionModel.drive_id == did))
+        db.execute(delete(CoordinatorRequestModel).where(CoordinatorRequestModel.target_id == did))
+        db.execute(delete(PlacementRequestModel).where(PlacementRequestModel.drive_id == did))
 
+    # 3. Cleanly remove offers associated with this company & recalculate affected students' versions
+    offers = db.execute(select(OfferModel).where(OfferModel.company == company_name)).scalars().all()
+    affected_student_ids = {off.student_id for off in offers if off.student_id}
+    db.execute(delete(OfferModel).where(OfferModel.company == company_name))
+    for stu_id in affected_student_ids:
+        stu = db.execute(select(StudentModel).where(StudentModel.id == stu_id)).scalar_one_or_none()
+        if stu:
+            stu.version += 1
+
+    # 4. Clean up any coordinator requests referencing company
+    db.execute(
+        delete(CoordinatorRequestModel).where(
+            (CoordinatorRequestModel.target_id == company_id)
+            | (CoordinatorRequestModel.title.like(f"%{company_name}%"))
+            | (CoordinatorRequestModel.description.like(f"%{company_name}%"))
+        )
+    )
+
+    # 5. Clean up any placement requests referencing company
+    db.execute(
+        delete(PlacementRequestModel).where(
+            PlacementRequestModel.subject.like(f"%{company_name}%")
+        )
+    )
+
+    # 6. Clean up notifications referencing this company or drive
+    for did in all_drive_ids:
+        db.execute(delete(NotificationModel).where(NotificationModel.metadata_json.like(f"%{did}%")))
+    db.execute(
+        delete(NotificationModel).where(
+            (NotificationModel.title.like(f"%{company_name}%"))
+            | (NotificationModel.message.like(f"%{company_name}%"))
+        )
+    )
+
+    # 7. Clean up company export mappings
+    if company_id:
+        db.execute(delete(CompanyExportMappingModel).where(CompanyExportMappingModel.company_id == company_id))
+    db.execute(delete(CompanyExportMappingModel).where(CompanyExportMappingModel.company_name == company_name))
+
+    # 8. Deactivate or unlink recruiter accounts tied to this company
+    recruiter_users = db.execute(
+        select(UserModel).where(
+            (UserModel.company_id == company_id)
+            | (UserModel.username == f"recruiter_{company_name.lower().replace(' ', '_')}")
+        )
+    ).scalars().all()
+    for ru in recruiter_users:
+        ru.company_id = None
+        ru.is_active = False
+
+    # 9. Delete all drives for this company
+    db.execute(delete(DriveModel).where(DriveModel.id.in_(all_drive_ids)))
+
+    # 10. Delete company completely from companies table
+    if company_id:
+        db.execute(delete(CompanyModel).where(CompanyModel.id == company_id))
+    db.execute(delete(CompanyModel).where(CompanyModel.name == company_name))
+
+    # 11. Record immutable audit log
     AuditService.record_action(
         db=db,
         actor=f"{current_user.role}:{current_user.username}",
-        action="DRIVE_REMOVED",
+        action="COMPANY_AND_DRIVE_PURGED_COMPLETELY",
         aggregate_type="DRIVE",
         aggregate_id=drive_id,
         payload={
             "company_name": company_name,
+            "company_id": company_id,
+            "deleted_drive_ids": all_drive_ids,
             "reason": reason,
             "timestamp": datetime.datetime.utcnow().isoformat(),
         },
     )
 
     db.commit()
-    return {"message": f"Drive '{company_name}' removed permanently. Reason: {reason}"}
+    return {"message": f"Company '{company_name}' and all associated drive data removed completely across all dashboards."}
+
+
+@router.delete("/company/{company_id}")
+def delete_company_by_id(
+    company_id: str,
+    reason: str = "Company removed by placement officer",
+    current_user: UserModel = Depends(require_officer),
+    db: Session = Depends(get_db),
+) -> dict[str, str]:
+    """Permanently purges a company by its company_id across all dashboards (Officer only)."""
+    company = db.execute(select(CompanyModel).where(CompanyModel.id == company_id)).scalar_one_or_none()
+    if not company:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Company not found.")
+
+    company_name = company.name
+
+    # Identify all drives
+    company_drives = db.execute(
+        select(DriveModel).where(
+            (DriveModel.company_id == company_id) | (DriveModel.company_name == company_name)
+        )
+    ).scalars().all()
+    all_drive_ids = [d.id for d in company_drives]
+
+    for did in all_drive_ids:
+        db.execute(delete(DriveAttendanceModel).where(DriveAttendanceModel.drive_id == did))
+        db.execute(delete(AttendanceRecordModel).where(AttendanceRecordModel.drive_id == did))
+        db.execute(delete(PendingResultModel).where(PendingResultModel.drive_id == did))
+        db.execute(delete(SlotModel).where(SlotModel.drive_id == did))
+        db.execute(delete(EligibilityDecisionModel).where(EligibilityDecisionModel.drive_id == did))
+        db.execute(delete(EligibilityRunModel).where(EligibilityRunModel.drive_id == did))
+        db.execute(delete(PanelModel).where(PanelModel.drive_id == did))
+        db.execute(delete(StudentApplicationModel).where(StudentApplicationModel.drive_id == did))
+        db.execute(delete(DriveRequirementVersionModel).where(DriveRequirementVersionModel.drive_id == did))
+        db.execute(delete(CoordinatorRequestModel).where(CoordinatorRequestModel.target_id == did))
+        db.execute(delete(PlacementRequestModel).where(PlacementRequestModel.drive_id == did))
+
+    offers = db.execute(select(OfferModel).where(OfferModel.company == company_name)).scalars().all()
+    affected_student_ids = {off.student_id for off in offers if off.student_id}
+    db.execute(delete(OfferModel).where(OfferModel.company == company_name))
+    for stu_id in affected_student_ids:
+        stu = db.execute(select(StudentModel).where(StudentModel.id == stu_id)).scalar_one_or_none()
+        if stu:
+            stu.version += 1
+
+    db.execute(
+        delete(CoordinatorRequestModel).where(
+            (CoordinatorRequestModel.target_id == company_id)
+            | (CoordinatorRequestModel.title.like(f"%{company_name}%"))
+            | (CoordinatorRequestModel.description.like(f"%{company_name}%"))
+        )
+    )
+    db.execute(
+        delete(PlacementRequestModel).where(
+            PlacementRequestModel.subject.like(f"%{company_name}%")
+        )
+    )
+
+    for did in all_drive_ids:
+        db.execute(delete(NotificationModel).where(NotificationModel.metadata_json.like(f"%{did}%")))
+    db.execute(
+        delete(NotificationModel).where(
+            (NotificationModel.title.like(f"%{company_name}%"))
+            | (NotificationModel.message.like(f"%{company_name}%"))
+        )
+    )
+
+    db.execute(delete(CompanyExportMappingModel).where(CompanyExportMappingModel.company_id == company_id))
+    db.execute(delete(CompanyExportMappingModel).where(CompanyExportMappingModel.company_name == company_name))
+
+    recruiter_users = db.execute(
+        select(UserModel).where(
+            (UserModel.company_id == company_id)
+            | (UserModel.username == f"recruiter_{company_name.lower().replace(' ', '_')}")
+        )
+    ).scalars().all()
+    for ru in recruiter_users:
+        ru.company_id = None
+        ru.is_active = False
+
+    if all_drive_ids:
+        db.execute(delete(DriveModel).where(DriveModel.id.in_(all_drive_ids)))
+
+    db.delete(company)
+
+    AuditService.record_action(
+        db=db,
+        actor=f"{current_user.role}:{current_user.username}",
+        action="COMPANY_PURGED_COMPLETELY",
+        aggregate_type="COMPANY",
+        aggregate_id=company_id,
+        payload={
+            "company_name": company_name,
+            "deleted_drive_ids": all_drive_ids,
+            "reason": reason,
+            "timestamp": datetime.datetime.utcnow().isoformat(),
+        },
+    )
+
+    db.commit()
+    return {"message": f"Company '{company_name}' and all associated records permanently removed across all dashboards."}
 
 
 @router.post("/{drive_id}/duplicate")

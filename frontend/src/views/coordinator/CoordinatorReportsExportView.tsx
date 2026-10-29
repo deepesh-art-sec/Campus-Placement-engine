@@ -46,10 +46,15 @@ export const CoordinatorReportsExportView: React.FC = () => {
         api.get<Drive[]>("/api/drives"),
         api.get<CompanyMapping[]>("/api/exports/company-mappings").catch(() => []),
       ]);
-      setDrives(drivesRes || []);
+      const list = drivesRes || [];
+      setDrives(list);
       setMappings(mappingsRes || []);
-      if (drivesRes && drivesRes.length > 0 && !selectedDriveId) {
-        setSelectedDriveId(drivesRes[0].id);
+      if (list.length > 0) {
+        if (!selectedDriveId || !list.some((d) => d.id === selectedDriveId)) {
+          setSelectedDriveId(list[0].id);
+        }
+      } else {
+        setSelectedDriveId("");
       }
     } catch (err: any) {
       setError(err?.message || "Failed to load drive export data.");

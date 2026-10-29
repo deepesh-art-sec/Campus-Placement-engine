@@ -130,7 +130,7 @@ export const DrivesDashboard: React.FC<DrivesDashboardProps> = ({ onNavigateTab 
       setDeleting(true);
       setError(null);
       await api.delete(`/api/drives/${deleteModalDrive.id}?reason=${encodeURIComponent(deleteReason)}`);
-      setSuccess(`Drive for ${deleteModalDrive.company_name} has been permanently removed.`);
+      setSuccess(`Company '${deleteModalDrive.company_name}' and all associated records permanently removed across all dashboards.`);
       setDeleteModalDrive(null);
       setDeleteReason("");
       fetchDrivesAndMetrics();
@@ -734,7 +734,7 @@ export const DrivesDashboard: React.FC<DrivesDashboardProps> = ({ onNavigateTab 
               <AlertTriangle className="w-4 h-4 text-rose-600 shrink-0 mt-0.5" />
               <div>
                 <strong className="block font-bold">Irreversible Administrative Action:</strong>
-                Permanently deleting this drive will purge all candidate eligibility evaluations, round schedule allocations, interview panels, and requirement versions. An immutable audit record will be logged with your justification.
+                Permanently deleting this drive will completely remove the company, its drives, applications, offers, eligibility evaluations, interview schedules, and requests across all dashboards (Officer, Coordinator, Student, and Recruiter). An immutable audit record will be logged with your justification.
               </div>
             </div>
 

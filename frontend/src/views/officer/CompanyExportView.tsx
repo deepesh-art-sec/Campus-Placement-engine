@@ -104,9 +104,14 @@ export const CompanyExportView: React.FC = () => {
         api.get<BroadcastHistoryRecord[]>("/api/messages/broadcast-history").catch(() => []),
       ]);
 
-      setDrives(drivesRes || []);
-      if (drivesRes && drivesRes.length > 0 && !selectedDriveId) {
-        setSelectedDriveId(drivesRes[0].id);
+      const list = drivesRes || [];
+      setDrives(list);
+      if (list.length > 0) {
+        if (!selectedDriveId || !list.some((d) => d.id === selectedDriveId)) {
+          setSelectedDriveId(list[0].id);
+        }
+      } else {
+        setSelectedDriveId("");
       }
       setTemplates(templatesRes || []);
       setBroadcastHistory(historyRes || []);
@@ -420,7 +425,7 @@ export const CompanyExportView: React.FC = () => {
             >
               {drives.map((d) => (
                 <option key={d.id} value={d.id}>
-                  {d.company_name} — {d.ctc_lpa} LPA ({d.drive_date})
+                  {d.company_name} — {d.ctc_lpa} LPA ({d.drive_date}){d.applied_count !== undefined ? ` • ${d.applied_count} Applied` : ""}
                 </option>
               ))}
             </select>
@@ -435,6 +440,11 @@ export const CompanyExportView: React.FC = () => {
             <span className="px-2.5 py-1 bg-emerald-50 text-emerald-700 rounded-lg font-bold border border-emerald-200">
               CTC: {selectedDrive.ctc_lpa} LPA
             </span>
+            {selectedDrive.applied_count !== undefined && (
+              <span className="px-2.5 py-1 bg-teal-50 text-teal-700 rounded-lg font-bold border border-teal-200">
+                Applied: {selectedDrive.applied_count}
+              </span>
+            )}
             <span className="px-2.5 py-1 bg-blue-50 text-blue-700 rounded-lg font-medium border border-blue-200 flex items-center gap-1">
               <Calendar className="w-3 h-3" />
               {selectedDrive.drive_date}

@@ -31,8 +31,15 @@ export const CoordinatorCommunicationView: React.FC = () => {
           api.get<Drive[]>("/api/drives"),
           api.get<{ items: Student[] }>("/api/students?limit=2500"),
         ]);
-        setDrives(dRes || []);
-        if (dRes && dRes.length > 0) setSelectedDriveId(dRes[0].id);
+        const list = dRes || [];
+        setDrives(list);
+        if (list.length > 0) {
+          if (!selectedDriveId || !list.some((d) => d.id === selectedDriveId)) {
+            setSelectedDriveId(list[0].id);
+          }
+        } else {
+          setSelectedDriveId("");
+        }
         const sList = sRes.items || [];
         setStudents(sList);
         if (sList.length > 0) setSelectedStudentRoll(sList[0].roll_no);

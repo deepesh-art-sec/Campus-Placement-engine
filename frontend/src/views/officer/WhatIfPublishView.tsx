@@ -77,9 +77,14 @@ export const WhatIfPublishView: React.FC<WhatIfPublishViewProps> = ({ initialDri
   const fetchDrives = async () => {
     try {
       const res = await api.get<Drive[]>("/api/drives");
-      setDrives(res || []);
-      if (res && res.length > 0 && !selectedDriveId) {
-        setSelectedDriveId(res[0].id);
+      const list = res || [];
+      setDrives(list);
+      if (list.length > 0) {
+        if (!selectedDriveId || !list.some((d) => d.id === selectedDriveId)) {
+          setSelectedDriveId(list[0].id);
+        }
+      } else {
+        setSelectedDriveId("");
       }
     } catch {
       setError("Failed to load drives.");

@@ -41,8 +41,12 @@ export const ResultEntryView: React.FC = () => {
         const drvList = Array.isArray(drvRes) ? drvRes : ((drvRes as any)?.items || []);
         setDrives(drvList);
         if (drvList.length > 0) {
-          setSelectedDriveId(drvList[0].id);
-          setCtcLpa(drvList[0].ctc_lpa || 14.0);
+          if (!selectedDriveId || !drvList.some((d: any) => d.id === selectedDriveId)) {
+            setSelectedDriveId(drvList[0].id);
+            setCtcLpa(drvList[0].ctc_lpa || 14.0);
+          }
+        } else {
+          setSelectedDriveId("");
         }
         const stuList = Array.isArray(stuRes) ? stuRes : ((stuRes as any)?.items || []);
         setStudents(stuList);

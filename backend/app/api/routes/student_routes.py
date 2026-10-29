@@ -47,6 +47,7 @@ from backend.app.storage.models.entities import (
     NotificationModel,
     OfferModel,
     SlotModel,
+    StudentApplicationModel,
     StudentModel,
     UserModel,
 )
@@ -195,6 +196,8 @@ def get_student_drive_statuses(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Student not found.")
 
     drives = db.execute(select(DriveModel).order_by(DriveModel.drive_date.asc())).scalars().all()
+    apps = db.execute(select(StudentApplicationModel).where(StudentApplicationModel.student_id == stu.id)).scalars().all()
+    app_map = {a.drive_id: a for a in apps}
     results = []
 
     for d in drives:
@@ -219,6 +222,9 @@ def get_student_drive_statuses(
                 st = "ineligible"
                 headline = f"CGPA {stu.cgpa:.2f} is below the required {min_cgpa}"
 
+        app_entry = app_map.get(d.id)
+        has_applied = app_entry is not None and app_entry.status == "applied"
+
         results.append({
             "drive_id": d.id,
             "company_name": d.company_name,
@@ -227,6 +233,9 @@ def get_student_drive_statuses(
             "mode": d.mode,
             "status": st,
             "headline_reason": headline,
+            "has_applied": has_applied,
+            "applied_at": app_entry.applied_at.isoformat() if app_entry else None,
+            "application_status": app_entry.status if app_entry else "not_applied",
         })
 
     return results
@@ -732,6 +741,10 @@ def portal_get_drives(
 
     # Fetch all drives
     drives = db.execute(select(DriveModel).order_by(DriveModel.drive_date.asc())).scalars().all()
+    apps = db.execute(
+        select(StudentApplicationModel).where(StudentApplicationModel.student_id == student.id)
+    ).scalars().all()
+    app_map = {a.drive_id: a for a in apps}
     results = []
 
     for d in drives:
@@ -939,6 +952,9 @@ def portal_get_drives(
             },
         ]
 
+        app_item = app_map.get(d.id)
+        has_applied = app_item is not None and app_item.status == "applied"
+
         results.append({
             "drive_id": d.id,
             "company_name": d.company_name,
@@ -946,6 +962,9 @@ def portal_get_drives(
             "drive_date": d.drive_date.isoformat(),
             "mode": d.mode,
             "status": final_status,
+            "has_applied": has_applied,
+            "applied_at": app_item.applied_at.isoformat() if (app_item and has_applied) else None,
+            "application_status": app_item.status if app_item else "not_applied",
             "status_parts": status_parts,
             "headline_reason": headline,
             "what_would_change_this": what_would_change_this,
@@ -961,6 +980,205 @@ def portal_get_drives(
         })
 
     return results
+
+
+class ApplyDriveRequest(BaseModel):
+    notes: str | None = None
+
+
+@router.post("/api/portal/drives/{drive_id}/apply")
+def portal_apply_to_drive(
+    drive_id: str,
+    req: ApplyDriveRequest | None = None,
+    current_user: UserModel = Depends(require_student),
+    db: Session = Depends(get_db),
+) -> dict[str, Any]:
+    """Allows an eligible candidate to formally apply for a campus placement drive."""
+    student = _resolve_student(db, current_user)
+    stmt_d = select(DriveModel).where(DriveModel.id == drive_id)
+    drive = db.execute(stmt_d).scalar_one_or_none()
+    if not drive:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Campus recruitment drive not found.")
+
+    # 1. Eligibility validation: candidate must be eligible for this drive
+    active_backlogs = len([b for b in student.backlogs if b.status == "active"])
+    total_gaps = sum(g.duration_years for g in student.gap_years)
+    existing_offers = list(student.offers)
+    offers_count = len(existing_offers)
+
+    req_version = drive.requirement_versions[0] if drive.requirement_versions else None
+    min_cgpa = req_version.min_cgpa if req_version and req_version.min_cgpa is not None else 6.0
+    min_tenth = req_version.min_tenth_percentage if req_version and req_version.min_tenth_percentage is not None else 60.0
+    min_twelfth = req_version.min_twelfth_percentage if req_version and req_version.min_twelfth_percentage is not None else 60.0
+    max_active_b = req_version.max_active_backlogs if req_version and req_version.max_active_backlogs is not None else 0
+    max_gaps = req_version.max_gap_years if req_version and req_version.max_gap_years is not None else 1
+    allowed_branches = parse_allowed_branches(req_version.allowed_branches_json if req_version else [])
+
+    cgpa_passed = student.cgpa >= min_cgpa
+    tenth_passed = student.tenth_percentage >= min_tenth
+    twelfth_passed = True
+    if student.twelfth_percentage is not None and min_twelfth is not None:
+        twelfth_passed = student.twelfth_percentage >= min_twelfth
+    branch_passed = is_branch_allowed(student.branch, allowed_branches)
+    backlogs_passed = active_backlogs <= max_active_b
+    gaps_passed = total_gaps <= max_gaps
+
+    company_rules_ok = cgpa_passed and tenth_passed and twelfth_passed and branch_passed and backlogs_passed and gaps_passed
+
+    dream_threshold = 10.0
+    policy_blocked = False
+    if offers_count >= 1:
+        if drive.ctc_lpa >= dream_threshold and offers_count < 2:
+            policy_blocked = False
+        else:
+            policy_blocked = True
+
+    if not company_rules_ok or policy_blocked:
+        reason = "Institutional policy restriction (maximum offers reached)." if policy_blocked else "Academic criteria requirement not satisfied."
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Candidate is not eligible to apply for {drive.company_name}: {reason}",
+        )
+
+    # 2. Check existing application
+    stmt_app = select(StudentApplicationModel).where(
+        StudentApplicationModel.student_id == student.id,
+        StudentApplicationModel.drive_id == drive.id,
+    )
+    existing_app = db.execute(stmt_app).scalar_one_or_none()
+
+    now = datetime.datetime.utcnow()
+    if existing_app:
+        if existing_app.status == "applied":
+            return {
+                "success": True,
+                "message": f"You have already applied for {drive.company_name}.",
+                "application_id": existing_app.id,
+                "applied_at": existing_app.applied_at.isoformat(),
+                "status": "applied",
+            }
+        else:
+            existing_app.status = "applied"
+            existing_app.applied_at = now
+            existing_app.notes = req.notes if req else None
+            app_record = existing_app
+    else:
+        app_record = StudentApplicationModel(
+            id=str(uuid.uuid4()),
+            student_id=student.id,
+            drive_id=drive.id,
+            status="applied",
+            applied_at=now,
+            notes=req.notes if req else None,
+        )
+        db.add(app_record)
+
+    # 3. Create student in-app confirmation notification
+    notif = NotificationModel(
+        id=str(uuid.uuid4()),
+        recipient_role="student",
+        recipient_username=current_user.username,
+        category="application_submitted",
+        title=f"Application Registered: {drive.company_name}",
+        message=f"Your placement application for {drive.company_name} ({drive.ctc_lpa} LPA) has been recorded successfully. Interview venues and slots will appear in your schedule tab.",
+        is_read=False,
+        metadata_json=json.dumps({"drive_id": drive.id, "student_id": student.id}),
+    )
+    db.add(notif)
+
+    # 4. Institutional Audit Log entry
+    AuditService.record_student_access(
+        db=db,
+        actor=current_user.username,
+        student_id=student.id,
+        action="APPLY_DRIVE",
+        endpoint=f"/api/portal/drives/{drive.id}/apply",
+        details={
+            "drive_id": drive.id,
+            "company_name": drive.company_name,
+            "ctc_lpa": drive.ctc_lpa,
+            "applied_at": now.isoformat(),
+        },
+    )
+
+    db.commit()
+
+    return {
+        "success": True,
+        "message": f"Successfully applied for {drive.company_name}!",
+        "application_id": app_record.id,
+        "applied_at": now.isoformat(),
+        "status": "applied",
+        "has_applied": True,
+        "application_status": "applied",
+        "drive_id": drive.id,
+    }
+
+
+@router.post("/api/portal/drives/{drive_id}/withdraw")
+def portal_withdraw_application(
+    drive_id: str,
+    current_user: UserModel = Depends(require_student),
+    db: Session = Depends(get_db),
+) -> dict[str, Any]:
+    """Allows candidate to withdraw their active drive application."""
+    student = _resolve_student(db, current_user)
+    stmt_app = select(StudentApplicationModel).where(
+        StudentApplicationModel.student_id == student.id,
+        StudentApplicationModel.drive_id == drive_id,
+    )
+    existing_app = db.execute(stmt_app).scalar_one_or_none()
+    if not existing_app or existing_app.status != "applied":
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Active application not found for this drive.")
+
+    existing_app.status = "withdrawn"
+
+    AuditService.record_student_access(
+        db=db,
+        actor=current_user.username,
+        student_id=student.id,
+        action="WITHDRAW_DRIVE",
+        endpoint=f"/api/portal/drives/{drive_id}/withdraw",
+        details={"drive_id": drive_id},
+    )
+
+    db.commit()
+
+    return {
+        "success": True,
+        "message": "Application withdrawn successfully.",
+        "status": "withdrawn",
+        "has_applied": False,
+        "application_status": "withdrawn",
+        "drive_id": drive_id,
+    }
+
+
+@router.get("/api/portal/applications")
+def portal_get_applications(
+    current_user: UserModel = Depends(require_student),
+    db: Session = Depends(get_db),
+) -> list[dict[str, Any]]:
+    """Returns candidate's placement drive applications."""
+    student = _resolve_student(db, current_user)
+    stmt = (
+        select(StudentApplicationModel)
+        .where(StudentApplicationModel.student_id == student.id)
+        .order_by(StudentApplicationModel.applied_at.desc())
+    )
+    apps = db.execute(stmt).scalars().all()
+    return [
+        {
+            "id": a.id,
+            "drive_id": a.drive_id,
+            "company_name": a.drive.company_name if a.drive else "Unknown",
+            "ctc_lpa": a.drive.ctc_lpa if a.drive else 0.0,
+            "drive_date": a.drive.drive_date.isoformat() if a.drive else None,
+            "status": a.status,
+            "applied_at": a.applied_at.isoformat(),
+        }
+        for a in apps
+    ]
 
 
 @router.get("/api/portal/schedule")

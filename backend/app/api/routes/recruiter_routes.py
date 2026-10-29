@@ -33,6 +33,7 @@ from backend.app.storage.models.entities import (
     OfferModel,
     PendingResultModel,
     SlotModel,
+    StudentApplicationModel,
     StudentModel,
     UserModel,
 )
@@ -146,6 +147,14 @@ def get_recruiter_shortlist(
     eligible_decisions = db.execute(dec_stmt).scalars().all()
     shortlist_ids = [d.student_id for d in eligible_decisions]
 
+    apps = db.execute(
+        select(StudentApplicationModel).where(
+            StudentApplicationModel.drive_id == drive.id,
+            StudentApplicationModel.status == "applied",
+        )
+    ).scalars().all()
+    app_map = {a.student_id: a for a in apps}
+
     if not shortlist_ids:
         return {"total": 0, "shortlist": []}
 
@@ -176,6 +185,8 @@ def get_recruiter_shortlist(
                 "twelfth_percentage": round(s.twelfth_percentage, 1) if s.twelfth_percentage else None,
                 "active_backlogs": len([b for b in s.backlogs if b.status == "active"]),
                 "gap_years": len(s.gap_years),
+                "has_applied": s.id in app_map,
+                "applied_at": app_map[s.id].applied_at.isoformat() if s.id in app_map else None,
             }
             for s in students
         ],
@@ -287,12 +298,23 @@ def get_candidate_verification_breakdown(
         },
     ]
 
+    # Check application status
+    app_record = db.execute(
+        select(StudentApplicationModel).where(
+            StudentApplicationModel.drive_id == drive.id,
+            StudentApplicationModel.student_id == stu.id,
+            StudentApplicationModel.status == "applied",
+        )
+    ).scalar_one_or_none()
+
     return {
         "candidate": {
             "roll_no": stu.roll_no,
             "name": stu.name,
             "branch": stu.branch,
             "cgpa": stu.cgpa,
+            "has_applied": app_record is not None,
+            "applied_at": app_record.applied_at.isoformat() if app_record and app_record.applied_at else None,
         },
         "verdict": "VERIFIED_ELIGIBLE",
         "company_name": drive.company_name,

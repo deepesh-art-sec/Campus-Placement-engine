@@ -24,7 +24,13 @@ export const DisputeComparisonView: React.FC = () => {
         ]);
         const drvList = Array.isArray(drvRes) ? drvRes : ((drvRes as any)?.items || []);
         setDrives(drvList);
-        if (drvList.length > 0) setSelectedDriveId(drvList[0].id);
+        if (drvList.length > 0) {
+          if (!selectedDriveId || !drvList.some((d: any) => d.id === selectedDriveId)) {
+            setSelectedDriveId(drvList[0].id);
+          }
+        } else {
+          setSelectedDriveId("");
+        }
 
         const stuList = Array.isArray(stuRes) ? stuRes : ((stuRes as any)?.items || []);
         setStudents(stuList);

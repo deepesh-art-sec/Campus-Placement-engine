@@ -127,9 +127,14 @@ export const ScheduleBoardView: React.FC<ScheduleBoardViewProps> = ({ initialDri
     const fetchDrives = async () => {
       try {
         const res = await api.get<Drive[]>("/api/drives");
-        setDrives(res || []);
-        if (res.length > 0 && !selectedDriveId) {
-          setSelectedDriveId(res[0].id);
+        const list = res || [];
+        setDrives(list);
+        if (list.length > 0) {
+          if (!selectedDriveId || !list.some((d) => d.id === selectedDriveId)) {
+            setSelectedDriveId(list[0].id);
+          }
+        } else {
+          setSelectedDriveId("");
         }
       } catch {
         setError("Failed to load drives.");
@@ -463,9 +468,16 @@ export const ScheduleBoardView: React.FC<ScheduleBoardViewProps> = ({ initialDri
                             } rounded-xl p-2.5 shadow-sm hover:shadow-emerald-950/30 cursor-pointer transition-all space-y-1.5 group`}
                             title={(slot as any).clash_detail || undefined}
                           >
-                            <span className="text-[11.5px] font-bold text-slate-100 block truncate group-hover:text-emerald-300 transition-colors">
-                              {slot.student_name}
-                            </span>
+                            <div className="flex items-center justify-between gap-1">
+                              <span className="text-[11.5px] font-bold text-slate-100 block truncate group-hover:text-emerald-300 transition-colors">
+                                {slot.student_name}
+                              </span>
+                              {slot.has_applied && (
+                                <span className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 shrink-0">
+                                  Applied
+                                </span>
+                              )}
+                            </div>
                             <span className="text-[10.5px] font-mono font-semibold text-cyan-400 block truncate">
                               {slot.roll_no}
                             </span>
@@ -521,9 +533,16 @@ export const ScheduleBoardView: React.FC<ScheduleBoardViewProps> = ({ initialDri
 
             <div className="space-y-3 text-xs">
               <div className="p-3 bg-[#080e1c] rounded-xl space-y-1 border border-[#1b2b4d]">
-                <div className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Candidate</div>
-                <div className="text-sm font-black text-slate-900">{selectedSlot.student_name}</div>
-                <div className="font-mono text-slate-600">{selectedSlot.roll_no}</div>
+                <div className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider flex items-center justify-between">
+                  <span>Candidate</span>
+                  {selectedSlot.has_applied && (
+                    <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/40">
+                      Applied Candidate
+                    </span>
+                  )}
+                </div>
+                <div className="text-sm font-black text-slate-100">{selectedSlot.student_name}</div>
+                <div className="font-mono text-slate-400">{selectedSlot.roll_no}</div>
               </div>
 
               <div className="grid grid-cols-2 gap-3">

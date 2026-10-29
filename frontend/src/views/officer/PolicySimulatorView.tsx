@@ -126,7 +126,13 @@ export const PolicySimulatorView: React.FC = () => {
         ]);
         const driveList = drvRes || [];
         setDrives(driveList);
-        if (driveList.length > 0) setSelectedDriveId(driveList[0].id);
+        if (driveList.length > 0) {
+          if (!selectedDriveId || !driveList.some((d) => d.id === selectedDriveId)) {
+            setSelectedDriveId(driveList[0].id);
+          }
+        } else {
+          setSelectedDriveId("");
+        }
 
         const studentList = stuRes.items || [];
         setStudents(studentList);
