@@ -192,6 +192,22 @@ class DeterministicExtractor:
                 source_sentence=src,
             )
 
+        # Try from title or first heading: "<Company> Campus Recruitment / Drive"
+        m_head = re.search(
+            r"^(?:##\s*)?([A-Za-z0-9&.\s]{2,40}?)\s+(?:campus\s+recruitment|placement\s+drive|recruitment\s+drive|campus\s+placement|hiring\s+notice|recruitment\s+notice|placement\s+notice)",
+            text,
+            re.IGNORECASE | re.MULTILINE,
+        )
+        if m_head:
+            val = m_head.group(1).strip()
+            src = self._find_sentence(sentences, val)
+            return ExtractedField(
+                field_name="company_name",
+                value=val,
+                confidence=0.90,
+                source_sentence=src,
+            )
+
         return None
 
     def _extract_role(self, text: str, sentences: list[str]) -> ExtractedField[str] | None:

@@ -55,13 +55,20 @@ class AuditService:
         company_id: str | None = None,
         candidate_count: int = 0,
         metadata: dict[str, Any] | None = None,
+        **kwargs: Any,
     ) -> AuditLogModel:
         """Records an institutional roster or schedule data export."""
+        meta = metadata or {}
+        if kwargs:
+            meta.update(kwargs)
+        if "row_count" in kwargs and not candidate_count:
+            candidate_count = kwargs["row_count"]
+
         payload = {
             "export_type": export_type,
             "company_id": company_id,
             "candidate_count": candidate_count,
-            "metadata": metadata or {},
+            "metadata": meta,
             "timestamp": datetime.datetime.utcnow().isoformat(),
         }
         entry = AuditLogModel(

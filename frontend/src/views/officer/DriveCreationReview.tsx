@@ -3,6 +3,7 @@ import { api } from "../../api/client";
 import { ExtractionParseResult } from "../../types";
 import { Badge } from "../../components/common/Badge";
 import { AlertBanner } from "../../components/common/AlertBanner";
+import { ConfirmDialog } from "../../components/common/ConfirmDialog";
 import {
   FileText,
   Upload,
@@ -112,6 +113,8 @@ export const DriveCreationReview: React.FC<DriveCreationReviewProps> = ({
   const [file, setFile] = useState<File | null>(null);
   const [extracting, setExtracting] = useState(false);
   const [parseResult, setParseResult] = useState<ExtractionParseResult | null>(null);
+  const [isConfirmSaveOpen, setIsConfirmSaveOpen] = useState(false);
+  const [savingNlp, setSavingNlp] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
   const [editingField, setEditingField] = useState<string | null>(null);
@@ -410,9 +413,15 @@ export const DriveCreationReview: React.FC<DriveCreationReviewProps> = ({
     }
   };
 
-  const handleSaveNlpDrive = async () => {
+  const handleInitiateSave = () => {
+    if (!parseResult) return;
+    setIsConfirmSaveOpen(true);
+  };
+
+  const handleConfirmSave = async () => {
     if (!parseResult) return;
     try {
+      setSavingNlp(true);
       setError(null);
       const ctcVal = parseResult.fields["ctc_lpa"]?.extracted_value ?? 12.0;
       const cgpaVal = parseResult.fields["cgpa_min"]?.extracted_value;
@@ -420,34 +429,41 @@ export const DriveCreationReview: React.FC<DriveCreationReviewProps> = ({
       const twelfthVal = parseResult.fields["twelfth_percentage_min"]?.extracted_value;
       const activeBacklogsVal = parseResult.fields["active_backlogs_max"]?.extracted_value;
       const gapYearsVal = parseResult.fields["gap_years_max"]?.extracted_value;
-      const branchesVal = parseResult.fields["allowed_branches"]?.extracted_value;
+      const branchesVal = parseResult.allowed_branches || parseResult.fields["allowed_branches"]?.extracted_value;
       const roleVal = parseResult.fields["role"]?.extracted_value || parseResult.job_role;
-      const locVal = parseResult.fields["location"]?.extracted_value;
+      const locVal = parseResult.fields["location"]?.extracted_value || parseResult.location;
 
       const finalCompany =
         companyName.trim() && companyName !== "Target Company"
           ? companyName.trim()
           : parseResult.company_name || "Target Company";
 
-      const res = await api.post<any>("/api/drives", {
+      const payload = {
         company_name: finalCompany,
-        drive_date: parseResult.fields["drive_date"]?.extracted_value || "2026-11-25",
-        mode: parseResult.fields["mode"]?.extracted_value || "on_campus",
-        ctc_lpa: typeof ctcVal === "number" ? ctcVal : parseFloat(ctcVal) || 12.0,
         job_role: roleVal || undefined,
         job_location: locVal || undefined,
+        drive_date: parseResult.fields["drive_date"]?.extracted_value || parseResult.drive_date || "2026-11-25",
+        mode: parseResult.fields["mode"]?.extracted_value || parseResult.mode || "on_campus",
+        ctc_lpa: typeof ctcVal === "number" ? ctcVal : parseFloat(ctcVal) || 12.0,
         min_cgpa: cgpaVal !== undefined && cgpaVal !== null ? Number(cgpaVal) : 6.0,
         min_tenth_percentage: tenthVal !== undefined && tenthVal !== null ? Number(tenthVal) : 60.0,
         min_twelfth_percentage: twelfthVal !== undefined && twelfthVal !== null ? Number(twelfthVal) : undefined,
         allowed_branches: Array.isArray(branchesVal) && branchesVal.length > 0 ? branchesVal : ["CSE", "IT", "ECE"],
         max_active_backlogs: activeBacklogsVal !== undefined && activeBacklogsVal !== null ? Number(activeBacklogsVal) : 0,
         max_gap_years: gapYearsVal !== undefined && gapYearsVal !== null ? Number(gapYearsVal) : 1,
-      });
+        selection_process: parseResult.selection_process || [],
+        raw_source_text: parseResult.raw_content_preview || undefined,
+        confirmed_by: "coordinator",
+      };
 
-      setSuccessMsg(`Recruitment drive for ${res.company_name} created successfully with full extracted eligibility criteria!`);
-      onSuccess(res.id);
+      const res = await api.post<any>("/api/extract/confirm-save", payload);
+      setIsConfirmSaveOpen(false);
+      setSuccessMsg(`Recruitment drive for ${res.company_name} confirmed and saved to SQLite database successfully! (Drive ID: ${res.drive_id})`);
+      onSuccess(res.drive_id);
     } catch (err: any) {
-      setError(err.message || "Failed to create recruitment drive.");
+      setError(err.message || "Failed to confirm and save recruitment drive.");
+    } finally {
+      setSavingNlp(false);
     }
   };
 
@@ -1241,113 +1257,245 @@ export const DriveCreationReview: React.FC<DriveCreationReviewProps> = ({
           {/* Extraction Review Results */}
           {parseResult && (
             <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-xs space-y-6">
-              <div className="flex items-center justify-between border-b border-slate-100 pb-4">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 pb-4">
                 <div>
-                  <h2 className="text-base font-bold text-slate-900">Side-by-Side Field Provenance</h2>
-                  <p className="text-xs text-slate-500">Every requirement maps to a verified AST condition.</p>
+                  <div className="flex items-center gap-2">
+                    <h2 className="text-base font-bold text-slate-900">Announcement Extraction & Verification</h2>
+                    <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-blue-100 text-blue-700">
+                      AST Rule Engine
+                    </span>
+                  </div>
+                  <p className="text-xs text-slate-500 mt-0.5">
+                    Verify extracted criteria with deterministic provenance before committing to the SQLite database.
+                  </p>
                 </div>
                 <button
                   type="button"
-                  onClick={handleSaveNlpDrive}
-                  className="flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl shadow-xs transition-colors cursor-pointer"
+                  onClick={handleInitiateSave}
+                  className="flex items-center gap-2 px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl shadow-xs transition-colors cursor-pointer shrink-0"
                 >
                   <Save className="w-4 h-4" />
-                  <span>Save & Create Drive</span>
+                  <span>Confirm & Save Drive to DB</span>
                 </button>
               </div>
 
-              {/* Review Queue Alerts */}
-              {(!parseResult.review_queue || parseResult.review_queue.length === 0) && (
-                <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-xl text-xs font-bold text-emerald-800 flex items-center gap-2">
-                  <Check className="w-4 h-4 text-emerald-600" />
-                  <span>All Fields Validated</span>
-                </div>
-              )}
-              {parseResult.review_queue && parseResult.review_queue.length > 0 && (
-                <div className="p-4 bg-amber-50 border border-amber-200 rounded-xl space-y-2">
-                  <div className="flex items-center gap-2 text-xs font-bold text-amber-800">
-                    <AlertTriangle className="w-4 h-4 text-amber-600" />
-                    <span>Requires Officer Review ({parseResult.review_queue.length} ambiguous items)</span>
+              {/* Status & Highlight Banners */}
+              <div className="space-y-3">
+                {/* Missing Fields Warning Banner */}
+                {parseResult.missing_fields && parseResult.missing_fields.length > 0 && (
+                  <div className="p-3.5 bg-rose-50 border border-rose-200 rounded-xl flex items-start gap-2.5 text-xs text-rose-800">
+                    <AlertTriangle className="w-4 h-4 text-rose-600 shrink-0 mt-0.5" />
+                    <div>
+                      <span className="font-bold">Missing Announcement Criteria ({parseResult.missing_fields.length}): </span>
+                      <span>
+                        The document did not explicitly specify {parseResult.missing_fields.map((f) => f.replace(/_/g, " ")).join(", ")}. Please review or provide fallback values.
+                      </span>
+                    </div>
                   </div>
-                  <div className="space-y-1.5 pl-6">
-                    {parseResult.review_queue.map((q) => (
-                      <div key={q.field_name} className="text-xs text-amber-700 flex items-center justify-between">
-                        <span>
-                          <strong className="capitalize">{q.field_name.replace(/_/g, " ")}</strong>: "{q.source_sentence}"
-                        </span>
-                        <div className="flex items-center gap-1.5">
-                          <button
-                            type="button"
-                            onClick={() => handleResolveField(q.field_name, "accepted")}
-                            className="px-2 py-0.5 bg-emerald-600 text-white rounded-md text-[10px] font-bold"
-                          >
-                            Accept
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => setEditingField(q.field_name)}
-                            className="px-2 py-0.5 bg-slate-200 text-slate-800 rounded-md text-[10px] font-bold"
-                          >
-                            Edit
-                          </button>
+                )}
+
+                {/* Uncertain / Low-Confidence Fields Banner */}
+                {parseResult.uncertain_fields && parseResult.uncertain_fields.length > 0 && (
+                  <div className="p-3.5 bg-amber-50 border border-amber-200 rounded-xl flex items-start gap-2.5 text-xs text-amber-800">
+                    <HelpCircle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+                    <div>
+                      <span className="font-bold">Uncertain / Ambiguous Fields ({parseResult.uncertain_fields.length}): </span>
+                      <span>
+                        Fields with confidence &lt; 70% or flagged ambiguity: {parseResult.uncertain_fields.map((f) => f.replace(/_/g, " ")).join(", ")}. Click 'Edit' to correct any field.
+                      </span>
+                    </div>
+                  </div>
+                )}
+
+                {/* All Clear Badge */}
+                {(!parseResult.missing_fields || parseResult.missing_fields.length === 0) &&
+                  (!parseResult.uncertain_fields || parseResult.uncertain_fields.length === 0) && (
+                    <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-xl text-xs font-bold text-emerald-800 flex items-center gap-2">
+                      <Check className="w-4 h-4 text-emerald-600" />
+                      <span>All Required Criteria Successfully Extracted with High Confidence (&gt;90%)</span>
+                    </div>
+                  )}
+              </div>
+
+              {/* Selection Process / Hiring Stages */}
+              {parseResult.selection_process && parseResult.selection_process.length > 0 && (
+                <div className="p-4 rounded-xl border border-slate-200 bg-slate-50/70 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <Briefcase className="w-4 h-4 text-blue-600" />
+                      <h3 className="text-xs font-bold text-slate-800 uppercase tracking-wider">
+                        Extracted Selection Process ({parseResult.selection_process.length} Rounds)
+                      </h3>
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+                    {parseResult.selection_process.map((rnd) => (
+                      <div
+                        key={rnd.round_number}
+                        className="p-3 rounded-lg bg-white border border-slate-200 shadow-2xs space-y-1"
+                      >
+                        <div className="flex items-center justify-between text-xs font-bold text-slate-800">
+                          <span>Round {rnd.round_number}: {rnd.name}</span>
+                          <span className="px-2 py-0.5 rounded text-[10px] bg-blue-50 text-blue-700 font-mono">
+                            {rnd.duration_minutes}m
+                          </span>
                         </div>
+                        {rnd.source_sentence && (
+                          <p className="text-[11px] text-slate-500 italic truncate" title={rnd.source_sentence}>
+                            "{rnd.source_sentence}"
+                          </p>
+                        )}
                       </div>
                     ))}
                   </div>
                 </div>
               )}
 
-              {/* Extracted Fields Grid */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {Object.entries(parseResult.fields).map(([fieldName, item]) => (
-                  <div
-                    key={fieldName}
-                    className="p-4 rounded-xl border border-slate-100 bg-slate-50/50 space-y-1.5"
-                  >
-                    <div className="flex items-center justify-between">
-                      <span className="text-xs font-bold text-slate-700 uppercase tracking-wider">
-                        {fieldName.replace(/_/g, " ")}
-                      </span>
-                      <span className="text-[10px] font-mono text-slate-400">
-                        Confidence: {(item.confidence * 100).toFixed(0)}%
-                      </span>
-                    </div>
-
-                    <div className="text-sm font-black text-slate-900">
-                      {editingField === fieldName ? (
-                        <div className="flex items-center gap-2 mt-1">
-                          <input
-                            type="text"
-                            value={editValue}
-                            onChange={(e) => setEditValue(e.target.value)}
-                            placeholder="Corrected value"
-                            className="px-2 py-1 text-xs border border-slate-300 rounded-md flex-1"
-                          />
-                          <button
-                            type="button"
-                            onClick={() => handleResolveField(fieldName, "edited", editValue)}
-                            className="p-1 bg-emerald-600 text-white rounded-md"
-                          >
-                            <Check className="w-3.5 h-3.5" />
-                          </button>
-                        </div>
-                      ) : (
-                        <span>
-                          {Array.isArray(item.extracted_value)
-                            ? item.extracted_value.join(", ")
-                            : String(item.extracted_value ?? "Not specified")}
-                        </span>
-                      )}
-                    </div>
-
-                    {item.source_sentence && (
-                      <p className="text-[11px] text-slate-500 italic border-l-2 border-slate-200 pl-2 mt-1">
-                        "{item.source_sentence}"
-                      </p>
-                    )}
+              {/* Eligible Normalized Branches Pill Cloud */}
+              <div className="p-4 rounded-xl border border-slate-200 bg-slate-50/70 space-y-2">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <GraduationCap className="w-4 h-4 text-emerald-600" />
+                    <h3 className="text-xs font-bold text-slate-800 uppercase tracking-wider">
+                      Eligible Normalized Branches
+                    </h3>
                   </div>
-                ))}
+                  <span className="text-[11px] text-slate-500">
+                    Canonical Academic Codes
+                  </span>
+                </div>
+                <div className="flex flex-wrap gap-1.5">
+                  {(parseResult.allowed_branches && parseResult.allowed_branches.length > 0
+                    ? parseResult.allowed_branches
+                    : ["All Branches"]
+                  ).map((br) => (
+                    <span
+                      key={br}
+                      className="px-2.5 py-1 rounded-lg text-xs font-bold bg-white text-slate-800 border border-slate-200 shadow-2xs"
+                    >
+                      {br}
+                    </span>
+                  ))}
+                </div>
               </div>
+
+              {/* Extracted Fields Grid */}
+              <div className="space-y-2">
+                <h3 className="text-xs font-bold text-slate-700 uppercase tracking-wider">
+                  Requirement Specifications & Provenance
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {Object.entries(parseResult.fields).map(([fieldName, item]) => {
+                    const isMissing = item.is_missing || item.extracted_value === null || item.extracted_value === undefined;
+                    const isUncertain = item.is_uncertain || item.confidence < 0.7 || item.is_ambiguous;
+
+                    return (
+                      <div
+                        key={fieldName}
+                        className={`p-4 rounded-xl border transition-all ${
+                          isMissing
+                            ? "border-rose-300 bg-rose-50/40"
+                            : isUncertain
+                            ? "border-amber-300 bg-amber-50/40"
+                            : "border-slate-200 bg-slate-50/50"
+                        } space-y-2`}
+                      >
+                        <div className="flex items-center justify-between">
+                          <span className="text-xs font-bold text-slate-700 uppercase tracking-wider">
+                            {fieldName.replace(/_/g, " ")}
+                          </span>
+                          <div className="flex items-center gap-1.5">
+                            {isMissing ? (
+                              <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-rose-100 text-rose-700">
+                                Missing
+                              </span>
+                            ) : isUncertain ? (
+                              <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-700">
+                                Uncertain ({(item.confidence * 100).toFixed(0)}%)
+                              </span>
+                            ) : (
+                              <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-700 font-mono">
+                                {(item.confidence * 100).toFixed(0)}%
+                              </span>
+                            )}
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setEditingField(fieldName);
+                                setEditValue(
+                                  Array.isArray(item.extracted_value)
+                                    ? item.extracted_value.join(", ")
+                                    : String(item.extracted_value ?? "")
+                                );
+                              }}
+                              className="p-1 hover:bg-slate-200/70 rounded text-slate-500 hover:text-slate-800 cursor-pointer"
+                              title="Edit this field"
+                            >
+                              <Edit2 className="w-3 h-3" />
+                            </button>
+                          </div>
+                        </div>
+
+                        <div className="text-sm font-black text-slate-900">
+                          {editingField === fieldName ? (
+                            <div className="flex items-center gap-2 mt-1">
+                              <input
+                                type="text"
+                                value={editValue}
+                                onChange={(e) => setEditValue(e.target.value)}
+                                placeholder="Enter corrected value"
+                                className="px-2 py-1 text-xs border border-slate-300 rounded-md flex-1 bg-white"
+                              />
+                              <button
+                                type="button"
+                                onClick={() => handleResolveField(fieldName, "edited", editValue)}
+                                className="p-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-md cursor-pointer"
+                                title="Save correction"
+                              >
+                                <Check className="w-3.5 h-3.5" />
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => setEditingField(null)}
+                                className="p-1.5 bg-slate-200 hover:bg-slate-300 text-slate-700 rounded-md cursor-pointer"
+                                title="Cancel"
+                              >
+                                <X className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
+                          ) : (
+                            <span>
+                              {Array.isArray(item.extracted_value)
+                                ? item.extracted_value.join(", ")
+                                : String(item.extracted_value ?? "Not specified")}
+                            </span>
+                          )}
+                        </div>
+
+                        {item.source_sentence && (
+                          <p className="text-[11px] text-slate-500 italic border-l-2 border-slate-300 pl-2 mt-1">
+                            "{item.source_sentence}"
+                          </p>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Confirm Save to SQLite Modal */}
+              <ConfirmDialog
+                isOpen={isConfirmSaveOpen}
+                title="Confirm & Save Recruitment Drive"
+                message={`Are you sure you want to save the recruitment drive for '${
+                  companyName.trim() && companyName !== "Target Company" ? companyName.trim() : parseResult.company_name
+                }' to the SQLite database? This will create Version 1 of eligibility criteria with the verified requirements.`}
+                confirmButtonText={savingNlp ? "Saving to Database..." : "Confirm & Save to SQLite"}
+                variant="brand"
+                onConfirm={handleConfirmSave}
+                onCancel={() => setIsConfirmSaveOpen(false)}
+                loading={savingNlp}
+              />
             </div>
           )}
         </div>

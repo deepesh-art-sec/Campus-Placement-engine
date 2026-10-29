@@ -64,7 +64,17 @@ export interface ExtractedFieldItem {
   confidence: number;
   source_sentence: string;
   is_ambiguous: boolean;
+  is_missing?: boolean;
+  is_uncertain?: boolean;
   ambiguity_reason?: string;
+}
+
+export interface ExtractedRoundItem {
+  round_number: number;
+  name: string;
+  round_type: string;
+  duration_minutes: number;
+  source_sentence: string;
 }
 
 export interface ExtractionParseResult {
@@ -72,8 +82,20 @@ export interface ExtractionParseResult {
   filename: string;
   company_name: string;
   job_role?: string;
+  location?: string;
   ctc_lpa?: number;
+  drive_date?: string;
+  mode?: string;
+  allowed_branches?: string[];
+  min_cgpa?: number;
+  min_tenth_percentage?: number;
+  min_twelfth_percentage?: number;
+  max_active_backlogs?: number;
+  max_gap_years?: number;
+  selection_process?: ExtractedRoundItem[];
   requires_review: boolean;
+  missing_fields?: string[];
+  uncertain_fields?: string[];
   review_queue: Array<{
     field_name: string;
     extracted_value: any;
@@ -83,12 +105,32 @@ export interface ExtractionParseResult {
   }>;
   ambiguities: Array<{
     field_name: string;
-    raw_snippet: string;
+    raw_snippet?: string;
+    raw_text?: string;
     reason: string;
     suggested_action: string;
   }>;
   fields: Record<string, ExtractedFieldItem>;
   rule_count: number;
+  raw_content_preview?: string;
+}
+
+export interface ConfirmSaveExtractionPayload {
+  company_name: string;
+  job_role?: string;
+  job_location?: string;
+  drive_date: string;
+  mode: string;
+  ctc_lpa: number;
+  min_cgpa: number;
+  min_tenth_percentage: number;
+  min_twelfth_percentage?: number;
+  allowed_branches: string[];
+  max_active_backlogs: number;
+  max_gap_years: number;
+  selection_process?: ExtractedRoundItem[];
+  raw_source_text?: string;
+  confirmed_by?: string;
 }
 
 export interface EligibilityDecisionItem {
