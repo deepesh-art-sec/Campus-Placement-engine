@@ -49,6 +49,8 @@ export interface Student {
   twelfth_percentage?: number | null;
   diploma_percentage?: number | null;
   date_of_birth: string;
+  gender?: string | null;
+  category?: string | null;
   active_backlogs?: number;
   history_backlogs?: number;
   gap_years?: number;

@@ -69,11 +69,16 @@ class StudentCreateUpdateRequest(BaseModel):
     twelfth_percentage: float | None = Field(default=None, ge=0.0, le=100.0)
     diploma_percentage: float | None = Field(default=None, ge=0.0, le=100.0)
     date_of_birth: datetime.date
+    # Backlogs
+    active_backlogs: int = Field(default=0, ge=0)
+    history_backlogs: int = Field(default=0, ge=0)
+    historical_backlogs: int | None = Field(default=None, ge=0)
     # Protected demographics (optional, never used in eligibility)
     gender: str | None = None
     caste: str | None = None
     religion: str | None = None
     category: str | None = None
+    reason: str | None = None
 
 
 # -----------------------------------------------------------------------------
@@ -119,7 +124,10 @@ def list_students(
                 "cgpa": s.cgpa,
                 "tenth_percentage": s.tenth_percentage,
                 "twelfth_percentage": s.twelfth_percentage,
+                "diploma_percentage": s.diploma_percentage,
                 "date_of_birth": s.date_of_birth.isoformat(),
+                "gender": s.gender,
+                "category": s.category,
                 "active_backlogs": len([b for b in s.backlogs if b.status == "active"]),
                 "history_backlogs": len([b for b in s.backlogs if b.status == "cleared"]),
                 "existing_offers_count": len(s.offers),
@@ -280,13 +288,13 @@ def update_student(
     current_user: UserModel = Depends(require_officer_or_coordinator),
     db: Session = Depends(get_db),
 ) -> dict[str, Any]:
-    """Updates academic details of a student (Officer only; Coordinators must request)."""
+    """Updates academic, personal, and backlog details of a student (Officer only; Coordinators must request)."""
     if current_user.role == "coordinator":
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Coordinators cannot edit academic marks directly. Please submit a Student Data Correction Request to the Officer.",
         )
-    stmt = select(StudentModel).where(StudentModel.id == student_id)
+    stmt = select(StudentModel).options(selectinload(StudentModel.backlogs)).where(StudentModel.id == student_id)
     student = db.execute(stmt).scalar_one_or_none()
     if not student:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Student not found.")
@@ -294,28 +302,126 @@ def update_student(
     import re
     from backend.app.importers.canonical_maps import get_branch_code
 
-    student.name = req.name
+    # Check roll number uniqueness if changed
+    clean_roll = req.roll_no.strip()
+    if clean_roll != student.roll_no:
+        existing_roll = db.execute(
+            select(StudentModel).where(StudentModel.roll_no == clean_roll, StudentModel.id != student_id)
+        ).scalar_one_or_none()
+        if existing_roll:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Roll number '{clean_roll}' is already assigned to candidate '{existing_roll.name}'.",
+            )
+        student.roll_no = clean_roll
+
+    # Check email uniqueness if changed
+    clean_email = req.email.strip().lower()
+    if clean_email != student.email.lower():
+        existing_email = db.execute(
+            select(StudentModel).where(StudentModel.email == clean_email, StudentModel.id != student_id)
+        ).scalar_one_or_none()
+        if existing_email:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Email '{clean_email}' is already registered to candidate '{existing_email.name}'.",
+            )
+        student.email = clean_email
+
+    student.name = req.name.strip()
     student.normalized_name = re.sub(r"\s+", " ", req.name.strip()).lower()
-    student.email = req.email
     student.branch = get_branch_code(req.branch) or req.branch
     student.program = req.program
-    student.cgpa = req.cgpa
+    student.cgpa = round(req.cgpa, 2)
     student.tenth_percentage = req.tenth_percentage
     student.twelfth_percentage = req.twelfth_percentage
     student.diploma_percentage = req.diploma_percentage
     student.date_of_birth = req.date_of_birth
-    student.version += 1
 
+    if req.gender is not None:
+        student.gender = req.gender
+    if req.category is not None:
+        student.category = req.category
+    if req.caste is not None:
+        student.caste = req.caste
+    if req.religion is not None:
+        student.religion = req.religion
+
+    # Synchronize active backlogs
+    target_active = req.active_backlogs
+    target_cleared = req.history_backlogs if req.historical_backlogs is None else req.historical_backlogs
+
+    current_active = [b for b in student.backlogs if b.status == "active"]
+    if len(current_active) < target_active:
+        for i in range(target_active - len(current_active)):
+            new_b = BacklogModel(
+                id=str(uuid.uuid4()),
+                student_id=student.id,
+                subject=f"Active Backlog {len(current_active) + i + 1}",
+                semester=1,
+                status="active",
+            )
+            db.add(new_b)
+    elif len(current_active) > target_active:
+        for b in current_active[target_active:]:
+            db.delete(b)
+
+    # Synchronize cleared (historical) backlogs
+    current_cleared = [b for b in student.backlogs if b.status == "cleared"]
+    if len(current_cleared) < target_cleared:
+        for i in range(target_cleared - len(current_cleared)):
+            new_cb = BacklogModel(
+                id=str(uuid.uuid4()),
+                student_id=student.id,
+                subject=f"Cleared Subject {len(current_cleared) + i + 1}",
+                semester=1,
+                status="cleared",
+                cleared_on=datetime.date.today(),
+            )
+            db.add(new_cb)
+    elif len(current_cleared) > target_cleared:
+        for b in current_cleared[target_cleared:]:
+            db.delete(b)
+
+    student.version += 1
     db.commit()
 
     AuditService.record_student_access(
         db=db,
         actor=current_user.username,
         student_id=student_id,
-        action="UPDATE",
-        details={"roll_no": req.roll_no},
+        action="UPDATE_STUDENT_DETAILS",
+        details={
+            "roll_no": student.roll_no,
+            "name": student.name,
+            "cgpa": student.cgpa,
+            "branch": student.branch,
+            "active_backlogs": target_active,
+            "history_backlogs": target_cleared,
+            "reason": req.reason or "Officer administrative modification",
+        },
     )
-    return {"id": student_id, "message": "Student updated successfully."}
+    return {
+        "id": student_id,
+        "message": f"Student details for {student.name} ({student.roll_no}) successfully updated.",
+        "student": {
+            "id": student.id,
+            "roll_no": student.roll_no,
+            "name": student.name,
+            "email": student.email,
+            "branch": student.branch,
+            "program": student.program,
+            "cgpa": student.cgpa,
+            "tenth_percentage": student.tenth_percentage,
+            "twelfth_percentage": student.twelfth_percentage,
+            "diploma_percentage": student.diploma_percentage,
+            "date_of_birth": student.date_of_birth.isoformat() if student.date_of_birth else None,
+            "gender": student.gender,
+            "category": student.category,
+            "active_backlogs": target_active,
+            "history_backlogs": target_cleared,
+        },
+    }
 
 
 class StudentContactUpdateRequest(BaseModel):

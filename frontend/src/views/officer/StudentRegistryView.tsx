@@ -21,6 +21,7 @@ import {
   Clock,
   Briefcase,
   Edit2,
+  Edit3,
   Check,
   X,
   FileCheck,
@@ -75,15 +76,58 @@ export const StudentRegistryView: React.FC = () => {
   const [loadingStatuses, setLoadingStatuses] = useState(false);
   const [drawerTab, setDrawerTab] = useState<"academics" | "drives" | "edit" | "corrections">("academics");
 
-  // Edit Student State
-  const [editCgpa, setEditCgpa] = useState<number>(0);
-  const [editTenth, setEditTenth] = useState<number>(0);
-  const [editTwelfth, setEditTwelfth] = useState<number>(0);
-  const [editActiveBacklogs, setEditActiveBacklogs] = useState<number>(0);
-  const [editReason, setEditReason] = useState("");
+  // Dedicated Edit Student Modal & Form State
+  const [editingStudent, setEditingStudent] = useState<Student | null>(null);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [editForm, setEditForm] = useState({
+    roll_no: "",
+    name: "",
+    email: "",
+    branch: "CSE",
+    program: "B.Tech",
+    cgpa: 0,
+    tenth_percentage: 0,
+    twelfth_percentage: 0,
+    diploma_percentage: 0,
+    date_of_birth: "2002-01-01",
+    gender: "",
+    category: "",
+    active_backlogs: 0,
+    history_backlogs: 0,
+    reason: "",
+  });
   const [savingEdit, setSavingEdit] = useState(false);
   const [editSuccess, setEditSuccess] = useState<string | null>(null);
   const [editError, setEditError] = useState<string | null>(null);
+
+  const populateEditForm = (student: Student) => {
+    setEditForm({
+      roll_no: student.roll_no || "",
+      name: student.name || "",
+      email: student.email || "",
+      branch: student.branch || "CSE",
+      program: student.program || "B.Tech",
+      cgpa: student.cgpa ?? 0,
+      tenth_percentage: student.tenth_percentage ?? 0,
+      twelfth_percentage: student.twelfth_percentage ?? 0,
+      diploma_percentage: student.diploma_percentage ?? 0,
+      date_of_birth: student.date_of_birth ? student.date_of_birth.slice(0, 10) : "2002-01-01",
+      gender: (student as any).gender || "",
+      category: (student as any).category || "",
+      active_backlogs: student.active_backlogs ?? 0,
+      history_backlogs: student.history_backlogs ?? 0,
+      reason: "",
+    });
+    setEditSuccess(null);
+    setEditError(null);
+  };
+
+  const handleOpenEditModal = (student: Student, e?: React.MouseEvent) => {
+    if (e) e.stopPropagation();
+    setEditingStudent(student);
+    populateEditForm(student);
+    setIsEditModalOpen(true);
+  };
 
   const fetchStudents = async () => {
     try {
@@ -115,13 +159,7 @@ export const StudentRegistryView: React.FC = () => {
 
   const handleOpenStudentDrawer = async (student: Student) => {
     setSelectedStudent(student);
-    setEditCgpa(student.cgpa);
-    setEditTenth(student.tenth_percentage);
-    setEditTwelfth(student.twelfth_percentage || 0);
-    setEditActiveBacklogs(student.active_backlogs ?? 0);
-    setEditReason("");
-    setEditSuccess(null);
-    setEditError(null);
+    populateEditForm(student);
     setDrawerTab("academics");
 
     // Fetch drive statuses for this student
@@ -136,32 +174,83 @@ export const StudentRegistryView: React.FC = () => {
     }
   };
 
-  const handleSaveStudentEdit = async (e: React.FormEvent) => {
+  const handleSaveStudentEdit = async (e: React.FormEvent, targetStudent?: Student) => {
     e.preventDefault();
-    if (!selectedStudent) return;
-    if (!editReason.trim()) {
-      setEditError("Mandatory reason required for modifying academic student records.");
+    const studentToUpdate = targetStudent || editingStudent || selectedStudent;
+    if (!studentToUpdate) return;
+
+    if (!editForm.reason.trim()) {
+      setEditError("Mandatory justification reason required for modifying institutional student records.");
+      return;
+    }
+    if (!editForm.name.trim()) {
+      setEditError("Candidate name cannot be empty.");
+      return;
+    }
+    if (!editForm.roll_no.trim()) {
+      setEditError("Roll number cannot be empty.");
+      return;
+    }
+    if (!editForm.email.trim() || !editForm.email.includes("@")) {
+      setEditError("A valid email address is required.");
+      return;
+    }
+    if (Number(editForm.cgpa) < 0 || Number(editForm.cgpa) > 10) {
+      setEditError("CGPA must be between 0.0 and 10.0.");
+      return;
+    }
+    if (Number(editForm.tenth_percentage) < 0 || Number(editForm.tenth_percentage) > 100) {
+      setEditError("10th percentage must be between 0.0 and 100.0.");
       return;
     }
 
     try {
       setSavingEdit(true);
       setEditError(null);
-      await api.put(`/api/students/${selectedStudent.id}`, {
-        roll_no: selectedStudent.roll_no,
-        name: selectedStudent.name,
-        email: selectedStudent.email,
-        branch: selectedStudent.branch,
-        program: selectedStudent.program,
-        cgpa: editCgpa,
-        tenth_percentage: editTenth,
-        twelfth_percentage: editTwelfth > 0 ? editTwelfth : null,
-        diploma_percentage: selectedStudent.diploma_percentage,
-        date_of_birth: selectedStudent.date_of_birth,
-      });
+      const payload = {
+        roll_no: editForm.roll_no.trim(),
+        name: editForm.name.trim(),
+        email: editForm.email.trim(),
+        branch: editForm.branch.trim(),
+        program: editForm.program.trim(),
+        cgpa: Number(Number(editForm.cgpa).toFixed(2)),
+        tenth_percentage: Number(Number(editForm.tenth_percentage).toFixed(2)),
+        twelfth_percentage: Number(editForm.twelfth_percentage) > 0 ? Number(Number(editForm.twelfth_percentage).toFixed(2)) : null,
+        diploma_percentage: Number(editForm.diploma_percentage) > 0 ? Number(Number(editForm.diploma_percentage).toFixed(2)) : null,
+        date_of_birth: editForm.date_of_birth,
+        active_backlogs: parseInt(String(editForm.active_backlogs), 10) || 0,
+        history_backlogs: parseInt(String(editForm.history_backlogs), 10) || 0,
+        gender: editForm.gender.trim() || null,
+        category: editForm.category.trim() || null,
+        reason: editForm.reason.trim(),
+      };
 
-      setEditSuccess("Student record updated and committed to the backend audit log.");
+      const res = await api.put<{ id: string; message: string; student?: any }>(
+        `/api/students/${studentToUpdate.id}`,
+        payload
+      );
+
+      const successMsg = res.message || "Student record updated and committed to backend audit log.";
+      setEditSuccess(successMsg);
+
+      // Instantly update candidate list in memory
+      setStudents((prev) =>
+        prev.map((s) => (s.id === studentToUpdate.id ? { ...s, ...payload } : s))
+      );
+
+      if (selectedStudent && selectedStudent.id === studentToUpdate.id) {
+        setSelectedStudent((prev) => (prev ? { ...prev, ...payload } : null));
+      }
+
+      // Re-fetch to keep everything in sync
       fetchStudents();
+
+      if (isEditModalOpen) {
+        setTimeout(() => {
+          setIsEditModalOpen(false);
+          setEditingStudent(null);
+        }, 1100);
+      }
     } catch (err: any) {
       setEditError(err.message || "Failed to update student.");
     } finally {
@@ -182,6 +271,296 @@ export const StudentRegistryView: React.FC = () => {
       setExportingCsv(false);
     }
   };
+
+  const renderStudentFormFields = (isModal: boolean = false) => (
+    <div className="space-y-4 text-xs">
+      {editError && <AlertBanner type="danger" message={editError} onClose={() => setEditError(null)} />}
+      {editSuccess && <AlertBanner type="success" message={editSuccess} onClose={() => setEditSuccess(null)} />}
+
+      {/* Group 1: Identity & Roll */}
+      <div className="bg-slate-50 p-3.5 rounded-xl border border-slate-200/80 space-y-3">
+        <h4 className="font-bold text-slate-800 uppercase tracking-wider text-[11px] flex items-center gap-1.5">
+          <GraduationCap className="w-4 h-4 text-brand-600" />
+          Candidate Identity & Institutional Profile
+        </h4>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div>
+            <label className="font-bold text-slate-700 block mb-1">
+              Full Name <span className="text-rose-500">*</span>
+            </label>
+            <input
+              type="text"
+              required
+              value={editForm.name}
+              onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
+              className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl font-medium focus:ring-2 focus:ring-brand-500 focus:outline-none"
+              placeholder="e.g. John Doe"
+            />
+          </div>
+          <div>
+            <label className="font-bold text-slate-700 block mb-1">
+              Roll / Registration Number <span className="text-rose-500">*</span>
+            </label>
+            <input
+              type="text"
+              required
+              value={editForm.roll_no}
+              onChange={(e) => setEditForm({ ...editForm, roll_no: e.target.value })}
+              className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl font-mono font-bold focus:ring-2 focus:ring-brand-500 focus:outline-none"
+              placeholder="e.g. 21CS01"
+            />
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div>
+            <label className="font-bold text-slate-700 block mb-1">
+              Email Address <span className="text-rose-500">*</span>
+            </label>
+            <input
+              type="email"
+              required
+              value={editForm.email}
+              onChange={(e) => setEditForm({ ...editForm, email: e.target.value })}
+              className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl font-medium focus:ring-2 focus:ring-brand-500 focus:outline-none"
+              placeholder="e.g. student@college.edu"
+            />
+          </div>
+          <div>
+            <label className="font-bold text-slate-700 block mb-1">
+              Date of Birth <span className="text-rose-500">*</span>
+            </label>
+            <input
+              type="date"
+              required
+              value={editForm.date_of_birth}
+              onChange={(e) => setEditForm({ ...editForm, date_of_birth: e.target.value })}
+              className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl font-medium focus:ring-2 focus:ring-brand-500 focus:outline-none"
+            />
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div>
+            <label className="font-bold text-slate-700 block mb-1">Gender (Optional)</label>
+            <select
+              value={editForm.gender}
+              onChange={(e) => setEditForm({ ...editForm, gender: e.target.value })}
+              className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl font-medium cursor-pointer"
+            >
+              <option value="">Unspecified</option>
+              <option value="Male">Male</option>
+              <option value="Female">Female</option>
+              <option value="Other">Other</option>
+            </select>
+          </div>
+          <div>
+            <label className="font-bold text-slate-700 block mb-1">Category (Optional)</label>
+            <select
+              value={editForm.category}
+              onChange={(e) => setEditForm({ ...editForm, category: e.target.value })}
+              className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl font-medium cursor-pointer"
+            >
+              <option value="">Unspecified</option>
+              <option value="General">General</option>
+              <option value="OBC">OBC</option>
+              <option value="SC">SC</option>
+              <option value="ST">ST</option>
+              <option value="EWS">EWS</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      {/* Group 2: Academics & Department */}
+      <div className="bg-slate-50 p-3.5 rounded-xl border border-slate-200/80 space-y-3">
+        <h4 className="font-bold text-slate-800 uppercase tracking-wider text-[11px] flex items-center gap-1.5">
+          <Layers className="w-4 h-4 text-brand-600" />
+          Academic Program & Scores
+        </h4>
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <div>
+            <label className="font-bold text-slate-700 block mb-1">Program</label>
+            <select
+              value={editForm.program}
+              onChange={(e) => setEditForm({ ...editForm, program: e.target.value })}
+              className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl font-medium cursor-pointer"
+            >
+              <option value="B.Tech">B.Tech</option>
+              <option value="M.Tech">M.Tech</option>
+              <option value="MCA">MCA</option>
+              <option value="B.Sc">B.Sc</option>
+              <option value="Dual Degree">Dual Degree</option>
+            </select>
+          </div>
+          <div>
+            <label className="font-bold text-slate-700 block mb-1">Branch / Dept</label>
+            <select
+              value={editForm.branch}
+              onChange={(e) => setEditForm({ ...editForm, branch: e.target.value })}
+              className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl font-semibold cursor-pointer"
+            >
+              <option value="CSE">CSE — Computer Science</option>
+              <option value="IT">IT — Information Tech</option>
+              <option value="ECE">ECE — Electronics & Comm</option>
+              <option value="EEE">EEE — Electrical & Electronics</option>
+              <option value="ME">ME — Mechanical</option>
+              <option value="CE">CE — Civil</option>
+              <option value="CHE">CHE — Chemical</option>
+              <option value="BT">BT — Biotechnology</option>
+              <option value="DS">DS — Data Science</option>
+            </select>
+          </div>
+          <div>
+            <label className="font-bold text-slate-700 block mb-1">
+              Cumulative CGPA (0-10) <span className="text-rose-500">*</span>
+            </label>
+            <input
+              type="number"
+              step="0.01"
+              min="0"
+              max="10"
+              required
+              value={editForm.cgpa}
+              onChange={(e) => setEditForm({ ...editForm, cgpa: parseFloat(e.target.value) || 0 })}
+              className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl font-mono font-bold text-brand-700 focus:ring-2 focus:ring-brand-500"
+            />
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <div>
+            <label className="font-bold text-slate-700 block mb-1">
+              10th Standard % <span className="text-rose-500">*</span>
+            </label>
+            <input
+              type="number"
+              step="0.1"
+              min="0"
+              max="100"
+              required
+              value={editForm.tenth_percentage}
+              onChange={(e) => setEditForm({ ...editForm, tenth_percentage: parseFloat(e.target.value) || 0 })}
+              className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl font-mono"
+            />
+          </div>
+          <div>
+            <label className="font-bold text-slate-700 block mb-1">12th Standard %</label>
+            <input
+              type="number"
+              step="0.1"
+              min="0"
+              max="100"
+              value={editForm.twelfth_percentage || ""}
+              onChange={(e) => setEditForm({ ...editForm, twelfth_percentage: parseFloat(e.target.value) || 0 })}
+              placeholder="e.g. 85.5 (or blank for Dip)"
+              className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl font-mono"
+            />
+          </div>
+          <div>
+            <label className="font-bold text-slate-700 block mb-1">Diploma % (Optional)</label>
+            <input
+              type="number"
+              step="0.1"
+              min="0"
+              max="100"
+              value={editForm.diploma_percentage || ""}
+              onChange={(e) => setEditForm({ ...editForm, diploma_percentage: parseFloat(e.target.value) || 0 })}
+              placeholder="e.g. 78.2"
+              className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl font-mono"
+            />
+          </div>
+        </div>
+      </div>
+
+      {/* Group 3: Backlogs */}
+      <div className="bg-slate-50 p-3.5 rounded-xl border border-slate-200/80 space-y-3">
+        <h4 className="font-bold text-slate-800 uppercase tracking-wider text-[11px] flex items-center gap-1.5">
+          <FileCheck className="w-4 h-4 text-brand-600" />
+          Backlog Records
+        </h4>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div>
+            <label className="font-bold text-slate-700 block mb-1">Active Backlogs Count</label>
+            <input
+              type="number"
+              min="0"
+              max="20"
+              value={editForm.active_backlogs}
+              onChange={(e) => setEditForm({ ...editForm, active_backlogs: parseInt(e.target.value) || 0 })}
+              className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl font-mono font-bold text-rose-600"
+            />
+            <span className="text-[10px] text-slate-400 mt-0.5 block">Un-cleared backlogs currently pending</span>
+          </div>
+          <div>
+            <label className="font-bold text-slate-700 block mb-1">Cleared / History Backlogs</label>
+            <input
+              type="number"
+              min="0"
+              max="20"
+              value={editForm.history_backlogs}
+              onChange={(e) => setEditForm({ ...editForm, history_backlogs: parseInt(e.target.value) || 0 })}
+              className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl font-mono font-bold text-slate-700"
+            />
+            <span className="text-[10px] text-slate-400 mt-0.5 block">Historical backlogs cleared in prior terms</span>
+          </div>
+        </div>
+      </div>
+
+      {/* Group 4: Mandatory Audit Reason */}
+      <div className="bg-amber-50/60 p-3.5 rounded-xl border border-amber-200/70 space-y-2">
+        <label className="font-bold text-slate-800 block text-[11px] uppercase tracking-wider">
+          Mandatory Reason for Modification <span className="text-rose-500">*</span>
+        </label>
+        <textarea
+          rows={isModal ? 2 : 3}
+          required
+          placeholder="e.g. Approved re-evaluation result in Math-III; updated CGPA per Controller of Examinations notification..."
+          value={editForm.reason}
+          onChange={(e) => setEditForm({ ...editForm, reason: e.target.value })}
+          className="w-full px-3 py-2 bg-white border border-amber-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-brand-500 font-medium text-xs text-slate-800"
+        />
+        <div className="text-[10px] text-amber-800 flex items-center gap-1 font-medium">
+          <Shield className="w-3 h-3 text-amber-600 shrink-0" />
+          <span>Institutional compliance rule: Every student modification is permanently logged with your Officer identity and timestamp.</span>
+        </div>
+      </div>
+
+      {/* Action Buttons */}
+      <div className="pt-3 border-t border-slate-200 flex items-center justify-end gap-2">
+        {isModal && (
+          <button
+            type="button"
+            disabled={savingEdit}
+            onClick={() => {
+              setIsEditModalOpen(false);
+              setEditingStudent(null);
+            }}
+            className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-xl transition-colors cursor-pointer"
+          >
+            Cancel
+          </button>
+        )}
+        <button
+          type="submit"
+          disabled={savingEdit || !editForm.reason.trim()}
+          className="px-5 py-2 bg-brand-600 hover:bg-brand-700 text-white font-bold text-xs rounded-xl shadow-xs transition-colors cursor-pointer disabled:opacity-50 flex items-center gap-1.5"
+        >
+          {savingEdit ? (
+            <>
+              <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+              <span>Saving Changes...</span>
+            </>
+          ) : (
+            <>
+              <Check className="w-3.5 h-3.5" />
+              <span>Commit & Save Student Record</span>
+            </>
+          )}
+        </button>
+      </div>
+    </div>
+  );
 
   // Filter and sort candidates
   const filtered = students
@@ -498,16 +877,27 @@ export const StudentRegistryView: React.FC = () => {
                       <span className="text-slate-400 font-mono text-[11px]">—</span>
                     )}
                   </td>
-                  <td className="px-5 py-3.5 text-right">
-                    <button
-                      type="button"
-                      onClick={(e) => handleIssueAccessCode(s.roll_no, e)}
-                      className="px-2.5 py-1 text-xs font-semibold text-brand-700 bg-brand-50 hover:bg-brand-100 rounded-lg transition-colors inline-flex items-center gap-1 cursor-pointer"
-                      title="Generate student portal login code"
-                    >
-                      <Key className="w-3 h-3" />
-                      <span>Code</span>
-                    </button>
+                  <td className="px-5 py-3.5 text-right whitespace-nowrap">
+                    <div className="flex items-center justify-end gap-1.5" onClick={(e) => e.stopPropagation()}>
+                      <button
+                        type="button"
+                        onClick={() => handleOpenEditModal(s)}
+                        className="px-2.5 py-1 text-xs font-semibold text-brand-700 bg-brand-50 hover:bg-brand-100 border border-brand-200/60 rounded-lg transition-colors inline-flex items-center gap-1 cursor-pointer shadow-2xs"
+                        title="Edit student academic details & marks"
+                      >
+                        <Edit3 className="w-3 h-3" />
+                        <span>Edit</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={(e) => handleIssueAccessCode(s.roll_no, e)}
+                        className="px-2.5 py-1 text-xs font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 border border-slate-200 rounded-lg transition-colors inline-flex items-center gap-1 cursor-pointer"
+                        title="Generate student portal login code"
+                      >
+                        <Key className="w-3 h-3" />
+                        <span>Code</span>
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))}
@@ -565,6 +955,20 @@ export const StudentRegistryView: React.FC = () => {
             {/* Tab 1: Academics & History */}
             {drawerTab === "academics" && (
               <div className="space-y-5">
+                <div className="flex items-center justify-between pb-2 border-b border-slate-200">
+                  <span className="text-xs font-bold text-slate-600 uppercase tracking-wider">Candidate Academic File</span>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      populateEditForm(selectedStudent);
+                      setDrawerTab("edit");
+                    }}
+                    className="flex items-center gap-1.5 px-3 py-1 bg-brand-50 hover:bg-brand-100 text-brand-700 text-xs font-bold rounded-lg border border-brand-200/80 cursor-pointer transition-colors shadow-2xs"
+                  >
+                    <Edit3 className="w-3.5 h-3.5" />
+                    <span>Edit Profile Data</span>
+                  </button>
+                </div>
                 {/* Academic Highlights */}
                 <div className="grid grid-cols-2 gap-3">
                   <div className="p-3 bg-slate-50 rounded-xl border border-slate-200">
@@ -692,100 +1096,30 @@ export const StudentRegistryView: React.FC = () => {
 
             {/* Tab 3: Edit Student Data with Mandatory Reason */}
             {drawerTab === "edit" && (
-              <form onSubmit={handleSaveStudentEdit} className="space-y-4">
-                {editError && <AlertBanner type="danger" message={editError} onClose={() => setEditError(null)} />}
-                {editSuccess && <AlertBanner type="success" message={editSuccess} onClose={() => setEditSuccess(null)} />}
-
-                <div className="space-y-3 text-xs">
-                  <div>
-                    <label className="font-bold text-slate-700 uppercase tracking-wider block mb-1">
-                      CGPA (0.0 to 10.0)
-                    </label>
-                    <input
-                      type="number"
-                      step="0.01"
-                      min="0.0"
-                      max="10.0"
-                      value={editCgpa}
-                      onChange={(e) => setEditCgpa(parseFloat(e.target.value) || 0)}
-                      className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl font-mono font-bold"
-                    />
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-3">
-                    <div>
-                      <label className="font-bold text-slate-700 uppercase tracking-wider block mb-1">
-                        10th Standard %
-                      </label>
-                      <input
-                        type="number"
-                        step="0.1"
-                        min="0"
-                        max="100"
-                        value={editTenth}
-                        onChange={(e) => setEditTenth(parseFloat(e.target.value) || 0)}
-                        className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl font-mono"
-                      />
-                    </div>
-                    <div>
-                      <label className="font-bold text-slate-700 uppercase tracking-wider block mb-1">
-                        12th Standard %
-                      </label>
-                      <input
-                        type="number"
-                        step="0.1"
-                        min="0"
-                        max="100"
-                        value={editTwelfth}
-                        onChange={(e) => setEditTwelfth(parseFloat(e.target.value) || 0)}
-                        className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl font-mono"
-                      />
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="font-bold text-slate-700 uppercase tracking-wider block mb-1">
-                      Active Backlogs Count
-                    </label>
-                    <input
-                      type="number"
-                      min="0"
-                      max="20"
-                      value={editActiveBacklogs}
-                      onChange={(e) => setEditActiveBacklogs(parseInt(e.target.value) || 0)}
-                      className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl font-mono"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="font-bold text-slate-700 uppercase tracking-wider block mb-1">
-                      Mandatory Reason for Modification <span className="text-rose-500">*</span>
-                    </label>
-                    <textarea
-                      rows={3}
-                      required
-                      placeholder="e.g. Cleared semester 5 re-evaluation in Mathematics; updated CGPA per Controller of Examinations circular..."
-                      value={editReason}
-                      onChange={(e) => setEditReason(e.target.value)}
-                      className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-brand-500 font-medium"
-                    />
-                  </div>
-                </div>
-
-                <div className="pt-3 border-t border-slate-200 flex items-center justify-end">
-                  <button
-                    type="submit"
-                    disabled={savingEdit || !editReason.trim()}
-                    className="px-4 py-2 bg-brand-600 hover:bg-brand-700 text-white font-bold text-xs rounded-xl shadow-xs transition-colors cursor-pointer disabled:opacity-50"
-                  >
-                    {savingEdit ? "Saving..." : "Commit Change with Audit"}
-                  </button>
-                </div>
+              <form onSubmit={(e) => handleSaveStudentEdit(e, selectedStudent)} className="space-y-4">
+                {renderStudentFormFields(false)}
               </form>
             )}
           </div>
         )}
       </Drawer>
+
+      {/* Edit Student Record Modal Dialog */}
+      <Modal
+        isOpen={isEditModalOpen}
+        onClose={() => {
+          if (!savingEdit) {
+            setIsEditModalOpen(false);
+            setEditingStudent(null);
+          }
+        }}
+        title={`Edit Student Academic Record — ${editingStudent?.name || "Student"} (${editingStudent?.roll_no || ""})`}
+        maxWidth="2xl"
+      >
+        <form onSubmit={(e) => handleSaveStudentEdit(e, editingStudent || undefined)} className="space-y-4">
+          {renderStudentFormFields(true)}
+        </form>
+      </Modal>
     </div>
   );
 };
