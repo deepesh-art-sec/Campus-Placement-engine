@@ -83,13 +83,13 @@ export const CoordinatorScheduleView: React.FC<CoordinatorScheduleViewProps> = (
   const roomsList = useMemo(() => {
     const map = new Map<string, { id: string; name: string }>();
     slots.forEach((s) => {
-      const rName = s.room_name || "Interview Cabin";
+      const rName = s.room_name || "Classroom";
       const rId = s.room_id || rName.toLowerCase().replace(/[^a-z0-9]/g, "_");
       if (!map.has(rName)) map.set(rName, { id: rId, name: rName });
     });
     if (map.size === 0) {
-      map.set("Interview Cabin 1", { id: "cabin_1", name: "Interview Cabin 1" });
-      map.set("Interview Cabin 2", { id: "cabin_2", name: "Interview Cabin 2" });
+      map.set("Classroom 101", { id: "room_class_101", name: "Classroom 101" });
+      map.set("Classroom 102", { id: "room_class_102", name: "Classroom 102" });
     }
     return Array.from(map.values());
   }, [slots]);
@@ -227,7 +227,7 @@ export const CoordinatorScheduleView: React.FC<CoordinatorScheduleViewProps> = (
             <thead>
               <tr className="bg-slate-50 border-b border-slate-200">
                 <th className="p-3.5 text-xs font-bold text-slate-700 w-52 text-left border-r border-slate-200 sticky left-0 bg-slate-50 z-10">
-                  Venue / Cabin
+                  Classroom / Venue
                 </th>
                 {timeColumns.map((time) => (
                   <th key={time} className="p-2.5 text-xs font-bold text-slate-600 text-center min-w-[140px] border-r border-slate-200">
@@ -249,9 +249,8 @@ export const CoordinatorScheduleView: React.FC<CoordinatorScheduleViewProps> = (
                   {timeColumns.map((time) => {
                     const slot = slots.find((s) => {
                       const rMatches =
-                        s.room_name.toLowerCase().trim() === room.name.toLowerCase().trim() ||
-                        (room.name.includes("1") && s.room_name.includes("1")) ||
-                        (room.name.includes("2") && s.room_name.includes("2"));
+                        Boolean(s.room_id && (s.room_id.toLowerCase() === room.id.toLowerCase() || s.room_id.toLowerCase() === room.name.toLowerCase())) ||
+                        s.room_name.toLowerCase().trim() === room.name.toLowerCase().trim();
                       return rMatches && extractSlotTime(s) === time;
                     });
 

@@ -22,6 +22,7 @@ from ortools.sat.python import cp_model
 from backend.app.scheduler.heuristic import DSaturHeuristicScheduler
 from backend.app.scheduler.infeasibility import InfeasibilityExplainer
 from backend.app.scheduler.models import (
+    RoomType,
     ScheduleConfig,
     ScheduledItem,
     SchedulerDrive,
@@ -87,9 +88,27 @@ class CpSatPlacementScheduler:
         lunch_slot_end = lunch_slot_start + lunch_slots_count
 
         max_room_cap = max(r.capacity for r in active_rooms)
-        cabins_classrooms = [r for r in active_rooms if r.capacity <= 30]
+        # Classrooms and cabins suitable for interview sessions
+        cabins_classrooms = [
+            r for r in active_rooms
+            if r.capacity <= 60 or r.room_type in (RoomType.CABIN, RoomType.CLASSROOM)
+        ]
         if not cabins_classrooms:
             cabins_classrooms = active_rooms
+
+        # Track rooms already busy on this date to assign empty classrooms / cabins
+        busy_rooms_on_date: set[str] = set()
+        if existing_slots:
+            for ext in existing_slots:
+                st = ext.get("start_time")
+                rid = ext.get("room_id")
+                if isinstance(st, datetime.datetime) and rid:
+                    busy_rooms_on_date.add(rid)
+
+        # Prioritize unbooked empty classrooms and cabins
+        unbooked_rooms = [rm for rm in cabins_classrooms if rm.id not in busy_rooms_on_date]
+        booked_rooms = [rm for rm in cabins_classrooms if rm.id in busy_rooms_on_date]
+        available_pool = unbooked_rooms + booked_rooms if unbooked_rooms else cabins_classrooms
 
         # ---------------------------------------------------------------------
         # Pre-assign rooms to interview panels per day
@@ -100,20 +119,28 @@ class CpSatPlacementScheduler:
 
         # Panel to Room mapping
         panel_room_map: dict[str, SchedulerRoom] = {}
+        allocated_rooms_this_run: set[str] = set()
+
         for _dt, day_drives in drives_by_date.items():
             used_room_indices = 0
             for d in day_drives:
                 for r in d.rounds:
                     if not r.is_group_round:
                         for p in r.panels:
-                            if p.preferred_room_id:
+                            if (
+                                p.preferred_room_id
+                                and p.preferred_room_id not in busy_rooms_on_date
+                                and p.preferred_room_id not in allocated_rooms_this_run
+                            ):
                                 matched = next((rm for rm in active_rooms if rm.id == p.preferred_room_id), None)
                                 if matched:
                                     panel_room_map[p.id] = matched
+                                    allocated_rooms_this_run.add(matched.id)
                                     continue
-                            # Allocate a cabin / classroom for this panel
-                            assigned_rm = cabins_classrooms[used_room_indices % len(cabins_classrooms)]
+                            # Allocate an empty classroom / cabin for this panel
+                            assigned_rm = available_pool[used_room_indices % len(available_pool)]
                             used_room_indices += 1
+                            allocated_rooms_this_run.add(assigned_rm.id)
                             panel_room_map[p.id] = assigned_rm
 
         # ---------------------------------------------------------------------

@@ -260,6 +260,7 @@ def seed_default_accounts() -> None:
             else:
                 rec_user.company_id = comp.id
                 rec_user.password_hash = hash_password("recruiter123")
+                rec_user.is_active = True
 
         # 4. Default Demo Students for LAN Access & Dispute Comparison
         stmt_bt = select(StudentModel).where(StudentModel.roll_no == "BT210001")

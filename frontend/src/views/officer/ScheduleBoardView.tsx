@@ -92,21 +92,17 @@ export const ScheduleBoardView: React.FC<ScheduleBoardViewProps> = ({ initialDri
 
     // 1. Add all venues where interviews are actually scheduled
     slots.forEach((s) => {
-      const rName = s.room_name || "Interview Cabin";
+      const rName = s.room_name || "Classroom";
       const rId = s.room_id || rName.toLowerCase().replace(/[^a-z0-9]/g, "_");
       if (!map.has(rName)) {
         map.set(rName, { id: rId, name: rName });
       }
     });
 
-    // 2. Ensure standard cabins always exist for baseline display
-    if (!map.has("Interview Cabin 101") && !Array.from(map.values()).some((r) => r.name.includes("101"))) {
-      map.set("Interview Cabin 101", { id: "cabin_101", name: "Interview Cabin 101" });
-    }
-    if (!map.has("Interview Cabin 102") && !Array.from(map.values()).some((r) => r.name.includes("102"))) {
-      map.set("Interview Cabin 102", { id: "cabin_102", name: "Interview Cabin 102" });
-    }
-    if (!map.has("Main Auditorium") && !Array.from(map.values()).some((r) => r.name.toLowerCase().includes("auditorium"))) {
+    // 2. Ensure standard classrooms always exist for baseline display if empty
+    if (map.size === 0) {
+      map.set("Classroom 101", { id: "room_class_101", name: "Classroom 101" });
+      map.set("Classroom 102", { id: "room_class_102", name: "Classroom 102" });
       map.set("Main Auditorium", { id: "hall_auditorium", name: "Main Auditorium (Hall)" });
     }
 
@@ -329,7 +325,7 @@ export const ScheduleBoardView: React.FC<ScheduleBoardViewProps> = ({ initialDri
         <div className="flex items-center gap-3 shrink-0">
           <div className="text-right text-xs text-slate-500 hidden sm:block">
             <span className="font-bold text-slate-800">{slots.length}</span> Total Slots •{" "}
-            <span className="font-bold text-slate-800">{roomsList.length}</span> Cabins
+            <span className="font-bold text-slate-800">{roomsList.length}</span> Classrooms / Venues
           </div>
           <button
             onClick={() => fetchSchedule(selectedDriveId)}
@@ -348,7 +344,7 @@ export const ScheduleBoardView: React.FC<ScheduleBoardViewProps> = ({ initialDri
             <thead>
               <tr className="bg-slate-50 border-b border-slate-200">
                 <th className="p-4 text-xs font-bold text-slate-700 w-52 text-left border-r border-slate-200 bg-slate-100/60 sticky left-0 z-10">
-                  Campus Venue / Cabin
+                  Campus Classroom / Venue
                 </th>
                 {timeColumns.map((time) => (
                   <th
@@ -373,13 +369,10 @@ export const ScheduleBoardView: React.FC<ScheduleBoardViewProps> = ({ initialDri
                   {timeColumns.map((time) => {
                     // Match slot strictly for this room AND this exact time slot
                     const slot = slots.find((s) => {
-                      // 1. Room matching logic
+                      // 1. Strict Room matching logic
                       const roomMatches =
-                        (s.room_id && (s.room_id.toLowerCase() === room.id.toLowerCase() || s.room_id.toLowerCase() === room.name.toLowerCase())) ||
-                        s.room_name.toLowerCase().trim() === room.name.toLowerCase().trim() ||
-                        (room.name.toLowerCase().includes("101") && s.room_name.toLowerCase().includes("101")) ||
-                        (room.name.toLowerCase().includes("102") && s.room_name.toLowerCase().includes("102")) ||
-                        (room.name.toLowerCase().includes("auditorium") && s.room_name.toLowerCase().includes("auditorium"));
+                        Boolean(s.room_id && (s.room_id.toLowerCase() === room.id.toLowerCase() || s.room_id.toLowerCase() === room.name.toLowerCase())) ||
+                        s.room_name.toLowerCase().trim() === room.name.toLowerCase().trim();
 
                       if (!roomMatches) return false;
 

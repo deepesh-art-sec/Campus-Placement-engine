@@ -65,18 +65,18 @@ def generate_schedule(
 
     # Fetch eligible students or use explicit candidate shortlist
     if req.student_ids:
-        shortlist_ids = req.student_ids
+        shortlist_ids = list(dict.fromkeys(req.student_ids))
     else:
         dec_stmt = select(EligibilityDecisionModel).where(
             EligibilityDecisionModel.drive_id == req.drive_id,
             EligibilityDecisionModel.status == "eligible",
         )
         eligible_decisions = db.execute(dec_stmt).scalars().all()
-        shortlist_ids = [d.student_id for d in eligible_decisions]
+        shortlist_ids = list(dict.fromkeys(d.student_id for d in eligible_decisions))
 
     if not shortlist_ids:
         # Fallback to sample student if no decisions saved yet
-        shortlist_ids = [d.student_id for d in db.execute(select(EligibilityDecisionModel).limit(5)).scalars().all()]
+        shortlist_ids = list(dict.fromkeys(d.student_id for d in db.execute(select(EligibilityDecisionModel).limit(5)).scalars().all()))
 
     if not shortlist_ids:
         raise HTTPException(
@@ -112,26 +112,27 @@ def generate_schedule(
         ).scalars().all()
     )
 
-    all_cabins = [r for r in room_entities if r.capacity < 50]
+    # Classrooms and cabins suitable for interview sessions
+    all_cabins = [r for r in room_entities if r.capacity <= 60]
     avail_cabins = [r for r in all_cabins if r.id not in busy_room_ids]
     occupied_cabins = [r for r in all_cabins if r.id in busy_room_ids]
     cabins = avail_cabins + occupied_cabins
 
     existing_ids = {r.id for r in room_entities}
     existing_names = {r.name for r in room_entities}
-    c_num = 1
+    c_num = 101
     while len(avail_cabins) < effective_num_panels:
-        cabin_id = f"cabin_auto_{c_num}"
-        cabin_name = f"Interview Cabin Auto {c_num}"
-        while cabin_id in existing_ids or cabin_name in existing_names:
+        class_id = f"room_class_{c_num}"
+        class_name = f"Classroom {c_num}"
+        while class_id in existing_ids or class_name in existing_names:
             c_num += 1
-            cabin_id = f"cabin_auto_{c_num}"
-            cabin_name = f"Interview Cabin Auto {c_num}"
-        new_c = RoomModel(id=cabin_id, name=cabin_name, building="Placement", capacity=5)
+            class_id = f"room_class_{c_num}"
+            class_name = f"Classroom {c_num}"
+        new_c = RoomModel(id=class_id, name=class_name, building="Academic Complex", capacity=40)
         db.add(new_c)
         db.flush()
-        existing_ids.add(cabin_id)
-        existing_names.add(cabin_name)
+        existing_ids.add(class_id)
+        existing_names.add(class_name)
         room_entities.append(new_c)
         cabins.insert(len(avail_cabins), new_c)
         avail_cabins.append(new_c)
@@ -179,13 +180,13 @@ def generate_schedule(
         ],
     )
 
-    # Fetch existing scheduled slots for published drives on this date to guarantee zero cross-drive clashes
+    # Fetch existing scheduled slots for active drives on this date to guarantee zero cross-drive clashes
     existing_slots_stmt = (
         select(SlotModel)
         .join(DriveModel, SlotModel.drive_id == DriveModel.id)
         .where(
             SlotModel.drive_id != drive_entity.id,
-            DriveModel.status == "published",
+            DriveModel.status != "cancelled",
             SlotModel.start_time >= day_start,
             SlotModel.start_time <= day_end,
         )

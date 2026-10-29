@@ -153,7 +153,7 @@ class DSaturHeuristicScheduler:
             for r in d.rounds:
                 if r.is_group_round:
                     batch_size = min(r.max_batch_size, max_room_cap)
-                    all_students = list(d.shortlisted_student_ids)
+                    all_students = list(dict.fromkeys(d.shortlisted_student_ids))
                     if not all_students:
                         continue
                     num_batches = math.ceil(len(all_students) / batch_size)
@@ -177,7 +177,7 @@ class DSaturHeuristicScheduler:
                             )
                         )
                 else:
-                    for sid in d.shortlisted_student_ids:
+                    for sid in list(dict.fromkeys(d.shortlisted_student_ids)):
                         tasks.append(
                             HeuristicTask(
                                 task_id=f"{d.id}_r{r.round_number}_s_{sid}",
