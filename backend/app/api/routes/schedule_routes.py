@@ -254,6 +254,21 @@ def generate_schedule(
         db.flush()
 
     for it in res.items:
+        # Guarantee any dynamically provisioned classroom is persisted in database
+        if it.room_id:
+            room_check = db.query(RoomModel).filter(RoomModel.id == it.room_id).first()
+            if not room_check:
+                r_name = it.room_name or f"Classroom {it.room_id.replace('room_class_', '')}"
+                room_check = RoomModel(
+                    id=it.room_id,
+                    name=r_name,
+                    building="Academic Complex",
+                    capacity=max(40, len(it.student_ids)),
+                    is_active=True,
+                )
+                db.add(room_check)
+                db.flush()
+
         for sid in it.student_ids:
             slot_id = f"slot_{uuid.uuid4().hex[:10]}"
             slot_entity = SlotModel(

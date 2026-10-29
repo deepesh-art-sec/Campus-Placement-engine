@@ -34,6 +34,15 @@ export const ScheduleBoardView: React.FC<ScheduleBoardViewProps> = ({ initialDri
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [selectedSlot, setSelectedSlot] = useState<ScheduleSlot | null>(null);
+  const [showClassroomModal, setShowClassroomModal] = useState(false);
+  const [roomTab, setRoomTab] = useState<"provision" | "custom">("provision");
+  const [provisionStudents, setProvisionStudents] = useState<number>(40);
+  const [provisionRoundType, setProvisionRoundType] = useState<string>("interview");
+  const [provisionCapacity, setProvisionCapacity] = useState<number>(40);
+  const [customRoomName, setCustomRoomName] = useState<string>("");
+  const [customRoomBuilding, setCustomRoomBuilding] = useState<string>("Academic Complex");
+  const [customRoomCapacity, setCustomRoomCapacity] = useState<number>(40);
+  const [roomActionLoading, setRoomActionLoading] = useState(false);
 
   const abortControllerRef = useRef<AbortController | null>(null);
 
@@ -128,6 +137,55 @@ export const ScheduleBoardView: React.FC<ScheduleBoardViewProps> = ({ initialDri
     };
     fetchDrives();
   }, [initialDriveId]);
+
+  const handleAutoProvisionRooms = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setRoomActionLoading(true);
+    try {
+      const selectedDrive = drives.find((d) => d.id === selectedDriveId);
+      const res = await api.post<{
+        status: string;
+        newly_provisioned_count: number;
+        needed_classrooms: number;
+      }>("/api/rooms/provision-for-students", {
+        students_count: provisionStudents,
+        round_type: provisionRoundType,
+        capacity_per_room: provisionCapacity,
+        target_date: selectedDrive?.drive_date,
+      });
+      setSuccess(
+        `Classrooms allocated! ${res.newly_provisioned_count} new classroom(s) created matching ${provisionStudents} student requirements.`
+      );
+      setShowClassroomModal(false);
+      if (selectedDriveId) fetchSchedule(selectedDriveId);
+    } catch (err: any) {
+      setError(err?.message || "Failed to provision classrooms.");
+    } finally {
+      setRoomActionLoading(false);
+    }
+  };
+
+  const handleCreateCustomRoom = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!customRoomName.trim()) return;
+    setRoomActionLoading(true);
+    try {
+      await api.post("/api/rooms", {
+        name: customRoomName.trim(),
+        building: customRoomBuilding,
+        capacity: customRoomCapacity,
+        room_type: "classroom",
+      });
+      setSuccess(`Classroom '${customRoomName.trim()}' successfully created with capacity ${customRoomCapacity}!`);
+      setCustomRoomName("");
+      setShowClassroomModal(false);
+      if (selectedDriveId) fetchSchedule(selectedDriveId);
+    } catch (err: any) {
+      setError(err?.message || "Failed to create classroom.");
+    } finally {
+      setRoomActionLoading(false);
+    }
+  };
 
   const fetchSchedule = async (driveId: string) => {
     if (!driveId) return;
@@ -257,6 +315,15 @@ export const ScheduleBoardView: React.FC<ScheduleBoardViewProps> = ({ initialDri
               </option>
             ))}
           </select>
+
+          <button
+            onClick={() => setShowClassroomModal(true)}
+            className="flex items-center gap-1.5 px-3.5 py-2 bg-blue-50 hover:bg-blue-100 text-blue-700 text-xs font-bold rounded-xl border border-blue-200 shadow-xs transition-colors cursor-pointer"
+            title="Auto-provision or add classrooms according to student requirements"
+          >
+            <Building className="w-3.5 h-3.5" />
+            <span>+ Classrooms</span>
+          </button>
 
           <button
             onClick={handleGenerateSchedule}
@@ -496,6 +563,174 @@ export const ScheduleBoardView: React.FC<ScheduleBoardViewProps> = ({ initialDri
             >
               Close Inspector
             </button>
+          </div>
+        </div>
+      )}
+
+      {/* Classroom Provisioning & Creation Modal */}
+      {showClassroomModal && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center z-50 p-4 animate-in fade-in duration-200">
+          <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-100 space-y-4">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+              <div className="flex items-center gap-2">
+                <Building className="w-5 h-5 text-blue-600" />
+                <h3 className="text-base font-bold text-slate-900">Classroom Allocation & Provisioning</h3>
+              </div>
+              <button
+                onClick={() => setShowClassroomModal(false)}
+                className="p-1 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-100 cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {/* Tab switch */}
+            <div className="flex bg-slate-100 p-1 rounded-xl">
+              <button
+                type="button"
+                onClick={() => setRoomTab("provision")}
+                className={`flex-1 py-1.5 text-xs font-bold rounded-lg transition-all cursor-pointer ${
+                  roomTab === "provision"
+                    ? "bg-white text-blue-600 shadow-xs"
+                    : "text-slate-500 hover:text-slate-900"
+                }`}
+              >
+                Auto-Provision for Students
+              </button>
+              <button
+                type="button"
+                onClick={() => setRoomTab("custom")}
+                className={`flex-1 py-1.5 text-xs font-bold rounded-lg transition-all cursor-pointer ${
+                  roomTab === "custom"
+                    ? "bg-white text-blue-600 shadow-xs"
+                    : "text-slate-500 hover:text-slate-900"
+                }`}
+              >
+                Add Single Classroom
+              </button>
+            </div>
+
+            {roomTab === "provision" ? (
+              <form onSubmit={handleAutoProvisionRooms} className="space-y-3.5">
+                <p className="text-xs text-slate-500">
+                  If classrooms are unavailable for your candidates, the engine dynamically provisions dedicated campus classrooms matching your students' requirements.
+                </p>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">Students Count</label>
+                  <input
+                    type="number"
+                    min="1"
+                    max="5000"
+                    value={provisionStudents}
+                    onChange={(e) => setProvisionStudents(parseInt(e.target.value) || 1)}
+                    className="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs font-medium text-slate-800 focus:ring-2 focus:ring-blue-500 focus:outline-hidden"
+                    required
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 mb-1">Round Type</label>
+                    <select
+                      value={provisionRoundType}
+                      onChange={(e) => setProvisionRoundType(e.target.value)}
+                      className="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs font-medium text-slate-800 focus:ring-2 focus:ring-blue-500 focus:outline-hidden"
+                    >
+                      <option value="interview">1-on-1 Interview</option>
+                      <option value="test">Written Test / GD</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 mb-1">Capacity / Room</label>
+                    <input
+                      type="number"
+                      min="5"
+                      max="300"
+                      value={provisionCapacity}
+                      onChange={(e) => setProvisionCapacity(parseInt(e.target.value) || 40)}
+                      className="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs font-medium text-slate-800 focus:ring-2 focus:ring-blue-500 focus:outline-hidden"
+                      required
+                    />
+                  </div>
+                </div>
+
+                <div className="pt-2 flex items-center justify-end gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setShowClassroomModal(false)}
+                    className="px-3 py-2 text-xs font-bold text-slate-500 hover:text-slate-800 rounded-xl cursor-pointer"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={roomActionLoading}
+                    className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-xl shadow-xs transition-colors disabled:opacity-50 cursor-pointer"
+                  >
+                    {roomActionLoading ? "Provisioning..." : "Provision Classrooms"}
+                  </button>
+                </div>
+              </form>
+            ) : (
+              <form onSubmit={handleCreateCustomRoom} className="space-y-3.5">
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">Classroom Name</label>
+                  <input
+                    type="text"
+                    placeholder="e.g. Classroom 601"
+                    value={customRoomName}
+                    onChange={(e) => setCustomRoomName(e.target.value)}
+                    className="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs font-medium text-slate-800 focus:ring-2 focus:ring-blue-500 focus:outline-hidden"
+                    required
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 mb-1">Building</label>
+                    <input
+                      type="text"
+                      value={customRoomBuilding}
+                      onChange={(e) => setCustomRoomBuilding(e.target.value)}
+                      className="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs font-medium text-slate-800 focus:ring-2 focus:ring-blue-500 focus:outline-hidden"
+                      required
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 mb-1">Capacity</label>
+                    <input
+                      type="number"
+                      min="5"
+                      max="500"
+                      value={customRoomCapacity}
+                      onChange={(e) => setCustomRoomCapacity(parseInt(e.target.value) || 40)}
+                      className="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs font-medium text-slate-800 focus:ring-2 focus:ring-blue-500 focus:outline-hidden"
+                      required
+                    />
+                  </div>
+                </div>
+
+                <div className="pt-2 flex items-center justify-end gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setShowClassroomModal(false)}
+                    className="px-3 py-2 text-xs font-bold text-slate-500 hover:text-slate-800 rounded-xl cursor-pointer"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={roomActionLoading || !customRoomName.trim()}
+                    className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl shadow-xs transition-colors disabled:opacity-50 cursor-pointer"
+                  >
+                    {roomActionLoading ? "Creating..." : "Create Classroom"}
+                  </button>
+                </div>
+              </form>
+            )}
           </div>
         </div>
       )}

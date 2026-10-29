@@ -137,11 +137,35 @@ class CpSatPlacementScheduler:
                                     panel_room_map[p.id] = matched
                                     allocated_rooms_this_run.add(matched.id)
                                     continue
-                            # Allocate an empty classroom / cabin for this panel
-                            assigned_rm = available_pool[used_room_indices % len(available_pool)]
-                            used_room_indices += 1
-                            allocated_rooms_this_run.add(assigned_rm.id)
-                            panel_room_map[p.id] = assigned_rm
+                            # Allocate an unbooked empty classroom for this panel
+                            candidate_room = None
+                            while used_room_indices < len(unbooked_rooms):
+                                cand = unbooked_rooms[used_room_indices]
+                                used_room_indices += 1
+                                if cand.id not in allocated_rooms_this_run:
+                                    candidate_room = cand
+                                    break
+
+                            if not candidate_room:
+                                # Classroom is not available -> dynamically provision a new classroom according to student requirements
+                                existing_names = {rm.name for rm in active_rooms}
+                                existing_ids = {rm.id for rm in active_rooms}
+                                c_num = 101
+                                while f"Classroom {c_num}" in existing_names or f"room_class_{c_num}" in existing_ids:
+                                    c_num += 1
+                                candidate_room = SchedulerRoom(
+                                    id=f"room_class_{c_num}",
+                                    name=f"Classroom {c_num}",
+                                    building="Academic Complex",
+                                    room_type=RoomType.CLASSROOM,
+                                    capacity=40,
+                                    is_active=True,
+                                )
+                                active_rooms.append(candidate_room)
+                                unbooked_rooms.append(candidate_room)
+
+                            allocated_rooms_this_run.add(candidate_room.id)
+                            panel_room_map[p.id] = candidate_room
 
         # ---------------------------------------------------------------------
         # Session Definition & CP Variables
@@ -280,15 +304,24 @@ class CpSatPlacementScheduler:
                                 valid_rooms = type_matched
 
                         if not valid_rooms:
-                            explanation = self.explainer.explain(drives, rooms, cfg)
-                            return ScheduleResult(
-                                schedule_id=str(uuid.uuid4()),
-                                status=ScheduleStatus.INFEASIBLE,
-                                items=[],
-                                solver_time_seconds=(datetime.datetime.now() - start_clock).total_seconds(),
-                                solver_name="cp-sat",
-                                infeasibility_explanation=explanation,
+                            # Classroom is not available for this batch -> dynamically make new class as per students requirements
+                            req_cap = max(40, len(batch_sids))
+                            existing_names = {rm.name for rm in active_rooms}
+                            existing_ids = {rm.id for rm in active_rooms}
+                            c_num = 101
+                            while f"Classroom {c_num}" in existing_names or f"room_class_{c_num}" in existing_ids:
+                                c_num += 1
+                            new_rm = SchedulerRoom(
+                                id=f"room_class_{c_num}",
+                                name=f"Classroom {c_num}",
+                                building="Academic Complex",
+                                room_type=r.required_room_type or RoomType.CLASSROOM,
+                                capacity=req_cap,
+                                has_computers=r.requires_computers,
+                                is_active=True,
                             )
+                            active_rooms.append(new_rm)
+                            valid_rooms = [new_rm]
 
                         room_literals = []
                         for rm in valid_rooms:

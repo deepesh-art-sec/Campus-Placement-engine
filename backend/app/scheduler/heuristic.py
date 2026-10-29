@@ -344,6 +344,89 @@ class DSaturHeuristicScheduler:
                     break
 
             if not placed:
+                # Classroom was not available among existing rooms -> dynamically make new class as per students requirements
+                for slot in range(slots_per_day - task_slots_needed + 1):
+                    slot_range = range(slot, slot + task_slots_needed)
+                    if any(lunch_slot_start <= s < lunch_slot_end for s in slot_range):
+                        continue
+                    extended_range = range(
+                        max(0, slot - buffer_slots),
+                        min(slots_per_day, slot + task_slots_needed + buffer_slots),
+                    )
+                    if any(
+                        (task.drive_date, s, sid) in busy_students
+                        for s in extended_range
+                        for sid in task.student_ids
+                    ):
+                        continue
+
+                    earlier_conflict = False
+                    for prev in scheduled:
+                        if prev.drive_id == task.drive_id and prev.round_number < task.round_number:
+                            if set(prev.student_ids) & set(task.student_ids):
+                                assert prev.assigned_slot is not None
+                                prev_dur_slots = math.ceil(prev.duration_minutes / config.slot_duration_minutes)
+                                if slot < prev.assigned_slot + prev_dur_slots + buffer_slots:
+                                    earlier_conflict = True
+                                    break
+                    if earlier_conflict:
+                        continue
+
+                    # Find a panel that is free
+                    free_panel = None
+                    if not task.is_group_round:
+                        for p in task.panels:
+                            if not any((task.drive_date, s, p.id) in busy_panels for s in slot_range):
+                                free_panel = p
+                                break
+                        if not free_panel:
+                            p_idx = len(task.panels) + 1
+                            free_panel = SchedulerPanel(
+                                id=f"panel_{task.drive_id}_auto_{p_idx}",
+                                drive_id=task.drive_id,
+                                round_number=task.round_number,
+                                name=f"Technical Panel {p_idx}",
+                            )
+                            task.panels.append(free_panel)
+
+                    # Create a new classroom as per students' requirements
+                    req_cap = max(40, len(task.student_ids))
+                    existing_names = {rm.name for rm in rooms}
+                    existing_ids = {rm.id for rm in rooms}
+                    c_num = 101
+                    while f"Classroom {c_num}" in existing_names or f"room_class_{c_num}" in existing_ids:
+                        c_num += 1
+                    candidate_room = SchedulerRoom(
+                        id=f"room_class_{c_num}",
+                        name=f"Classroom {c_num}",
+                        building="Academic Complex",
+                        room_type=task.required_room_type or RoomType.CLASSROOM,
+                        capacity=req_cap,
+                        has_computers=task.requires_computers,
+                        is_active=True,
+                    )
+                    rooms.append(candidate_room)
+
+                    task.assigned_slot = slot
+                    task.assigned_room = candidate_room
+                    task.assigned_panel = free_panel
+
+                    for s in slot_range:
+                        busy_rooms.add((task.drive_date, s, candidate_room.id))
+                        if free_panel:
+                            busy_panels.add((task.drive_date, s, free_panel.id))
+                        for sid in task.student_ids:
+                            busy_students.add((task.drive_date, s, sid))
+
+                    for nbr in conflict_graph[task.task_id]:
+                        if nbr in unscheduled:
+                            saturation_map[nbr].update(slot_range)
+
+                    scheduled.append(task)
+                    placed = True
+                    break
+
+            if not placed:
                 break
 
         return scheduled
