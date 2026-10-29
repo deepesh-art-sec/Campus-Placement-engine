@@ -15,6 +15,7 @@ import {
   Info,
   Clock,
   ArrowRight,
+  RefreshCw,
 } from "lucide-react";
 
 interface ClashItem {
@@ -41,36 +42,20 @@ export const CoordinatorClashesView: React.FC = () => {
   const [submitting, setSubmitting] = useState(false);
   const [success, setSuccess] = useState<string | null>(null);
 
-  // Mock baseline clashes if none currently colliding in database
+  const fetchClashes = async () => {
+    try {
+      setLoading(true);
+      const res = await api.get<ClashItem[]>("/api/coordinator/clashes");
+      setClashes(res || []);
+    } catch {
+      setClashes([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
-    setClashes([
-      {
-        id: "clash_1",
-        student_roll: "BT210005",
-        student_name: "Rahul Verma",
-        branch: "Computer Science and Engineering",
-        drive_a_id: "drv_1",
-        drive_a_company: "Google",
-        drive_a_time: "10:00 AM - 10:30 AM",
-        drive_b_id: "drv_2",
-        drive_b_company: "Microsoft",
-        drive_b_time: "10:15 AM - 10:45 AM",
-        status: "unresolved",
-      },
-      {
-        id: "clash_2",
-        student_roll: "BT210012",
-        student_name: "Pooja Sharma",
-        branch: "Information Technology",
-        drive_a_id: "drv_3",
-        drive_a_company: "Amazon",
-        drive_a_time: "11:30 AM - 12:00 PM",
-        drive_b_id: "drv_4",
-        drive_b_company: "Goldman Sachs",
-        drive_b_time: "11:45 AM - 12:15 PM",
-        status: "unresolved",
-      },
-    ]);
+    fetchClashes();
   }, []);
 
   const handleOpenPreferenceModal = (clash: ClashItem) => {
@@ -130,11 +115,26 @@ export const CoordinatorClashesView: React.FC = () => {
         <div>
           <div className="flex items-center gap-3">
             <h1 className="text-2xl font-black text-slate-900 tracking-tight">Student Clash Centre</h1>
-            <Badge variant="warning">{clashes.filter((c) => c.status === "unresolved").length} Overlapping Windows</Badge>
+            <Badge variant={clashes.filter((c) => c.status === "unresolved").length === 0 ? "success" : "warning"}>
+              {clashes.filter((c) => c.status === "unresolved").length === 0
+                ? "0 Clashes Active"
+                : `${clashes.filter((c) => c.status === "unresolved").length} Overlapping Windows`}
+            </Badge>
           </div>
           <p className="text-sm text-slate-500 mt-1">
             Detect students shortlisted by two companies with overlapping interview windows. Record candidate stated preferences and notify the Officer.
           </p>
+        </div>
+
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={fetchClashes}
+            className="p-2 text-slate-600 hover:text-slate-900 bg-white border border-slate-200 rounded-xl hover:bg-slate-50 shadow-2xs transition-all cursor-pointer"
+            title="Refresh clash detections"
+          >
+            <RefreshCw className={`w-4 h-4 ${loading ? "animate-spin text-purple-600" : ""}`} />
+          </button>
         </div>
       </div>
 
@@ -149,7 +149,23 @@ export const CoordinatorClashesView: React.FC = () => {
 
       {/* Clashes List */}
       <div className="space-y-4">
-        {clashes.map((c) => (
+        {loading ? (
+          <div className="p-8 text-center bg-white rounded-2xl border border-slate-200 shadow-xs flex items-center justify-center gap-2 text-slate-500 text-xs">
+            <RefreshCw className="w-4 h-4 animate-spin text-purple-600" />
+            <span>Scanning published schedules for candidate conflicts...</span>
+          </div>
+        ) : clashes.length === 0 ? (
+          <div className="p-8 text-center bg-white rounded-2xl border border-slate-200 shadow-xs flex flex-col items-center justify-center">
+            <div className="w-12 h-12 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center mb-3">
+              <CheckCircle className="w-6 h-6" />
+            </div>
+            <h3 className="text-base font-bold text-slate-800">Zero Schedule Clashes Detected</h3>
+            <p className="text-xs text-slate-500 max-w-md mt-1">
+              All published drive slots are fully coordinated and non-overlapping. No student is currently double-booked.
+            </p>
+          </div>
+        ) : (
+          clashes.map((c) => (
           <div
             key={c.id}
             className="p-5 bg-white rounded-2xl border border-slate-200 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4 hover:border-brand-200 transition-all"
@@ -201,7 +217,7 @@ export const CoordinatorClashesView: React.FC = () => {
               )}
             </div>
           </div>
-        ))}
+        )))}
       </div>
 
       {/* Record Preference Modal */}

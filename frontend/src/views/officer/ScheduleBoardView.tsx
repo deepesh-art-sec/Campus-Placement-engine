@@ -162,7 +162,8 @@ export const ScheduleBoardView: React.FC<ScheduleBoardViewProps> = ({ initialDri
         }
       }
     }
-    setClashCount(collisions);
+    const crossDriveClashes = items.filter((it: any) => it.has_clash).length;
+    setClashCount(collisions + crossDriveClashes);
   };
 
   useEffect(() => {
@@ -387,7 +388,12 @@ export const ScheduleBoardView: React.FC<ScheduleBoardViewProps> = ({ initialDri
                         {slot ? (
                           <div
                             onClick={() => setSelectedSlot(slot)}
-                            className="bg-[#111e38]/90 hover:bg-[#16274a] border border-[#1e3258] hover:border-emerald-500/60 rounded-xl p-2.5 shadow-sm hover:shadow-emerald-950/30 cursor-pointer transition-all space-y-1.5 group"
+                            className={`${
+                              (slot as any).has_clash
+                                ? "bg-rose-950/80 hover:bg-rose-900 border border-rose-500/80"
+                                : "bg-[#111e38]/90 hover:bg-[#16274a] border border-[#1e3258] hover:border-emerald-500/60"
+                            } rounded-xl p-2.5 shadow-sm hover:shadow-emerald-950/30 cursor-pointer transition-all space-y-1.5 group`}
+                            title={(slot as any).clash_detail || undefined}
                           >
                             <span className="text-[11.5px] font-bold text-slate-100 block truncate group-hover:text-emerald-300 transition-colors">
                               {slot.student_name}
@@ -397,9 +403,15 @@ export const ScheduleBoardView: React.FC<ScheduleBoardViewProps> = ({ initialDri
                             </span>
                             <div className="flex items-center justify-between text-[10px] text-slate-400 pt-1 border-t border-[#1a2c50]">
                               <span className="truncate">{slot.round_name}</span>
-                              <span className="font-bold text-emerald-300 shrink-0 bg-emerald-950/80 border border-emerald-500/30 px-1.5 py-0.5 rounded text-[9.5px]">
-                                OK
-                              </span>
+                              {(slot as any).has_clash ? (
+                                <span className="font-bold text-rose-300 shrink-0 bg-rose-950/80 border border-rose-500/50 px-1.5 py-0.5 rounded text-[9.5px]">
+                                  CLASH
+                                </span>
+                              ) : (
+                                <span className="font-bold text-emerald-300 shrink-0 bg-emerald-950/80 border border-emerald-500/30 px-1.5 py-0.5 rounded text-[9.5px]">
+                                  OK
+                                </span>
+                              )}
                             </div>
                           </div>
                         ) : (
