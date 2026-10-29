@@ -79,7 +79,9 @@ class SqlAlchemyStudentRepository:
     def list_all(self, branch: str | None = None, limit: int = 1000, offset: int = 0) -> list[Student]:
         stmt = self._query()
         if branch:
-            stmt = stmt.where(StudentModel.branch == branch)
+            from backend.app.importers.canonical_maps import get_branch_code
+            canon = get_branch_code(branch)
+            stmt = stmt.where((StudentModel.branch == branch) | (StudentModel.branch == canon))
         stmt = stmt.offset(offset).limit(limit)
         results = self.session.execute(stmt).scalars().all()
         return [student_entity_to_domain(r) for r in results]
@@ -87,7 +89,9 @@ class SqlAlchemyStudentRepository:
     def count(self, branch: str | None = None) -> int:
         stmt = select(func.count(StudentModel.id))
         if branch:
-            stmt = stmt.where(StudentModel.branch == branch)
+            from backend.app.importers.canonical_maps import get_branch_code
+            canon = get_branch_code(branch)
+            stmt = stmt.where((StudentModel.branch == branch) | (StudentModel.branch == canon))
         return self.session.execute(stmt).scalar_one()
 
     def add(self, student: Student) -> Student:

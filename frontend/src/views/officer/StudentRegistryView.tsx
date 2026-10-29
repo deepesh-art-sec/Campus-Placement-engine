@@ -40,6 +40,18 @@ interface DriveStatusItem {
   headline_reason: string;
 }
 
+const CANONICAL_BRANCH_MAP: Record<string, string> = {
+  CSE: "Computer Science and Engineering",
+  IT: "Information Technology",
+  ECE: "Electronics and Communication Engineering",
+  EEE: "Electrical and Electronics Engineering",
+  ME: "Mechanical Engineering",
+  CE: "Civil Engineering",
+  CHE: "Chemical Engineering",
+  BT: "Biotechnology",
+  DS: "Data Science",
+};
+
 export const StudentRegistryView: React.FC = () => {
   const [students, setStudents] = useState<Student[]>([]);
   const [totalCount, setTotalCount] = useState<number>(0);
@@ -166,7 +178,11 @@ export const StudentRegistryView: React.FC = () => {
       const matchesSearch =
         s.name.toLowerCase().includes(search.toLowerCase()) ||
         s.roll_no.toLowerCase().includes(search.toLowerCase());
-      const matchesBranch = branchFilter === "all" || s.branch === branchFilter;
+      const matchesBranch =
+        branchFilter === "all" ||
+        s.branch === branchFilter ||
+        CANONICAL_BRANCH_MAP[s.branch] === branchFilter ||
+        (CANONICAL_BRANCH_MAP[branchFilter] && s.branch === CANONICAL_BRANCH_MAP[branchFilter]);
       const matchesCgpa = s.cgpa >= minCgpa;
       const activeBacklogs = s.active_backlogs ?? 0;
       const historyBacklogs = s.history_backlogs ?? 0;
@@ -293,15 +309,15 @@ export const StudentRegistryView: React.FC = () => {
               className="px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold cursor-pointer"
             >
               <option value="all">All Branches (9 Engineering Disciplines)</option>
-              <option value="Computer Science and Engineering">CSE</option>
-              <option value="Information Technology">IT</option>
-              <option value="Electronics and Communication Engineering">ECE</option>
-              <option value="Electrical and Electronics Engineering">EEE</option>
-              <option value="Mechanical Engineering">Mechanical</option>
-              <option value="Civil Engineering">Civil</option>
-              <option value="Chemical Engineering">Chemical</option>
-              <option value="Biotechnology">Biotechnology</option>
-              <option value="Data Science">Data Science</option>
+              <option value="CSE">CSE — Computer Science and Engineering</option>
+              <option value="IT">IT — Information Technology</option>
+              <option value="ECE">ECE — Electronics & Communication</option>
+              <option value="EEE">EEE — Electrical & Electronics</option>
+              <option value="ME">ME — Mechanical Engineering</option>
+              <option value="CE">CE — Civil Engineering</option>
+              <option value="CHE">CHE — Chemical Engineering</option>
+              <option value="BT">BT — Biotechnology</option>
+              <option value="DS">DS — Data Science</option>
             </select>
 
             {/* Backlog Filter */}

@@ -30,6 +30,7 @@ class StudentModel(Base):
     id = Column(String(36), primary_key=True)
     roll_no = Column(String(64), unique=True, nullable=False, index=True)
     name = Column(String(255), nullable=False)
+    normalized_name = Column(String(255), unique=True, nullable=False, index=True)
     email = Column(String(255), unique=True, nullable=False, index=True)
     branch = Column(String(128), nullable=False, index=True)
     program = Column(String(64), nullable=False, default="B.Tech")
@@ -48,6 +49,12 @@ class StudentModel(Base):
     version = Column(Integer, nullable=False, default=1)
     created_at = Column(DateTime, default=datetime.datetime.utcnow, nullable=False)
     updated_at = Column(DateTime, default=datetime.datetime.utcnow, onupdate=datetime.datetime.utcnow, nullable=False)
+
+    def __init__(self, **kwargs):
+        if "normalized_name" not in kwargs and "name" in kwargs and kwargs["name"]:
+            import re
+            kwargs["normalized_name"] = re.sub(r"\s+", " ", kwargs["name"].strip()).lower()
+        super().__init__(**kwargs)
 
     # Relationships
     academic_records = relationship("AcademicRecordModel", back_populates="student", cascade="all, delete-orphan")
@@ -364,6 +371,8 @@ class CompanyExportMappingModel(Base):
     updated_at = Column(DateTime, default=datetime.datetime.utcnow, onupdate=datetime.datetime.utcnow, nullable=False)
 
 
+
+
 class SessionModel(Base):
     __tablename__ = "sessions"
 
@@ -464,6 +473,8 @@ class PlacementRequestModel(Base):
     updated_at = Column(DateTime, default=datetime.datetime.utcnow, onupdate=datetime.datetime.utcnow, nullable=False)
 
 
+
+
 class AttendanceRecordModel(Base):
     __tablename__ = "attendance_records"
 
@@ -478,3 +489,5 @@ class AttendanceRecordModel(Base):
     marked_by = Column(String(128), nullable=False)
     created_at = Column(DateTime, default=datetime.datetime.utcnow, nullable=False)
     updated_at = Column(DateTime, default=datetime.datetime.utcnow, onupdate=datetime.datetime.utcnow, nullable=False)
+
+

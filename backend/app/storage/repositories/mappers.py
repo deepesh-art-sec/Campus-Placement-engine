@@ -6,6 +6,7 @@ Converts between pure Domain Pydantic models and SQLAlchemy models.
 from __future__ import annotations
 
 import json
+import re
 import uuid
 
 from backend.app.domain.models import (
@@ -123,6 +124,7 @@ def student_domain_to_entity(student: Student) -> StudentModel:
         id=student.id,
         roll_no=student.roll_no,
         name=student.name,
+        normalized_name=re.sub(r"\s+", " ", student.name.strip()).lower(),
         email=student.email,
         branch=student.branch,
         program=student.program,

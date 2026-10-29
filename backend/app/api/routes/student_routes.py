@@ -91,13 +91,17 @@ def list_students(
     """Lists students with optional branch filtering (Staff only)."""
     stmt = select(StudentModel)
     if branch:
-        stmt = stmt.where(StudentModel.branch == branch)
+        from backend.app.importers.canonical_maps import get_branch_code
+        canon = get_branch_code(branch)
+        stmt = stmt.where((StudentModel.branch == branch) | (StudentModel.branch == canon))
     stmt = stmt.offset(offset).limit(limit)
 
     results = db.execute(stmt).scalars().all()
     count_stmt = select(StudentModel)
     if branch:
-        count_stmt = count_stmt.where(StudentModel.branch == branch)
+        from backend.app.importers.canonical_maps import get_branch_code
+        canon = get_branch_code(branch)
+        count_stmt = count_stmt.where((StudentModel.branch == branch) | (StudentModel.branch == canon))
     total_count = len(db.execute(count_stmt).scalars().all())
 
     return {
@@ -238,12 +242,15 @@ def create_student(
             category=req.category,
         )
 
+    from backend.app.importers.canonical_maps import get_branch_code
+    canon_branch = get_branch_code(req.branch) or req.branch
+
     student = Student(
         id=str(uuid.uuid4()),
         roll_no=req.roll_no,
         name=req.name,
         email=req.email,
-        branch=req.branch,
+        branch=canon_branch,
         program=req.program,
         cgpa=req.cgpa,
         tenth_percentage=req.tenth_percentage,
@@ -284,9 +291,13 @@ def update_student(
     if not student:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Student not found.")
 
+    import re
+    from backend.app.importers.canonical_maps import get_branch_code
+
     student.name = req.name
+    student.normalized_name = re.sub(r"\s+", " ", req.name.strip()).lower()
     student.email = req.email
-    student.branch = req.branch
+    student.branch = get_branch_code(req.branch) or req.branch
     student.program = req.program
     student.cgpa = req.cgpa
     student.tenth_percentage = req.tenth_percentage

@@ -201,7 +201,11 @@ def get_branch_code(val: str | None) -> str:
     """Returns the standard short industry code (e.g. CSE, IT, ECE) for a given branch."""
     if not val:
         return ""
-    canonical = get_canonical_branch(val)
+    val_clean = str(val).strip()
+    upper = val_clean.upper()
+    if upper in {"CSE", "IT", "ECE", "EEE", "ME", "CE", "CHE", "BT", "DS"}:
+        return upper
+    canonical = get_canonical_branch(val_clean)
     if canonical in BRANCH_CODES:
         return BRANCH_CODES[canonical]
 
