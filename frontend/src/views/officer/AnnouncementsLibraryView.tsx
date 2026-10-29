@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { api } from "../../api/client";
 import { Badge } from "../../components/common/Badge";
 import { AlertBanner } from "../../components/common/AlertBanner";
@@ -71,6 +71,29 @@ export const AnnouncementsLibraryView: React.FC<AnnouncementsLibraryViewProps> =
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
   const [uploadFile, setUploadFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleModalDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(true);
+  };
+
+  const handleModalDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+  };
+
+  const handleModalDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+    if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+      setUploadFile(e.dataTransfer.files[0]);
+    }
+  };
 
   useEffect(() => {
     fetchAnnouncements();
@@ -477,23 +500,34 @@ export const AnnouncementsLibraryView: React.FC<AnnouncementsLibraryViewProps> =
             </div>
 
             <form onSubmit={handleUploadAnnouncement} className="p-6 space-y-5">
-              <div className="border-2 border-dashed border-[#1e3258] hover:border-emerald-500/50 rounded-2xl p-6 text-center space-y-3 bg-[#080e1c]">
+              <div
+                onDragOver={handleModalDragOver}
+                onDragLeave={handleModalDragLeave}
+                onDrop={handleModalDrop}
+                onClick={() => fileInputRef.current?.click()}
+                className={`border-2 border-dashed rounded-2xl p-6 text-center space-y-3 transition-all cursor-pointer ${
+                  isDragging
+                    ? "border-emerald-400 bg-emerald-950/40 ring-4 ring-emerald-500/20 scale-[1.01]"
+                    : "border-[#1e3258] hover:border-emerald-500/50 bg-[#080e1c]"
+                }`}
+              >
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  required={!uploadFile}
+                  accept=".pdf,.docx,.eml,.txt"
+                  onChange={(e) => setUploadFile(e.target.files ? e.target.files[0] : null)}
+                  className="hidden"
+                />
                 <Upload className="w-8 h-8 text-emerald-400 mx-auto" />
                 <div className="text-xs text-slate-300">
-                  <label className="font-bold text-emerald-400 hover:underline cursor-pointer">
-                    Click to select file
-                    <input
-                      type="file"
-                      required
-                      accept=".pdf,.docx,.eml,.txt"
-                      onChange={(e) => setUploadFile(e.target.files ? e.target.files[0] : null)}
-                      className="hidden"
-                    />
-                  </label>{" "}
-                  or drag and drop
+                  <span className="font-bold text-emerald-400 hover:underline">
+                    {isDragging ? "Drop your file here" : "Click to select file"}
+                  </span>{" "}
+                  or drag and drop document here
                 </div>
-                <div className="text-[10px] text-slate-500 font-mono">
-                  {uploadFile ? `Selected: ${uploadFile.name} (${(uploadFile.size / 1024).toFixed(1)} KB)` : "PDF specs, DOCX JDs, EML emails, or TXT notices"}
+                <div className="text-[10px] text-slate-400 font-mono">
+                  {uploadFile ? `Attached: ${uploadFile.name} (${(uploadFile.size / 1024).toFixed(1)} KB)` : "PDF specs, DOCX JDs, EML emails, or TXT notices"}
                 </div>
               </div>
 

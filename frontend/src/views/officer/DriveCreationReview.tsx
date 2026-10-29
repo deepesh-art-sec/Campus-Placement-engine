@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { api } from "../../api/client";
 import { ExtractionParseResult } from "../../types";
 import { Badge } from "../../components/common/Badge";
@@ -25,6 +25,11 @@ import {
   CheckCircle2,
   MapPin,
   Layers,
+  UploadCloud,
+  FileUp,
+  FileCode,
+  Mail,
+  FileType,
 } from "lucide-react";
 
 interface DriveCreationReviewProps {
@@ -114,6 +119,90 @@ export const DriveCreationReview: React.FC<DriveCreationReviewProps> = ({
   const [samples, setSamples] = useState<
     Array<{ filename: string; label: string; format: string; company_name: string; text: string }>
   >([]);
+
+  // Drag & Drop State
+  const [isDragging, setIsDragging] = useState(false);
+  const [showPasteText, setShowPasteText] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const formatFileSize = (bytes: number): string => {
+    if (bytes < 1024) return `${bytes} B`;
+    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+    return `${(bytes / (1024 * 1024)).toFixed(2)} MB`;
+  };
+
+  const inferCompanyName = (filename: string): string => {
+    const clean = filename.replace(/\.[^/.]+$/, "").replace(/[_-]/g, " ");
+    const stopWords = [
+      "announcement", "circular", "drive", "jd", "job", "description",
+      "hiring", "campus", "notice", "intern", "fte", "fulltime",
+      "placement", "engine", "2024", "2025", "2026", "v1", "v2", "spec", "recruitment"
+    ];
+    const tokens = clean.split(/\s+/).filter(
+      (t) => t.length > 1 && !stopWords.includes(t.toLowerCase())
+    );
+    if (tokens.length > 0) {
+      return tokens.map((t) => t.charAt(0).toUpperCase() + t.slice(1).toLowerCase()).join(" ");
+    }
+    return "";
+  };
+
+  const handleFileSelected = (selectedFile: File) => {
+    const ext = selectedFile.name.split(".").pop()?.toLowerCase();
+    const allowed = ["pdf", "docx", "eml", "txt", "csv", "xlsx"];
+    if (ext && !allowed.includes(ext)) {
+      setError(`Unsupported file format '.${ext}'. Please upload a PDF, DOCX, EML, TXT, CSV, or XLSX document.`);
+      return;
+    }
+    if (selectedFile.size > 30 * 1024 * 1024) {
+      setError("File exceeds 30MB limit. Please upload a smaller circular document.");
+      return;
+    }
+
+    setFile(selectedFile);
+    setError(null);
+
+    // Auto-infer company name if empty or default
+    const inferred = inferCompanyName(selectedFile.name);
+    if (inferred && (companyName === "Google" || companyName === "Target Company" || !companyName.trim())) {
+      setCompanyName(inferred);
+    }
+
+    // If text file or eml, read text preview
+    if (ext === "txt" || ext === "eml") {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const text = e.target?.result as string;
+        if (text && text.trim()) {
+          setInputText(text);
+        }
+      };
+      reader.readAsText(selectedFile);
+    }
+
+    setSuccessMsg(`Document '${selectedFile.name}' (${formatFileSize(selectedFile.size)}) attached via Drag & Drop. Ready for requirement extraction.`);
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+    if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+      handleFileSelected(e.dataTransfer.files[0]);
+    }
+  };
 
   useEffect(() => {
     api.get<any[]>("/api/extract/samples")
@@ -362,6 +451,45 @@ export const DriveCreationReview: React.FC<DriveCreationReviewProps> = ({
       {/* ========================================================= */}
       {creationMode === "manual" && (
         <form onSubmit={handleSubmitManualDrive} className="space-y-6">
+          {/* Quick Drag & Drop Ingestion Bar for Fast Transfer */}
+          <div
+            onDragOver={handleDragOver}
+            onDragLeave={handleDragLeave}
+            onDrop={(e) => {
+              handleDrop(e);
+              setCreationMode("nlp");
+            }}
+            className={`border-2 border-dashed rounded-2xl p-4 transition-all ${
+              isDragging
+                ? "border-emerald-500 bg-emerald-50/90 shadow-md ring-4 ring-emerald-500/10"
+                : "border-slate-200 hover:border-blue-300 bg-slate-50/80"
+            }`}
+          >
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
+              <div className="flex items-center gap-3 text-left">
+                <div className="w-10 h-10 rounded-xl bg-blue-100 text-blue-700 flex items-center justify-center shrink-0 shadow-xs">
+                  <UploadCloud className="w-5 h-5 text-blue-600" />
+                </div>
+                <div>
+                  <h4 className="text-xs font-bold text-slate-800">
+                    Have an announcement email, PDF circular, or JD document?
+                  </h4>
+                  <p className="text-[11px] text-slate-500">
+                    Drag and drop your file here to automatically extract and pre-fill criteria with AST parser.
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setCreationMode("nlp")}
+                className="px-3.5 py-1.5 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 shrink-0"
+              >
+                <Sparkles className="w-3.5 h-3.5 text-emerald-400" />
+                <span>Switch to NLP Extractor</span>
+              </button>
+            </div>
+          </div>
+
           {/* Card 1: Company & Job Profile */}
           <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-xs space-y-5">
             <div className="flex items-center gap-2.5 pb-3 border-b border-slate-100">
@@ -841,68 +969,223 @@ export const DriveCreationReview: React.FC<DriveCreationReviewProps> = ({
             </div>
           )}
 
-          {/* Input Section */}
-          <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-xs space-y-4">
+          {/* Input Section with Drag and Drop Feature */}
+          <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-xs space-y-5">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-100">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-xl bg-emerald-100 text-emerald-700 flex items-center justify-center font-bold shadow-2xs">
+                  <FileUp className="w-4 h-4" />
+                </div>
+                <div>
+                  <h2 className="text-sm font-bold text-slate-900">Upload Announcement & Extract Requirements</h2>
+                  <p className="text-xs text-slate-400">
+                    Drag and drop official company circulars (PDF, DOCX, EML, TXT) for deterministic rule extraction.
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-[11px] font-mono font-bold text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-lg border border-emerald-200 flex items-center gap-1.5">
+                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" />
+                  AST Rule Parser Active
+                </span>
+              </div>
+            </div>
+
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="md:col-span-1">
                 <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
                   Target Company Name
                 </label>
-                <input
-                  type="text"
-                  value={companyName}
-                  onChange={(e) => setCompanyName(e.target.value)}
-                  className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 focus:bg-white"
-                  placeholder="e.g. Microsoft, Google, DE Shaw"
-                />
+                <div className="relative">
+                  <input
+                    type="text"
+                    value={companyName}
+                    onChange={(e) => setCompanyName(e.target.value)}
+                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 focus:bg-white focus:ring-2 focus:ring-blue-500"
+                    placeholder="e.g. Microsoft, Google, DE Shaw"
+                  />
+                  {companyName && (
+                    <span className="absolute right-3 top-2.5 px-2 py-0.5 rounded text-[10px] font-bold bg-blue-50 text-blue-700 border border-blue-200">
+                      Company
+                    </span>
+                  )}
+                </div>
+                <p className="text-[11px] text-slate-400 mt-1">
+                  Auto-updated when a named announcement file is dropped.
+                </p>
               </div>
 
               <div className="md:col-span-2">
                 <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
-                  Upload Announcement Document (PDF, DOCX, EML, TXT)
+                  Announcement Document Transfer (Drag & Drop)
                 </label>
-                <div className="flex items-center gap-3">
-                  <input
-                    type="file"
-                    accept=".txt,.pdf,.docx,.eml"
-                    onChange={(e) => setFile(e.target.files ? e.target.files[0] : null)}
-                    className="text-xs text-slate-500 file:mr-3 file:py-2 file:px-3 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-slate-100 file:text-slate-700 hover:file:bg-slate-200 cursor-pointer"
-                  />
-                  {file && (
-                    <button
-                      type="button"
-                      onClick={() => setFile(null)}
-                      className="p-1 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-100 cursor-pointer"
-                    >
-                      <X className="w-4 h-4" />
-                    </button>
-                  )}
-                </div>
+
+                {file ? (
+                  <div className="p-4 bg-gradient-to-r from-slate-50 via-blue-50/20 to-emerald-50/40 border-2 border-emerald-400/80 rounded-2xl shadow-xs transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                    <div className="flex items-center gap-3.5 min-w-0">
+                      <div className="w-12 h-12 rounded-xl bg-white border border-slate-200 flex items-center justify-center shrink-0 shadow-xs">
+                        {file.name.toLowerCase().endsWith(".pdf") ? (
+                          <FileText className="w-6 h-6 text-rose-500" />
+                        ) : file.name.toLowerCase().endsWith(".docx") || file.name.toLowerCase().endsWith(".doc") ? (
+                          <FileText className="w-6 h-6 text-blue-500" />
+                        ) : file.name.toLowerCase().endsWith(".eml") ? (
+                          <Mail className="w-6 h-6 text-purple-500" />
+                        ) : (
+                          <FileCode className="w-6 h-6 text-emerald-500" />
+                        )}
+                      </div>
+                      <div className="min-w-0">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="text-xs font-black text-slate-900 truncate max-w-xs sm:max-w-md">
+                            {file.name}
+                          </span>
+                          <span className="px-2 py-0.5 rounded-md text-[10px] font-mono font-bold uppercase bg-slate-200/80 text-slate-700">
+                            {file.name.split(".").pop()}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-2.5 text-[11px] text-slate-500 mt-0.5">
+                          <span className="font-mono">{formatFileSize(file.size)}</span>
+                          <span>•</span>
+                          <span className="text-emerald-700 font-semibold flex items-center gap-1">
+                            <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" />
+                            File Loaded & Ready for Extraction
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-2 shrink-0">
+                      <button
+                        type="button"
+                        onClick={() => fileInputRef.current?.click()}
+                        className="px-3 py-1.5 text-xs font-bold text-slate-700 bg-white hover:bg-slate-100 border border-slate-200 rounded-xl transition-all cursor-pointer shadow-2xs"
+                      >
+                        Change File
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setFile(null);
+                          if (fileInputRef.current) fileInputRef.current.value = "";
+                        }}
+                        className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition-all cursor-pointer"
+                        title="Remove attached file"
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <div
+                    onDragOver={handleDragOver}
+                    onDragLeave={handleDragLeave}
+                    onDrop={handleDrop}
+                    onClick={() => fileInputRef.current?.click()}
+                    className={`border-2 border-dashed rounded-2xl p-6 text-center transition-all cursor-pointer select-none ${
+                      isDragging
+                        ? "border-emerald-500 bg-emerald-50/80 ring-4 ring-emerald-500/10 scale-[1.01] shadow-lg shadow-emerald-500/10"
+                        : "border-slate-300 hover:border-emerald-500/70 hover:bg-slate-50/70 bg-slate-50/40"
+                    }`}
+                  >
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      accept=".txt,.pdf,.docx,.eml,.csv,.xlsx"
+                      onChange={(e) => {
+                        if (e.target.files && e.target.files.length > 0) {
+                          handleFileSelected(e.target.files[0]);
+                        }
+                      }}
+                      className="hidden"
+                    />
+
+                    <div className="flex flex-col items-center justify-center space-y-2.5">
+                      <div
+                        className={`w-12 h-12 rounded-2xl flex items-center justify-center transition-transform ${
+                          isDragging
+                            ? "bg-emerald-600 text-white scale-110 shadow-lg shadow-emerald-600/30"
+                            : "bg-blue-50 border border-blue-100 text-blue-600 shadow-inner"
+                        }`}
+                      >
+                        <UploadCloud className="w-6 h-6" />
+                      </div>
+
+                      <div>
+                        <h4 className="text-xs font-black text-slate-900 tracking-tight">
+                          {isDragging ? "Drop your announcement file here to attach" : "Drag and drop circular document here"}
+                        </h4>
+                        <p className="text-[11px] text-slate-500 mt-0.5">
+                          or <span className="text-blue-600 font-bold hover:underline">click to browse</span> from your device
+                        </p>
+                      </div>
+
+                      <div className="flex items-center gap-1.5 flex-wrap justify-center pt-0.5">
+                        {["PDF", "DOCX", "EML", "TXT", "XLSX"].map((fmt) => (
+                          <span
+                            key={fmt}
+                            className="px-2 py-0.5 bg-white border border-slate-200 text-slate-600 text-[10px] font-mono font-bold rounded-md shadow-2xs"
+                          >
+                            {fmt}
+                          </span>
+                        ))}
+                        <span className="text-[10px] text-slate-400 ml-1">Up to 30 MB</span>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
 
-            <div>
-              <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
-                Paste Announcement Email, Notice, or JD
-              </label>
-              <textarea
-                rows={5}
-                value={inputText}
-                onChange={(e) => setInputText(e.target.value)}
-                placeholder="Paste the raw circular text here..."
-                className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-xs font-mono text-slate-800 focus:bg-white resize-y"
-              />
+            {/* Collapsible / Optional Raw Text Editor */}
+            <div className="pt-1">
+              <div className="flex items-center justify-between mb-1.5">
+                <button
+                  type="button"
+                  onClick={() => setShowPasteText(!showPasteText)}
+                  className="text-xs font-bold text-slate-600 hover:text-blue-600 transition-colors flex items-center gap-1.5 cursor-pointer"
+                >
+                  <FileText className="w-3.5 h-3.5" />
+                  <span>{showPasteText ? "Hide Raw Notice Text Area" : "Or Paste / Inspect Raw Notice Text"}</span>
+                </button>
+                {inputText.trim() && (
+                  <span className="text-[11px] font-mono text-slate-400">
+                    {inputText.length} characters loaded
+                  </span>
+                )}
+              </div>
+
+              {showPasteText && (
+                <textarea
+                  rows={5}
+                  value={inputText}
+                  onChange={(e) => setInputText(e.target.value)}
+                  placeholder="Paste raw circular email or notice text here..."
+                  className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-xs font-mono text-slate-800 focus:bg-white resize-y"
+                />
+              )}
             </div>
 
-            <div className="flex justify-end pt-2">
+            {/* Action Bar */}
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-3 border-t border-slate-100">
+              <div className="text-[11px] text-slate-500 flex items-center gap-1.5">
+                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" />
+                <span>Deterministic offline AST extraction with sentence provenance tracking</span>
+              </div>
+
               <button
                 type="button"
                 onClick={handleExtract}
-                disabled={extracting}
-                className="flex items-center gap-2 px-5 py-2.5 bg-brand-600 hover:bg-brand-700 text-white font-bold text-xs rounded-xl shadow-xs transition-colors disabled:opacity-50 cursor-pointer"
+                disabled={extracting || (!file && !inputText.trim())}
+                className="w-full sm:w-auto flex items-center justify-center gap-2 px-6 py-2.5 bg-gradient-to-r from-blue-600 via-indigo-600 to-emerald-600 hover:from-blue-500 hover:to-emerald-500 text-white font-bold text-xs rounded-xl shadow-md shadow-blue-900/20 transition-all disabled:opacity-50 cursor-pointer"
               >
-                <Sparkles className="w-4 h-4" />
-                <span>{extracting ? "Running Deterministic AST Extractor..." : "Extract Requirements"}</span>
+                <Sparkles className="w-4 h-4 text-emerald-300" />
+                <span>
+                  {extracting
+                    ? "Running AST Extractor..."
+                    : file
+                    ? `Extract Requirements from ${file.name}`
+                    : "Extract Requirements"}
+                </span>
               </button>
             </div>
           </div>
