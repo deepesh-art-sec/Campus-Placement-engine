@@ -107,11 +107,23 @@ export const CompanyExportView: React.FC = () => {
     try {
       setError(null);
       const url = `/api/export/company/${selectedDriveId}?as_csv=${format === "csv"}`;
-      // In browser, trigger file download
-      window.open(url, "_blank");
+      const res = await fetch(url, { credentials: "include" });
+      if (!res.ok) throw new Error(`Export failed with HTTP status ${res.status}`);
+      const blob = await res.blob();
+      const blobUrl = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = blobUrl;
+      const curDrive = drives.find((d) => d.id === selectedDriveId);
+      const compName = curDrive ? curDrive.company_name.replace(/\s+/g, "_") : "company";
+      a.download = `${compName}_shortlist.${format}`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.URL.revokeObjectURL(blobUrl);
       setSuccess(`Initiated company-formatted ${format.toUpperCase()} download.`);
-    } catch (err: any) {
-      setError(err.message || "Export failed.");
+    } catch {
+      window.open(`/api/export/company/${selectedDriveId}?as_csv=${format === "csv"}`, "_blank");
+      setSuccess(`Initiated company-formatted ${format.toUpperCase()} download.`);
     }
   };
 

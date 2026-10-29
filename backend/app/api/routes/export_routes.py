@@ -9,7 +9,7 @@ from typing import Any
 
 from fastapi import APIRouter, Depends, File, Form, HTTPException, Response, UploadFile, status
 from sqlalchemy import select
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, selectinload
 
 from backend.app.api.auth.dependencies import get_current_user, require_officer_or_coordinator
 from backend.app.api.export.exporter import export_to_company_csv, export_to_company_xlsx
@@ -115,7 +115,9 @@ def save_company_mapping(
     return {"message": f"Mapping for '{mapping.company_name}' successfully saved."}
 
 
-@router.post("/company-format/{drive_id}")
+@router.api_route("/company-format/{drive_id}", methods=["GET", "POST"])
+@router.api_route("/company/{drive_id}", methods=["GET", "POST"])
+@router.api_route("/shortlist/{drive_id}", methods=["GET", "POST"])
 def export_company_format(
     drive_id: str,
     as_csv: bool = False,
@@ -310,3 +312,22 @@ def export_student_pdf(
         media_type="application/pdf",
         headers={"Content-Disposition": f"attachment; filename=placement_status_{domain_stu.roll_no}.pdf"},
     )
+
+
+# -----------------------------------------------------------------------------
+# Alias Router for /api/export (Singular) Prefix
+# -----------------------------------------------------------------------------
+export_alias_router = APIRouter(prefix="/api/export", tags=["Exports & Company Templates"])
+
+
+@export_alias_router.api_route("/company-format/{drive_id}", methods=["GET", "POST"])
+@export_alias_router.api_route("/company/{drive_id}", methods=["GET", "POST"])
+@export_alias_router.api_route("/shortlist/{drive_id}", methods=["GET", "POST"])
+def export_company_alias(
+    drive_id: str,
+    as_csv: bool = False,
+    current_user: UserModel = Depends(require_officer_or_coordinator),
+    db: Session = Depends(get_db),
+) -> Response:
+    """Alias for company format export supporting /api/export prefix."""
+    return export_company_format(drive_id=drive_id, as_csv=as_csv, current_user=current_user, db=db)

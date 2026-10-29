@@ -69,8 +69,31 @@ export const CoordinatorEligibilityView: React.FC<CoordinatorEligibilityViewProp
     if (selectedDriveId) fetchDecisions(selectedDriveId);
   }, [selectedDriveId]);
 
-  const handleExportCsv = () => {
-    window.open(`/api/export/shortlist/${selectedDriveId}?as_csv=true`, "_blank");
+  const [exportingCsv, setExportingCsv] = useState(false);
+
+  const handleExportCsv = async () => {
+    if (!selectedDriveId) return;
+    try {
+      setExportingCsv(true);
+      const res = await fetch(`/api/export/shortlist/${selectedDriveId}?as_csv=true`, {
+        credentials: "include",
+      });
+      if (!res.ok) throw new Error("Download failed");
+      const blob = await res.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      const compName = selectedDrive ? selectedDrive.company_name.replace(/\s+/g, "_") : "shortlist";
+      a.download = `${compName}_eligibility_shortlist.csv`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.URL.revokeObjectURL(url);
+    } catch {
+      window.open(`/api/export/shortlist/${selectedDriveId}?as_csv=true`, "_blank");
+    } finally {
+      setExportingCsv(false);
+    }
   };
 
   const selectedDrive = drives.find((d) => d.id === selectedDriveId);
@@ -117,12 +140,12 @@ export const CoordinatorEligibilityView: React.FC<CoordinatorEligibilityViewProp
           <button
             type="button"
             onClick={handleExportCsv}
-            disabled={!selectedDriveId}
+            disabled={!selectedDriveId || exportingCsv}
             className="flex items-center gap-1.5 px-3 py-2 bg-slate-800 hover:bg-slate-900 text-white text-xs font-bold rounded-xl shadow-xs transition-colors cursor-pointer disabled:opacity-50"
             title="Download shortlist CSV"
           >
             <Download className="w-3.5 h-3.5" />
-            <span>Export CSV</span>
+            <span>{exportingCsv ? "Exporting..." : "Export CSV"}</span>
           </button>
         </div>
       </div>

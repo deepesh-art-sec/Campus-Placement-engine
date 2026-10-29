@@ -96,7 +96,8 @@ export const CoordinatorReportsExportView: React.FC = () => {
       setDownloading(asCsv ? "company_csv" : "company_xlsx");
       const token = localStorage.getItem("token");
       const response = await fetch(`/api/exports/company-format/${selectedDriveId}?as_csv=${asCsv}`, {
-        method: "POST",
+        method: "GET",
+        credentials: "include",
         headers: token ? { Authorization: `Bearer ${token}` } : {},
       });
 
