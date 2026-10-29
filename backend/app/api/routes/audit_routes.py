@@ -51,7 +51,41 @@ def list_audit_logs(
             "id": log.id,
             "entity_type": log.entity_type,
             "entity_id": log.entity_id,
+            "aggregate_type": log.entity_type,
+            "aggregate_id": log.entity_id,
             "action": log.action,
+            "event_type": log.action,
+            "actor": log.actor,
+            "timestamp": log.timestamp.isoformat(),
+            "payload": log.changes_json,
+        }
+        for log in logs
+    ]
+
+
+@router.get("/student-access")
+def list_student_access_logs(
+    limit: int = Query(default=100, ge=1, le=1000),
+    current_user: UserModel = Depends(require_officer_or_coordinator),
+    db: Session = Depends(get_db),
+) -> list[dict[str, Any]]:
+    """Lists student access audit records for privacy and transparency audit."""
+    stmt = (
+        select(AuditLogModel)
+        .where(AuditLogModel.entity_type == "student")
+        .order_by(AuditLogModel.timestamp.desc())
+        .limit(limit)
+    )
+    logs = db.execute(stmt).scalars().all()
+    return [
+        {
+            "id": log.id,
+            "entity_type": log.entity_type,
+            "entity_id": log.entity_id,
+            "aggregate_type": log.entity_type,
+            "aggregate_id": log.entity_id,
+            "action": log.action,
+            "event_type": log.action,
             "actor": log.actor,
             "timestamp": log.timestamp.isoformat(),
             "payload": log.changes_json,

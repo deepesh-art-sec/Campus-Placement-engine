@@ -1,4 +1,5 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { api } from "../../api/client";
 import {
   Home,
   Users,
@@ -71,6 +72,36 @@ export const Navigation: React.FC<NavigationProps> = ({
   userRole = "officer",
 }) => {
   const [isCollapsed, setIsCollapsed] = useState(() => typeof window !== "undefined" && window.innerWidth < 1024);
+  const [liveStudentCount, setLiveStudentCount] = useState<number | null>(null);
+  const [liveClashCount, setLiveClashCount] = useState<number>(0);
+
+  useEffect(() => {
+    let active = true;
+    Promise.all([
+      api.get<{ total: number }>("/api/students?limit=1").catch(() => null),
+      api.get<{ unresolved_clashes: number }>("/api/drives/overview-metrics").catch(() => null),
+    ]).then(([stuRes, metRes]) => {
+      if (!active) return;
+      if (stuRes && typeof stuRes.total === "number") {
+        setLiveStudentCount(stuRes.total);
+      }
+      if (metRes && typeof metRes.unresolved_clashes === "number") {
+        setLiveClashCount(metRes.unresolved_clashes);
+      }
+    });
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  const rosterBadge = liveStudentCount !== null
+    ? liveStudentCount >= 1000
+      ? `${(liveStudentCount / 1000).toFixed(1)}k Roster`
+      : `${liveStudentCount} Roster`
+    : "1.8k Roster";
+
+  const clashBadge = liveClashCount === 0 ? "0 Clashes" : `${liveClashCount} Clashes`;
+  const clashVariant: "success" | "warning" = liveClashCount === 0 ? "success" : "warning";
 
   const modules: NavModule[] = [
     {
@@ -86,7 +117,7 @@ export const Navigation: React.FC<NavigationProps> = ({
       label: "Students",
       accessibleName: "Students & Importer",
       icon: Users,
-      badge: "1.8k Roster",
+      badge: rosterBadge,
     },
     {
       moduleNum: "03",
@@ -109,7 +140,7 @@ export const Navigation: React.FC<NavigationProps> = ({
       label: "Drives (Create)",
       accessibleName: "Extract Drive",
       icon: Briefcase,
-      badge: "3 Ways",
+      badge: "3 Modes",
       subItems: [
         {
           id: "announcements",
@@ -139,8 +170,8 @@ export const Navigation: React.FC<NavigationProps> = ({
       label: "Schedule",
       accessibleName: "Schedule Grid",
       icon: Calendar,
-      badge: "0 Clashes",
-      badgeVariant: "success",
+      badge: clashBadge,
+      badgeVariant: clashVariant,
     },
     {
       moduleNum: "07",
@@ -274,8 +305,10 @@ export const Navigation: React.FC<NavigationProps> = ({
                         className={`text-[9px] px-1.5 py-0.2 rounded-full font-black uppercase tracking-wider shrink-0 ml-1 ${
                           isMainActive
                             ? "bg-white/20 text-white"
-                            : mod.badge === "0 Clashes"
+                            : mod.badgeVariant === "success" || mod.badge === "0 Clashes"
                             ? "bg-emerald-950 text-emerald-300 border border-emerald-800"
+                            : mod.badgeVariant === "warning"
+                            ? "bg-amber-950 text-amber-300 border border-amber-800"
                             : "bg-[#111d38] text-slate-400 border border-[#1b2b4d]"
                         }`}
                       >

@@ -66,8 +66,8 @@ export const DisputeComparisonView: React.FC = () => {
   return (
     <div className="space-y-6 max-w-4xl mx-auto">
       <div>
-        <h1 className="text-2xl font-black text-slate-900 tracking-tight">Student Dispute Comparison Explainer</h1>
-        <p className="text-sm text-slate-500 mt-1">
+        <h1 className="text-2xl font-black text-white tracking-tight">Student Dispute Comparison Explainer</h1>
+        <p className="text-sm text-slate-400 mt-1">
           Objective side-by-side justification answering student eligibility disputes in writing, citing precise rule AST & policy clauses.
         </p>
       </div>
@@ -75,16 +75,16 @@ export const DisputeComparisonView: React.FC = () => {
       {error && <AlertBanner type="danger" message={error} onClose={() => setError(null)} />}
 
       {/* Selectors */}
-      <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-xs space-y-4">
+      <div className="bg-[#0d1527] p-6 rounded-2xl border border-[#1b2b4d] shadow-xl space-y-4">
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <div>
-            <label className="text-xs font-bold text-slate-700 uppercase tracking-wider block mb-1">
+            <label className="text-xs font-bold text-slate-300 uppercase tracking-wider block mb-1">
               Recruitment Drive
             </label>
             <select
               value={selectedDriveId || drives[0]?.id || ""}
               onChange={(e) => setSelectedDriveId(e.target.value)}
-              className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold"
+              className="w-full px-3 py-2 bg-[#080e1c] border border-[#1e3258] rounded-xl text-xs font-semibold text-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
             >
               {drives.map((d) => (
                 <option key={d.id} value={d.id}>
@@ -95,13 +95,13 @@ export const DisputeComparisonView: React.FC = () => {
           </div>
 
           <div>
-            <label className="text-xs font-bold text-slate-700 uppercase tracking-wider block mb-1">
+            <label className="text-xs font-bold text-slate-300 uppercase tracking-wider block mb-1">
               Candidate A
             </label>
             <select
               value={studentAId || students[0]?.id || ""}
               onChange={(e) => setStudentAId(e.target.value)}
-              className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold"
+              className="w-full px-3 py-2 bg-[#080e1c] border border-[#1e3258] rounded-xl text-xs font-semibold text-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
             >
               {students.map((s) => (
                 <option key={s.id} value={s.id}>
@@ -112,13 +112,13 @@ export const DisputeComparisonView: React.FC = () => {
           </div>
 
           <div>
-            <label className="text-xs font-bold text-slate-700 uppercase tracking-wider block mb-1">
+            <label className="text-xs font-bold text-slate-300 uppercase tracking-wider block mb-1">
               Candidate B (Disputing)
             </label>
             <select
               value={studentBId || students[1]?.id || ""}
               onChange={(e) => setStudentBId(e.target.value)}
-              className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold"
+              className="w-full px-3 py-2 bg-[#080e1c] border border-[#1e3258] rounded-xl text-xs font-semibold text-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
             >
               {students.map((s) => (
                 <option key={s.id} value={s.id}>
@@ -133,7 +133,7 @@ export const DisputeComparisonView: React.FC = () => {
           <button
             onClick={handleCompare}
             disabled={loading || drives.length === 0 || students.length < 2}
-            className="flex items-center gap-2 px-5 py-2.5 bg-brand-600 hover:bg-brand-700 text-white text-xs font-bold rounded-xl shadow-xs transition-colors disabled:opacity-50"
+            className="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-blue-600 via-teal-600 to-emerald-600 hover:from-blue-500 hover:to-emerald-500 text-white text-xs font-bold rounded-xl shadow-lg transition-all cursor-pointer disabled:opacity-50"
           >
             <GitCompare className="w-4 h-4" />
             <span>{loading ? "Comparing..." : "Generate Dispute Explanation"}</span>
@@ -143,61 +143,61 @@ export const DisputeComparisonView: React.FC = () => {
 
       {/* Comparative Explainer Card */}
       {comparison && (
-        <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-xs space-y-6">
-          <div className="p-4 bg-brand-50 border border-brand-200 rounded-2xl">
-            <span className="text-[10px] font-bold uppercase tracking-wider text-brand-700 block mb-1">
+        <div className="bg-[#0d1527] p-6 rounded-2xl border border-[#1b2b4d] shadow-xl space-y-6">
+          <div className="p-4 bg-emerald-950/40 border border-emerald-500/40 rounded-2xl">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-400 block mb-1 font-mono">
               Official Placement Cell Dispute Response
             </span>
-            <p className="text-sm font-semibold text-brand-950 leading-relaxed">
+            <p className="text-sm font-semibold text-slate-100 leading-relaxed">
               "{comparison.comparative_summary}"
             </p>
           </div>
 
           {/* Side-by-Side Comparison Table */}
-          <div className="border border-slate-200 rounded-2xl overflow-x-auto">
+          <div className="border border-[#1b2b4d] rounded-2xl overflow-x-auto bg-[#080e1c]">
             <table className="w-full text-left border-collapse text-xs">
               <thead>
-                <tr className="bg-slate-50 border-b border-slate-200 font-bold text-slate-700">
+                <tr className="bg-[#111d38] border-b border-[#1b2b4d] font-bold text-slate-300">
                   <th className="p-3 w-1/3">Evaluation Metric</th>
-                  <th className="p-3 w-1/3 border-l border-slate-200 font-bold text-brand-900">
+                  <th className="p-3 w-1/3 border-l border-[#1b2b4d] font-bold text-emerald-400">
                     Candidate A: {studentA?.name}
                   </th>
-                  <th className="p-3 w-1/3 border-l border-slate-200 font-bold text-slate-900">
+                  <th className="p-3 w-1/3 border-l border-[#1b2b4d] font-bold text-slate-200">
                     Candidate B: {studentB?.name}
                   </th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100">
+              <tbody className="divide-y divide-[#1b2b4d]">
                 <tr>
-                  <td className="p-3 font-semibold text-slate-600">Roll Number</td>
-                  <td className="p-3 font-mono border-l border-slate-100">{studentA?.roll_no}</td>
-                  <td className="p-3 font-mono border-l border-slate-100">{studentB?.roll_no}</td>
+                  <td className="p-3 font-semibold text-slate-400">Roll Number</td>
+                  <td className="p-3 font-mono border-l border-[#1b2b4d] text-slate-200">{studentA?.roll_no}</td>
+                  <td className="p-3 font-mono border-l border-[#1b2b4d] text-slate-200">{studentB?.roll_no}</td>
                 </tr>
                 <tr>
-                  <td className="p-3 font-semibold text-slate-600">Branch</td>
-                  <td className="p-3 border-l border-slate-100">{studentA?.branch}</td>
-                  <td className="p-3 border-l border-slate-100">{studentB?.branch}</td>
+                  <td className="p-3 font-semibold text-slate-400">Branch</td>
+                  <td className="p-3 border-l border-[#1b2b4d] text-slate-200">{studentA?.branch}</td>
+                  <td className="p-3 border-l border-[#1b2b4d] text-slate-200">{studentB?.branch}</td>
                 </tr>
                 <tr>
-                  <td className="p-3 font-semibold text-slate-600">Cumulative GPA</td>
-                  <td className="p-3 font-mono font-bold text-brand-700 border-l border-slate-100">
+                  <td className="p-3 font-semibold text-slate-400">Cumulative GPA</td>
+                  <td className="p-3 font-mono font-bold text-emerald-400 border-l border-[#1b2b4d]">
                     {studentA?.cgpa.toFixed(2)}
                   </td>
-                  <td className="p-3 font-mono font-bold text-slate-700 border-l border-slate-100">
+                  <td className="p-3 font-mono font-bold text-slate-300 border-l border-[#1b2b4d]">
                     {studentB?.cgpa.toFixed(2)}
                   </td>
                 </tr>
                 <tr>
-                  <td className="p-3 font-semibold text-slate-600">Active Backlogs</td>
-                  <td className="p-3 border-l border-slate-100">{studentA?.active_backlogs_count || 0}</td>
-                  <td className="p-3 border-l border-slate-100">{studentB?.active_backlogs_count || 0}</td>
+                  <td className="p-3 font-semibold text-slate-400">Active Backlogs</td>
+                  <td className="p-3 border-l border-[#1b2b4d] text-slate-200">{studentA?.active_backlogs_count || 0}</td>
+                  <td className="p-3 border-l border-[#1b2b4d] text-slate-200">{studentB?.active_backlogs_count || 0}</td>
                 </tr>
-                <tr className="bg-slate-50/50">
-                  <td className="p-3 font-bold text-slate-900">Eligibility Verdict</td>
-                  <td className="p-3 border-l border-slate-100 font-bold text-emerald-700">
+                <tr className="bg-[#111d38]/60">
+                  <td className="p-3 font-bold text-white">Eligibility Verdict</td>
+                  <td className="p-3 border-l border-[#1b2b4d] font-bold text-emerald-400">
                     {comparison.student_a_status || "Eligible"}
                   </td>
-                  <td className="p-3 border-l border-slate-100 font-bold text-rose-700">
+                  <td className="p-3 border-l border-[#1b2b4d] font-bold text-rose-400">
                     {comparison.student_b_status || "Ineligible"}
                   </td>
                 </tr>

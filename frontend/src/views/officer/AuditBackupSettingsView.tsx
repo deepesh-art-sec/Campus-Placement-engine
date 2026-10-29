@@ -171,11 +171,18 @@ export const AuditBackupSettingsView: React.FC = () => {
   };
 
   const filteredEvents = events.filter((e) => {
-    const matchesFilter = eventFilter === "all" || e.aggregate_type.toLowerCase() === eventFilter.toLowerCase();
+    const aggType = (e.aggregate_type || (e as any).entity_type || "").toLowerCase();
+    const evtType = (e.event_type || (e as any).action || "").toLowerCase();
+    const actor = (e.actor || "").toLowerCase();
+    const aggId = (e.aggregate_id || (e as any).entity_id || "").toLowerCase();
+
+    const matchesFilter = eventFilter === "all" || aggType === eventFilter.toLowerCase();
+    const q = searchQuery.toLowerCase();
     const matchesSearch =
-      e.event_type.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      e.actor.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      e.aggregate_id.toLowerCase().includes(searchQuery.toLowerCase());
+      !q ||
+      evtType.includes(q) ||
+      actor.includes(q) ||
+      aggId.includes(q);
     return matchesFilter && matchesSearch;
   });
 
@@ -335,7 +342,7 @@ export const AuditBackupSettingsView: React.FC = () => {
                     >
                       <div className="flex items-center justify-between">
                         <span className="text-xs font-bold text-slate-900 font-mono">
-                          {evt.event_type}
+                          {evt.event_type || (evt as any).action}
                         </span>
                         <span className="text-[11px] text-slate-400">
                           {new Date(evt.timestamp).toLocaleString()}
@@ -348,7 +355,7 @@ export const AuditBackupSettingsView: React.FC = () => {
                         </span>
                         <span>•</span>
                         <span className="font-mono text-[11px] text-slate-600">
-                          {evt.aggregate_type}:{evt.aggregate_id}
+                          {evt.aggregate_type || (evt as any).entity_type}:{evt.aggregate_id || (evt as any).entity_id}
                         </span>
                       </div>
                     </div>
@@ -397,7 +404,7 @@ export const AuditBackupSettingsView: React.FC = () => {
                       Aggregate Target
                     </span>
                     <span className="font-mono text-slate-800">
-                      {selectedEvent.aggregate_type} ({selectedEvent.aggregate_id})
+                      {selectedEvent.aggregate_type || (selectedEvent as any).entity_type} ({selectedEvent.aggregate_id || (selectedEvent as any).entity_id})
                     </span>
                   </div>
 
