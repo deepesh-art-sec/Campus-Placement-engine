@@ -67,6 +67,7 @@ export const CoordinatorReportsExportView: React.FC = () => {
       setDownloading("students_csv");
       const token = localStorage.getItem("token");
       const response = await fetch("/api/students/export/csv", {
+        credentials: "include",
         headers: token ? { Authorization: `Bearer ${token}` } : {},
       });
       if (!response.ok) throw new Error("Failed to download student master CSV.");

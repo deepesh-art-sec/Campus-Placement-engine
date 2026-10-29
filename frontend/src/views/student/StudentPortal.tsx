@@ -274,6 +274,56 @@ export const StudentPortal: React.FC = () => {
     URL.revokeObjectURL(url);
   };
 
+  // Generate Schedule CSV download
+  const handleDownloadScheduleCsv = () => {
+    const slots = schedule.length > 0 ? schedule : [];
+    const headers = ["Company", "Round", "Date", "Start Time", "End Time", "Venue", "Mode", "Status"];
+    const rows = slots.map((s) => [
+      `"${(s.company_name || "").replace(/"/g, '""')}"`,
+      `"${(s.round_name || "").replace(/"/g, '""')}"`,
+      `"${(s.drive_date || "").replace(/"/g, '""')}"`,
+      `"${(s.start_time || "").replace(/"/g, '""')}"`,
+      `"${(s.end_time || "").replace(/"/g, '""')}"`,
+      `"${(s.venue || s.room_name || "").replace(/"/g, '""')}"`,
+      `"${(s.mode || "in-person").replace(/"/g, '""')}"`,
+      `"${(s.status || "SCHEDULED").replace(/"/g, '""')}"`,
+    ]);
+    const csvContent = [headers.join(","), ...rows.map((r) => r.join(","))].join("\r\n");
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.setAttribute("download", `placement_schedule_${studentInfo?.roll_no || "candidate"}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  };
+
+  // Generate Drives CSV download
+  const handleDownloadDrivesCsv = () => {
+    const list = drives.length > 0 ? drives : [];
+    const headers = ["Company Name", "Role", "CTC (LPA)", "Drive Date", "Eligibility Status", "Verdict Reason"];
+    const rows = list.map((d) => [
+      `"${(d.company_name || "").replace(/"/g, '""')}"`,
+      `"${(d.role || "Software Engineer").replace(/"/g, '""')}"`,
+      `"${d.ctc_lpa || ""}"`,
+      `"${(d.drive_date || "").replace(/"/g, '""')}"`,
+      `"${(d.status || "").toUpperCase()}"`,
+      `"${(d.headline_reason || "").replace(/"/g, '""')}"`,
+    ]);
+    const csvContent = [headers.join(","), ...rows.map((r) => r.join(","))].join("\r\n");
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.setAttribute("download", `placement_drives_${studentInfo?.roll_no || "candidate"}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  };
+
   // Filter and sort drives
   const filteredDrives = drives
     .filter((d) => (statusFilter === "all" ? true : d.status === statusFilter))
@@ -718,6 +768,15 @@ export const StudentPortal: React.FC = () => {
                     <Download className="w-3.5 h-3.5" />
                     <span>Official PDF</span>
                   </a>
+                  <a
+                    href="/api/portal/status-sheet-csv"
+                    download={`placement_status_${studentInfo?.roll_no || "candidate"}.csv`}
+                    className="min-h-[44px] px-3 py-2 bg-[#111d38] hover:bg-[#162447] text-emerald-300 border border-emerald-500/30 hover:border-emerald-500/60 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 shadow-sm"
+                    title="Export personal placement status & schedule as CSV"
+                  >
+                    <Download className="w-3.5 h-3.5 text-emerald-400" />
+                    <span>Export CSV</span>
+                  </a>
                   <button
                     onClick={logout}
                     className="min-h-[44px] px-3 py-2 bg-[#111d38] hover:bg-rose-950/60 text-slate-400 hover:text-rose-300 border border-[#1b2b4d] rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center justify-center"
@@ -763,10 +822,20 @@ export const StudentPortal: React.FC = () => {
             </div>
           </div>
 
-          <h2 className="text-sm font-bold text-white flex items-center gap-2">
-            <Briefcase className="w-4 h-4 text-emerald-400" />
-            <span>Campus Drives & Eligibility Verdicts</span>
-          </h2>
+          <div className="flex items-center justify-between">
+            <h2 className="text-sm font-bold text-white flex items-center gap-2">
+              <Briefcase className="w-4 h-4 text-emerald-400" />
+              <span>Campus Drives & Eligibility Verdicts</span>
+            </h2>
+            <button
+              onClick={handleDownloadDrivesCsv}
+              className="min-h-[36px] px-3 py-1.5 bg-[#0d1527] hover:bg-[#1b2b4d] text-emerald-300 text-xs font-bold rounded-xl border border-emerald-500/30 hover:border-emerald-500/60 flex items-center gap-1.5 transition-all cursor-pointer"
+              title="Download personal drives and verdicts as CSV"
+            >
+              <Download className="w-3.5 h-3.5 text-emerald-400" />
+              <span>Export Drives (CSV)</span>
+            </button>
+          </div>
 
           {/* Drive Cards List */}
           {filteredDrives.length === 0 ? (
@@ -824,6 +893,7 @@ export const StudentPortal: React.FC = () => {
                 <Calendar className="w-4 h-4 text-emerald-400" />
                 <span>My Scheduled Rounds & Campus Venues</span>
               </h2>
+            <div className="flex items-center gap-2">
               <button
                 onClick={handleDownloadCalendar}
                 className="min-h-[44px] px-3.5 py-1.5 bg-gradient-to-r from-blue-600 to-emerald-600 hover:from-blue-500 hover:to-emerald-500 text-white text-xs font-bold rounded-2xl border border-emerald-400/30 flex items-center gap-1.5 transition-all cursor-pointer"
@@ -831,6 +901,15 @@ export const StudentPortal: React.FC = () => {
                 <Download className="w-3.5 h-3.5" />
                 <span>Add to Calendar (.ics)</span>
               </button>
+              <button
+                onClick={handleDownloadScheduleCsv}
+                className="min-h-[44px] px-3.5 py-1.5 bg-[#111d38] hover:bg-[#1b2b4d] text-emerald-300 text-xs font-bold rounded-2xl border border-emerald-500/30 hover:border-emerald-500/60 flex items-center gap-1.5 transition-all cursor-pointer"
+                title="Download personal interview schedule as CSV"
+              >
+                <Download className="w-3.5 h-3.5 text-emerald-400" />
+                <span>Export CSV</span>
+              </button>
+            </div>
             </div>
 
             {schedule.length === 0 ? (
@@ -953,6 +1032,7 @@ export const StudentPortal: React.FC = () => {
                 <Calendar className="w-4 h-4 text-emerald-400" />
                 <span>My Scheduled Rounds & Campus Venues</span>
               </h2>
+            <div className="flex items-center gap-2">
               <button
                 onClick={handleDownloadCalendar}
                 className="min-h-[44px] px-3.5 py-1.5 bg-gradient-to-r from-blue-600 to-emerald-600 hover:from-blue-500 hover:to-emerald-500 text-white text-xs font-bold rounded-2xl border border-emerald-400/30 flex items-center gap-1.5 transition-all cursor-pointer"
@@ -960,6 +1040,15 @@ export const StudentPortal: React.FC = () => {
                 <Download className="w-3.5 h-3.5" />
                 <span>Add to Calendar (.ics)</span>
               </button>
+              <button
+                onClick={handleDownloadScheduleCsv}
+                className="min-h-[44px] px-3.5 py-1.5 bg-[#111d38] hover:bg-[#1b2b4d] text-emerald-300 text-xs font-bold rounded-2xl border border-emerald-500/30 hover:border-emerald-500/60 flex items-center gap-1.5 transition-all cursor-pointer"
+                title="Download personal interview schedule as CSV"
+              >
+                <Download className="w-3.5 h-3.5 text-emerald-400" />
+                <span>Export CSV</span>
+              </button>
+            </div>
             </div>
 
             {schedule.length === 0 ? (
@@ -1409,6 +1498,16 @@ export const StudentPortal: React.FC = () => {
               >
                 <Download className="w-4 h-4" />
                 <span>Official PDF</span>
+              </a>
+
+              <a
+                href="/api/portal/status-sheet-csv"
+                download={`placement_status_${studentInfo?.roll_no || "candidate"}.csv`}
+                className="min-h-[44px] flex-1 py-2.5 bg-[#111d38] hover:bg-[#162447] text-emerald-300 rounded-2xl text-xs font-bold transition-all flex items-center justify-center gap-2 border border-emerald-500/30 hover:border-emerald-500/60"
+                title="Download personal status and eligibility records as CSV"
+              >
+                <Download className="w-4 h-4 text-emerald-400" />
+                <span>Export CSV</span>
               </a>
             </div>
           </div>

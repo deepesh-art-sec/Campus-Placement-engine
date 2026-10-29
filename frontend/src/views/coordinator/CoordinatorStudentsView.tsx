@@ -22,6 +22,7 @@ import {
   Shield,
   Layers,
   Send,
+  Download,
 } from "lucide-react";
 
 interface DriveStatusItem {
@@ -54,6 +55,7 @@ export const CoordinatorStudentsView: React.FC = () => {
   const [minCgpa, setMinCgpa] = useState<number>(0.0);
   const [backlogFilter, setBacklogFilter] = useState("all");
   const [offerFilter, setOfferFilter] = useState("all");
+  const [exportingCsv, setExportingCsv] = useState(false);
 
   // Detail Drawer State
   const [selectedStudent, setSelectedStudent] = useState<Student | null>(null);
@@ -171,6 +173,34 @@ export const CoordinatorStudentsView: React.FC = () => {
     }
   };
 
+  const handleExportCsv = async () => {
+    try {
+      setExportingCsv(true);
+      const url = branchFilter && branchFilter !== "all"
+        ? `/api/students/export/csv?branch=${encodeURIComponent(branchFilter)}`
+        : "/api/students/export/csv";
+      const response = await fetch(url, {
+        credentials: "include",
+      });
+      if (!response.ok) {
+        throw new Error(`Failed to export student CSV (HTTP ${response.status})`);
+      }
+      const blob = await response.blob();
+      const blobUrl = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = blobUrl;
+      a.download = `student_academic_roster_${new Date().toISOString().slice(0, 10)}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.URL.revokeObjectURL(blobUrl);
+    } catch {
+      window.open("/api/students/export/csv", "_blank");
+    } finally {
+      setExportingCsv(false);
+    }
+  };
+
   const filtered = students.filter((s) => {
     const matchesSearch =
       s.name.toLowerCase().includes(search.toLowerCase()) ||
@@ -211,14 +241,26 @@ export const CoordinatorStudentsView: React.FC = () => {
           </p>
         </div>
 
-        <button
-          type="button"
-          onClick={fetchStudents}
-          className="p-2 text-slate-500 hover:text-slate-800 bg-white border border-slate-200 rounded-xl hover:bg-slate-50 shadow-xs cursor-pointer"
-          title="Refresh roster"
-        >
-          <RefreshCw className="w-4 h-4" />
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={fetchStudents}
+            className="p-2 text-slate-500 hover:text-slate-800 bg-white border border-slate-200 rounded-xl hover:bg-slate-50 shadow-xs cursor-pointer"
+            title="Refresh roster"
+          >
+            <RefreshCw className="w-4 h-4" />
+          </button>
+          <button
+            type="button"
+            onClick={handleExportCsv}
+            disabled={exportingCsv}
+            className="flex items-center gap-1.5 px-3 py-2 bg-slate-800 hover:bg-slate-900 text-white text-xs font-bold rounded-xl shadow-xs transition-colors cursor-pointer disabled:opacity-50"
+            title="Download full candidate roster as CSV"
+          >
+            <Download className="w-3.5 h-3.5" />
+            <span>{exportingCsv ? "Exporting..." : "Export CSV"}</span>
+          </button>
+        </div>
       </div>
 
       {/* Filter and Search Bar */}

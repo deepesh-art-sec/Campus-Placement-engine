@@ -67,6 +67,7 @@ export const StudentRegistryView: React.FC = () => {
   const [showWizard, setShowWizard] = useState(false);
   const [accessCodeStudent, setAccessCodeStudent] = useState<any | null>(null);
   const [codeGenerated, setCodeGenerated] = useState<string | null>(null);
+  const [exportingCsv, setExportingCsv] = useState(false);
 
   // Student Detail Drawer State
   const [selectedStudent, setSelectedStudent] = useState<Student | null>(null);
@@ -168,8 +169,32 @@ export const StudentRegistryView: React.FC = () => {
     }
   };
 
-  const handleExportCsv = () => {
-    window.open("/api/students/export/csv", "_blank");
+  const handleExportCsv = async () => {
+    try {
+      setExportingCsv(true);
+      const url = branchFilter && branchFilter !== "all"
+        ? `/api/students/export/csv?branch=${encodeURIComponent(branchFilter)}`
+        : "/api/students/export/csv";
+      const response = await fetch(url, {
+        credentials: "include",
+      });
+      if (!response.ok) {
+        throw new Error(`Export failed with status ${response.status}`);
+      }
+      const blob = await response.blob();
+      const blobUrl = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = blobUrl;
+      a.download = `student_academic_roster_${new Date().toISOString().slice(0, 10)}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.URL.revokeObjectURL(blobUrl);
+    } catch {
+      window.open("/api/students/export/csv", "_blank");
+    } finally {
+      setExportingCsv(false);
+    }
   };
 
   // Filter and sort candidates
@@ -253,11 +278,12 @@ export const StudentRegistryView: React.FC = () => {
           </button>
           <button
             onClick={handleExportCsv}
-            className="flex items-center gap-1.5 px-3 py-2 bg-slate-800 hover:bg-slate-900 text-white text-xs font-bold rounded-xl shadow-xs transition-colors cursor-pointer"
+            disabled={exportingCsv}
+            className="flex items-center gap-1.5 px-3 py-2 bg-slate-800 hover:bg-slate-900 text-white text-xs font-bold rounded-xl shadow-xs transition-colors cursor-pointer disabled:opacity-50"
             title="Download full candidate roster as CSV"
           >
             <Download className="w-3.5 h-3.5" />
-            <span>Export CSV</span>
+            <span>{exportingCsv ? "Exporting..." : "Export CSV"}</span>
           </button>
           <button
             onClick={() => setShowWizard(true)}
