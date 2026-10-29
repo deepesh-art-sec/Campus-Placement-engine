@@ -45,6 +45,7 @@ class CpSatPlacementScheduler:
         drives: list[SchedulerDrive],
         rooms: list[SchedulerRoom],
         config: ScheduleConfig | None = None,
+        existing_slots: list[dict[str, Any]] | None = None,
     ) -> ScheduleResult:
         cfg = config or ScheduleConfig()
         start_clock = datetime.datetime.now()
@@ -122,6 +123,72 @@ class CpSatPlacementScheduler:
         room_intervals: dict[str, list[cp_model.IntervalVar]] = collections.defaultdict(list)
         panel_intervals: dict[str, list[cp_model.IntervalVar]] = collections.defaultdict(list)
         student_intervals: dict[str, list[cp_model.IntervalVar]] = collections.defaultdict(list)
+
+        # Process existing busy slots to guarantee cross-drive clash avoidance
+        if existing_slots:
+            stu_busy_ranges: dict[str, list[tuple[int, int]]] = collections.defaultdict(list)
+            rm_busy_ranges: dict[str, list[tuple[int, int]]] = collections.defaultdict(list)
+
+            for ext in existing_slots:
+                st = ext.get("start_time")
+                et = ext.get("end_time")
+                if not isinstance(st, datetime.datetime) or not isinstance(et, datetime.datetime):
+                    continue
+                ext_date = st.date()
+                if ext_date not in date_to_idx:
+                    continue
+
+                d_idx = date_to_idx[ext_date]
+                day_slot_offset = d_idx * slots_per_day
+                day_start_dt = datetime.datetime.combine(ext_date, datetime.time(cfg.day_start_hour, 0))
+
+                start_min = max(0, int((st - day_start_dt).total_seconds() / 60))
+                end_min = min(slots_per_day * cfg.slot_duration_minutes, int((et - day_start_dt).total_seconds() / 60))
+                if end_min <= start_min:
+                    continue
+
+                start_slot = day_slot_offset + (start_min // cfg.slot_duration_minutes)
+                end_slot = day_slot_offset + math.ceil(end_min / cfg.slot_duration_minutes)
+
+                sid = ext.get("student_id")
+                if sid:
+                    b_start = max(day_slot_offset, start_slot - buffer_slots)
+                    b_end = min(day_slot_offset + slots_per_day, end_slot + buffer_slots)
+                    stu_busy_ranges[sid].append((b_start, b_end))
+
+                rid = ext.get("room_id")
+                if rid:
+                    rm_busy_ranges[rid].append((start_slot, end_slot))
+
+            def merge_intervals(intervals: list[tuple[int, int]]) -> list[tuple[int, int]]:
+                if not intervals:
+                    return []
+                sorted_inv = sorted(intervals, key=lambda x: x[0])
+                merged = [sorted_inv[0]]
+                for cur_start, cur_end in sorted_inv[1:]:
+                    last_start, last_end = merged[-1]
+                    if cur_start <= last_end:
+                        merged[-1] = (last_start, max(last_end, cur_end))
+                    else:
+                        merged.append((cur_start, cur_end))
+                return merged
+
+            ext_counter = 0
+            for sid, ranges in stu_busy_ranges.items():
+                for m_start, m_end in merge_intervals(ranges):
+                    dur = m_end - m_start
+                    if dur > 0:
+                        fixed_iv = model.new_fixed_size_interval_var(m_start, dur, f"ext_busy_stu_{sid}_{ext_counter}")
+                        student_intervals[sid].append(fixed_iv)
+                        ext_counter += 1
+
+            for rid, ranges in rm_busy_ranges.items():
+                for m_start, m_end in merge_intervals(ranges):
+                    dur = m_end - m_start
+                    if dur > 0:
+                        fixed_iv = model.new_fixed_size_interval_var(m_start, dur, f"ext_busy_rm_{rid}_{ext_counter}")
+                        room_intervals[rid].append(fixed_iv)
+                        ext_counter += 1
 
         session_counter = 0
 
@@ -438,7 +505,7 @@ class CpSatPlacementScheduler:
         else:
             # UNKNOWN / TIMEOUT -> Run fallback heuristic
             if cfg.allow_heuristic_fallback:
-                return self.heuristic.schedule(drives, rooms, cfg)
+                return self.heuristic.schedule(drives, rooms, cfg, existing_slots=existing_slots)
 
             return ScheduleResult(
                 schedule_id=str(uuid.uuid4()),
