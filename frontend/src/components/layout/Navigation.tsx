@@ -1,22 +1,25 @@
-import React from "react";
+import React, { useState } from "react";
 import {
-  Briefcase,
-  PlusCircle,
-  Files,
+  Home,
   Users,
-  Sliders,
   Shield,
+  Briefcase,
   CheckCircle,
   Calendar,
   Sparkles,
   Award,
   GitCompare,
   Download,
-  History,
-  Activity,
-  Cpu,
-  Inbox,
+  Key,
   Lock,
+  ChevronLeft,
+  ChevronRight,
+  Activity,
+  Sliders,
+  Files,
+  Cpu,
+  History,
+  CheckCircle2,
 } from "lucide-react";
 
 export type NavTabId =
@@ -33,12 +36,10 @@ export type NavTabId =
   | "results"
   | "dispute"
   | "export"
-  | "requests_manager"
-  | "user_management"
-  | "recruiter_portal"
+  | "users_roles"
+  | "audit_backup"
   | "audit"
-  | "offline_audit"
-  | "dev_components";
+  | "offline_audit";
 
 interface NavigationProps {
   activeTab: NavTabId;
@@ -46,14 +47,22 @@ interface NavigationProps {
   userRole?: string;
 }
 
-interface NavGroup {
-  name: string;
-  tabs: Array<{
-    id: NavTabId;
-    label: string;
-    icon: React.ComponentType<{ className?: string }>;
-    badge?: string;
-  }>;
+interface SubItem {
+  id: NavTabId;
+  label: string;
+  accessibleName: string;
+  badge?: string;
+}
+
+interface NavModule {
+  moduleNum: string;
+  id: NavTabId;
+  label: string;
+  accessibleName: string;
+  icon: React.ComponentType<{ className?: string }>;
+  badge?: string;
+  badgeVariant?: "success" | "brand" | "neutral" | "warning";
+  subItems?: SubItem[];
 }
 
 export const Navigation: React.FC<NavigationProps> = ({
@@ -61,93 +70,267 @@ export const Navigation: React.FC<NavigationProps> = ({
   onSelectTab,
   userRole = "officer",
 }) => {
-  const navGroups: NavGroup[] = [
+  const [isCollapsed, setIsCollapsed] = useState(false);
+
+  const modules: NavModule[] = [
     {
-      name: "Setup & Roster",
-      tabs: [
-        { id: "drives", label: "Drives", icon: Briefcase },
-        { id: "create_drive", label: "New Drive", icon: PlusCircle, badge: "Create" },
-        { id: "announcements", label: "25 Announcements", icon: Files, badge: "25 Docs" },
-        { id: "students", label: "Students & Importer", icon: Users },
+      moduleNum: "01",
+      id: "drives",
+      label: "Home / Overview",
+      accessibleName: "Recruitment Drives",
+      icon: Home,
+    },
+    {
+      moduleNum: "02",
+      id: "students",
+      label: "Students",
+      accessibleName: "Students & Importer",
+      icon: Users,
+      badge: "1.8k Roster",
+    },
+    {
+      moduleNum: "03",
+      id: "policies",
+      label: "Offer Policy",
+      accessibleName: "Offer Policies",
+      icon: Shield,
+      subItems: [
+        {
+          id: "policy_simulator",
+          label: "Policy Simulator",
+          accessibleName: "Policy Simulator",
+          badge: "Sim",
+        },
       ],
     },
     {
-      name: "Rules & Policy",
-      tabs: [
-        { id: "rule_editor", label: "Rule Editor", icon: Sliders },
-        { id: "policies", label: "Offer Policies", icon: Shield },
-        { id: "policy_simulator", label: "Policy Simulator", icon: Cpu, badge: "Simulate" },
+      moduleNum: "04",
+      id: "create_drive",
+      label: "Drives (Create)",
+      accessibleName: "Extract Drive",
+      icon: Briefcase,
+      badge: "3 Ways",
+      subItems: [
+        {
+          id: "announcements",
+          label: "25 Announcements",
+          accessibleName: "25 Announcements",
+          badge: "25 Docs",
+        },
       ],
     },
     {
-      name: "Execution",
-      tabs: [
-        { id: "eligibility", label: "Eligibility Runs", icon: CheckCircle },
-        { id: "schedule", label: "Schedule Grid", icon: Calendar, badge: "0 Clashes" },
-        { id: "what_if", label: "What-If & Publish", icon: Sparkles },
-        { id: "results", label: "Result Entry", icon: Award },
+      moduleNum: "05",
+      id: "eligibility",
+      label: "Rules & Eligibility",
+      accessibleName: "Eligibility Runs",
+      icon: CheckCircle,
+      subItems: [
+        {
+          id: "rule_editor",
+          label: "Rule Editor",
+          accessibleName: "Rule Editor",
+        },
       ],
     },
     {
-      name: "Governance & Operations",
-      tabs: [
-        { id: "requests_manager", label: "Requests & Diff", icon: Inbox, badge: "Review" },
-        { id: "user_management", label: "Users & Roles", icon: Lock },
-        { id: "recruiter_portal", label: "Recruiter Desk", icon: Briefcase, badge: "Preview" },
-        { id: "dispute", label: "Dispute Explainer", icon: GitCompare },
-        { id: "export", label: "Company Export", icon: Download },
-        { id: "audit", label: "Event Replay", icon: History },
-        { id: "offline_audit", label: "Offline Audit", icon: Activity },
-        { id: "dev_components", label: "UI Primitives (/dev)", icon: Sparkles, badge: "Prompt 0" },
+      moduleNum: "06",
+      id: "schedule",
+      label: "Schedule",
+      accessibleName: "Schedule Grid",
+      icon: Calendar,
+      badge: "0 Clashes",
+      badgeVariant: "success",
+    },
+    {
+      moduleNum: "07",
+      id: "what_if",
+      label: "What-If & Publish",
+      accessibleName: "What-If & Publish",
+      icon: Sparkles,
+    },
+    {
+      moduleNum: "08",
+      id: "results",
+      label: "Results & Enforcement",
+      accessibleName: "Result Entry",
+      icon: Award,
+    },
+    {
+      moduleNum: "09",
+      id: "dispute",
+      label: "Disputes & Explanations",
+      accessibleName: "Dispute Explainer",
+      icon: GitCompare,
+    },
+    {
+      moduleNum: "10",
+      id: "export",
+      label: "Messages & Export",
+      accessibleName: "Company Export",
+      icon: Download,
+    },
+    {
+      moduleNum: "11",
+      id: "users_roles",
+      label: "Users & Roles",
+      accessibleName: "Users & Roles",
+      icon: Key,
+      badge: "RBAC",
+    },
+    {
+      moduleNum: "12",
+      id: "audit_backup",
+      label: "Audit & Settings",
+      accessibleName: "Audit, Backup & Settings",
+      icon: Lock,
+      subItems: [
+        {
+          id: "offline_audit",
+          label: "Offline Audit",
+          accessibleName: "Offline Audit",
+          badge: "Air-Gap",
+        },
+        {
+          id: "audit",
+          label: "Event Replay",
+          accessibleName: "Event Replay",
+        },
       ],
     },
   ];
 
   return (
-    <nav className="bg-[#080e1c]/95 backdrop-blur-md border-b border-[#1b2b4d] sticky top-[73px] z-20 shadow-sm no-print">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-2">
-        <div className="flex items-center gap-4 overflow-x-auto no-scrollbar py-0.5">
-          {navGroups.map((group, groupIdx) => (
-            <React.Fragment key={group.name}>
-              {groupIdx > 0 && <div className="h-5 w-px bg-[#1b2b4d] shrink-0" />}
-              <div className="flex items-center gap-1 shrink-0">
-                <span className="text-[10px] uppercase font-bold tracking-wider text-slate-300 font-mono hidden xl:inline-block mr-1">
-                  {group.name}
-                </span>
-                {group.tabs.map((tab) => {
-                  const Icon = tab.icon;
-                  const isActive = activeTab === tab.id;
-                  return (
-                    <button
-                      key={tab.id}
-                      onClick={() => onSelectTab(tab.id)}
-                      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap cursor-pointer ${
-                        isActive
-                          ? "bg-gradient-to-r from-blue-700 to-emerald-600 text-white shadow-sm shadow-emerald-900/40"
-                          : "text-slate-300 hover:text-white hover:bg-[#111d38]"
-                      }`}
-                    >
-                      <Icon className="w-3.5 h-3.5" />
-                      <span>{tab.label}</span>
-                      {tab.badge && (
-                        <span
-                          className={`text-[9px] font-mono px-1.5 py-0.2 rounded-full font-bold ${
-                            isActive
-                              ? "bg-white/20 text-white"
-                              : "bg-[#162447] text-emerald-400 border border-emerald-500/30"
-                          }`}
-                        >
-                          {tab.badge}
-                        </span>
-                      )}
-                    </button>
-                  );
-                })}
-              </div>
-            </React.Fragment>
-          ))}
-        </div>
+    <aside
+      className={`bg-[#080e1c] border-r border-[#1b2b4d] shrink-0 flex flex-col transition-all duration-200 select-none z-20 ${
+        isCollapsed ? "w-16" : "w-64"
+      }`}
+      aria-label="Officer Dashboard Left Navigation"
+    >
+      {/* Sidebar Header with Module Index and Collapse Toggle */}
+      <div className="p-3.5 border-b border-[#1b2b4d] flex items-center justify-between text-slate-300">
+        {!isCollapsed && (
+          <div className="flex items-center gap-2">
+            <span className="text-[10px] font-black tracking-widest text-emerald-400 uppercase font-mono">
+              OFFICER SUITE
+            </span>
+            <span className="text-[9px] px-1.5 py-0.2 bg-[#111d38] border border-[#1b2b4d] rounded text-slate-400 font-bold">
+              12 MODULES
+            </span>
+          </div>
+        )}
+        <button
+          type="button"
+          onClick={() => setIsCollapsed(!isCollapsed)}
+          className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-[#111d38] transition-colors cursor-pointer ml-auto"
+          title={isCollapsed ? "Expand sidebar navigation" : "Collapse sidebar navigation"}
+        >
+          {isCollapsed ? <ChevronRight className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}
+        </button>
       </div>
-    </nav>
+
+      {/* Nav List with 12 Numbered Officer Modules */}
+      <nav className="flex-1 overflow-y-auto px-2 py-3 space-y-1 custom-scrollbar">
+        {modules.map((mod) => {
+          const Icon = mod.icon;
+          const isMainActive = activeTab === mod.id;
+          const isSubActive = mod.subItems?.some((sub) => activeTab === sub.id);
+          const isActive = isMainActive || isSubActive;
+
+          return (
+            <div key={mod.id} className="space-y-0.5">
+              <button
+                type="button"
+                aria-label={mod.accessibleName}
+                onClick={() => onSelectTab(mod.id)}
+                title={`${mod.moduleNum}. ${mod.label}`}
+                className={`w-full flex items-center gap-2.5 px-2.5 py-2 rounded-xl text-xs font-bold transition-all duration-150 cursor-pointer ${
+                  isMainActive
+                    ? "bg-gradient-to-r from-blue-700 via-teal-600 to-emerald-600 text-white shadow-md shadow-emerald-950/40 ring-1 ring-emerald-400/40"
+                    : isSubActive
+                    ? "bg-[#111d38] text-white border border-[#1b2b4d]"
+                    : "text-slate-300 hover:text-white hover:bg-[#111d38]/80"
+                }`}
+              >
+                <div className="flex items-center justify-center shrink-0">
+                  <Icon
+                    className={`w-4 h-4 ${
+                      isMainActive ? "text-white" : "text-slate-400"
+                    }`}
+                  />
+                </div>
+
+                {!isCollapsed && (
+                  <div className="flex items-center justify-between flex-1 min-w-0">
+                    <div className="flex items-center gap-1.5 min-w-0">
+                      <span className="text-[10px] font-mono font-bold text-slate-500">
+                        {mod.moduleNum}
+                      </span>
+                      <span className="truncate text-left">{mod.label}</span>
+                    </div>
+
+                    {mod.badge && (
+                      <span
+                        className={`text-[9px] px-1.5 py-0.2 rounded-full font-black uppercase tracking-wider shrink-0 ml-1 ${
+                          isMainActive
+                            ? "bg-white/20 text-white"
+                            : mod.badge === "0 Clashes"
+                            ? "bg-emerald-950 text-emerald-300 border border-emerald-800"
+                            : "bg-[#111d38] text-slate-400 border border-[#1b2b4d]"
+                        }`}
+                      >
+                        {mod.badge}
+                      </span>
+                    )}
+                  </div>
+                )}
+              </button>
+
+              {/* Sub-Items (Quick Shortcuts like 25 Announcements, Policy Simulator, Offline Audit) */}
+              {!isCollapsed && mod.subItems && mod.subItems.length > 0 && (
+                <div className="pl-7 pr-1 py-0.5 space-y-0.5">
+                  {mod.subItems.map((sub) => {
+                    const isCurrentSub = activeTab === sub.id;
+                    return (
+                      <button
+                        key={sub.id}
+                        type="button"
+                        aria-label={sub.accessibleName}
+                        onClick={() => onSelectTab(sub.id)}
+                        className={`w-full flex items-center justify-between px-2 py-1 rounded-lg text-[11px] font-semibold transition-all cursor-pointer ${
+                          isCurrentSub
+                            ? "bg-emerald-500/20 text-emerald-300 border border-emerald-500/40"
+                            : "text-slate-400 hover:text-slate-200 hover:bg-[#111d38]"
+                        }`}
+                      >
+                        <span className="truncate">{sub.label}</span>
+                        {sub.badge && (
+                          <span className="text-[8px] px-1 rounded bg-[#111d38] text-slate-400 font-mono">
+                            {sub.badge}
+                          </span>
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </nav>
+
+      {/* Sidebar Footer with Institutional Compliance Badges */}
+      {!isCollapsed && (
+        <div className="p-3 border-t border-[#1b2b4d] bg-[#050a14]/60 text-[11px] text-slate-400 space-y-1 font-mono">
+          <div className="flex items-center gap-1.5 text-emerald-400 font-bold">
+            <CheckCircle2 className="w-3.5 h-3.5" />
+            <span>Air-Gap Ready</span>
+          </div>
+          <div className="text-[10px] text-slate-500 truncate">
+            Deterministic IM-101 Engine
+          </div>
+        </div>
+      )}
+    </aside>
   );
 };

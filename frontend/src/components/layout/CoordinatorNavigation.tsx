@@ -52,9 +52,7 @@ export const CoordinatorNavigation: React.FC<CoordinatorNavigationProps> = ({
   onSelectTab,
   unreadCount = 0,
 }) => {
-  const [isCollapsed, setIsCollapsed] = useState(() =>
-    typeof window !== "undefined" ? window.innerWidth < 1024 : false
-  );
+  const [isCollapsed, setIsCollapsed] = useState(false);
 
   const navItems: NavItem[] = [
     { num: "01", id: "overview", label: "Overview", icon: Home },
@@ -80,7 +78,6 @@ export const CoordinatorNavigation: React.FC<CoordinatorNavigationProps> = ({
 
   return (
     <aside
-      aria-label="Coordinator Dashboard Left Navigation"
       className={`bg-[#060b14] border-r border-[#15233e] flex flex-col transition-all duration-300 select-none ${
         isCollapsed ? "w-20" : "w-64"
       }`}
