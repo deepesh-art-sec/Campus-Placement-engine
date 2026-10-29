@@ -41,6 +41,60 @@ def _get_announcements_dir() -> str:
     raise FileNotFoundError("fixtures/announcements directory not found.")
 
 
+def _clean_company_name(filename: str, ground_truth: dict[str, Any] | None = None) -> str:
+    """Extracts or looks up clean, accurate company name without deleting multi-word names."""
+    if ground_truth and filename in ground_truth:
+        gt_name = ground_truth[filename].get("company_name")
+        if gt_name:
+            return gt_name
+
+    clean = filename.rsplit(".", 1)[0]
+    clean = re.sub(r"^\d+[\s_-]*", "", clean)
+    clean = re.sub(r"[_-](?:announcement|email|spec|jd|circular|notice|job_description)$", "", clean, flags=re.IGNORECASE)
+    clean = clean.replace("_", " ").replace("-", " ").strip()
+
+    lower = clean.lower()
+    if "goldman" in lower and "sachs" in lower:
+        return "Goldman Sachs"
+    if "deloitte" in lower:
+        return "Deloitte USI" if "usi" in lower else "Deloitte"
+    if "tata" in lower and "consultancy" in lower:
+        return "Tata Consultancy Services"
+    if "tata" in lower and "motors" in lower:
+        return "Tata Motors"
+    if "larsen" in lower or "toubro" in lower:
+        return "Larsen & Toubro"
+    if "texas" in lower and "instruments" in lower:
+        return "Texas Instruments"
+    if "morgan" in lower and "stanley" in lower:
+        return "Morgan Stanley"
+    if "samsung" in lower:
+        return "Samsung R&D"
+    if "reliance" in lower:
+        return "Reliance Industries"
+    if "itc" in lower:
+        return "ITC Limited"
+    if "zs" in lower or "associates" in lower:
+        return "ZS Associates"
+    if "infosys" in lower:
+        return "Infosys Power Programmer" if "power" in lower else "Infosys"
+    if "wipro" in lower:
+        return "Wipro Turbo" if "turbo" in lower else "Wipro"
+    if "accenture" in lower:
+        return "Accenture Advanced Tech" if ("tech" in lower or "advanced" in lower) else "Accenture"
+
+    words = []
+    for w in clean.split():
+        up = w.upper()
+        if up in ("USI", "ITC", "ZS", "TCS", "R&D", "AI", "ML"):
+            words.append(up)
+        elif up == "AND":
+            words.append("&")
+        else:
+            words.append(w.capitalize())
+    return " ".join(words) or clean.title()
+
+
 def _get_ground_truth() -> dict[str, Any]:
     """Loads ground truth criteria metadata."""
     try:
@@ -82,12 +136,12 @@ def list_all_announcements(
         if format_filter and ext != format_filter.upper():
             continue
 
-        name_part = f.split("_", 1)[1].rsplit(".", 1)[0].replace("_", " ").title()
+        name_part = (f.split("_", 1)[1] if "_" in f else f).rsplit(".", 1)[0].replace("_", " ").title()
         file_path = os.path.join(ann_dir, f)
         size_bytes = os.path.getsize(file_path) if os.path.exists(file_path) else 0
 
         gt = ground_truth.get(f, {})
-        comp_name = gt.get("company_name", name_part.split()[0])
+        comp_name = gt.get("company_name") or _clean_company_name(f, ground_truth)
 
         if search and search.lower() not in comp_name.lower() and search.lower() not in name_part.lower():
             continue
@@ -136,7 +190,7 @@ def get_announcement_details(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Announcement '{filename}' not found.")
 
     ext = filename.rsplit(".", 1)[1].upper()
-    name_part = filename.split("_", 1)[1].rsplit(".", 1)[0].replace("_", " ").title()
+    name_part = (filename.split("_", 1)[1] if "_" in filename else filename).rsplit(".", 1)[0].replace("_", " ").title()
 
     ground_truth = _get_ground_truth()
     gt = ground_truth.get(filename, {})
@@ -149,7 +203,7 @@ def get_announcement_details(
     return {
         "filename": filename,
         "format": ext,
-        "company_name": gt.get("company_name", name_part.split()[0]),
+        "company_name": gt.get("company_name") or _clean_company_name(filename, ground_truth),
         "size_bytes": len(raw_bytes),
         "ground_truth": gt,
         "full_text": full_text,
@@ -280,7 +334,7 @@ def create_drive_from_announcement(
             "tenth_percentage_min": dyn_ext.tenth_percentage_min.value if dyn_ext.tenth_percentage_min else 60.0,
             "twelfth_percentage_min": dyn_ext.twelfth_percentage_min.value if dyn_ext.twelfth_percentage_min else 60.0,
         }
-    company_name = gt.get("company_name", name_part.split()[0])
+    company_name = gt.get("company_name") or _clean_company_name(filename, ground_truth)
     drive_id = f"drv_{uuid.uuid4().hex[:8]}"
 
     # Check if drive for this company already exists

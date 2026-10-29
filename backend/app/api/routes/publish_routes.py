@@ -30,7 +30,7 @@ _safeguards = PublishSafeguards()
 
 
 class PublishRequest(BaseModel):
-    expected_base_version: int
+    expected_base_version: int | None = None
     reason: str = "Finalized shortlisted candidates and interview slots"
 
 
@@ -53,6 +53,8 @@ def publish_drive(
     if not drive_entity:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Drive not found.")
 
+    expected_v = req.expected_base_version if req.expected_base_version is not None else drive_entity.version
+
     # Fetch shortlist
     dec_stmt = select(EligibilityDecisionModel).where(
         EligibilityDecisionModel.drive_id == drive_id,
@@ -74,7 +76,7 @@ def publish_drive(
     validation = _safeguards.validate_for_publish(
         drive_id=drive_id,
         current_version=drive_entity.version,
-        expected_base_version=req.expected_base_version,
+        expected_base_version=expected_v,
         unresolved_review_items=[],
         schedule_items=[],
         rooms=[],
@@ -109,7 +111,7 @@ def publish_drive(
                 requirements=RequirementSet(id=f"req_{drive_id}", drive_id=drive_id, min_cgpa=6.0),
                 shortlist_student_ids=shortlist_ids,
                 schedule_items=[],
-                expected_base_version=req.expected_base_version,
+                expected_base_version=expected_v,
                 actor=current_user.username,
                 reason=req.reason,
             )

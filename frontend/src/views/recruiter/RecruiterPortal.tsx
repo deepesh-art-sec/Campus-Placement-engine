@@ -430,9 +430,6 @@ export const RecruiterPortal: React.FC = () => {
                 <span className="text-[10px] font-black tracking-widest text-emerald-400 uppercase font-mono">
                   RECRUITER SUITE
                 </span>
-                <span className="text-[9px] px-1.5 py-0.2 bg-[#111d38] border border-[#1b2b4d] rounded text-slate-400 font-bold shrink-0">
-                  9 MODULES
-                </span>
               </div>
               <p className="text-[10px] text-slate-400 font-semibold truncate mt-0.5">
                 {overview?.company_name || "Company Portal"} • Read-Only

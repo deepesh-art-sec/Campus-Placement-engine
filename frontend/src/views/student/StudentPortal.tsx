@@ -447,9 +447,6 @@ export const StudentPortal: React.FC = () => {
                 <span className="text-[10px] font-black tracking-widest text-emerald-400 uppercase font-mono">
                   STUDENT SUITE
                 </span>
-                <span className="text-[9px] px-1.5 py-0.2 bg-[#111d38] border border-[#1b2b4d] rounded text-slate-400 font-bold shrink-0">
-                  10 MODULES
-                </span>
               </div>
               <p className="text-[10px] text-slate-400 font-semibold truncate mt-0.5">
                 Roll: {studentInfo?.roll_no || user.username} • Verified
@@ -494,22 +491,19 @@ export const StudentPortal: React.FC = () => {
                 {!isSidebarCollapsed && (
                   <div className="flex-1 flex items-center justify-between min-w-0">
                     <span className="truncate">{item.label}</span>
-                    <div className="flex items-center gap-1.5">
-                      {item.badge && (
-                        <span
-                          className={`text-[10px] px-1.5 py-0.2 rounded-md font-mono font-bold ${
-                            item.badgeVariant === "amber"
-                              ? "bg-amber-500/20 text-amber-300 border border-amber-500/30"
-                              : item.badgeVariant === "rose"
-                              ? "bg-rose-500/20 text-rose-300 border border-rose-500/30"
-                              : "bg-[#111d38] border border-[#1b2b4d] text-emerald-300"
-                          }`}
-                        >
-                          {item.badge}
-                        </span>
-                      )}
-                      <span className="text-[10px] font-mono text-slate-500">{item.num}</span>
-                    </div>
+                    {item.badge && (
+                      <span
+                        className={`text-[10px] px-1.5 py-0.2 rounded-md font-mono font-bold ${
+                          item.badgeVariant === "amber"
+                            ? "bg-amber-500/20 text-amber-300 border border-amber-500/30"
+                            : item.badgeVariant === "rose"
+                            ? "bg-rose-500/20 text-rose-300 border border-rose-500/30"
+                            : "bg-[#111d38] border border-[#1b2b4d] text-emerald-300"
+                        }`}
+                      >
+                        {item.badge}
+                      </span>
+                    )}
                   </div>
                 )}
               </button>

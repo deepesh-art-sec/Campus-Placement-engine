@@ -13,7 +13,7 @@ from typing import Any
 from fastapi import APIRouter, Depends, File, HTTPException, Query, Response, UploadFile, status
 from pydantic import BaseModel, Field
 from sqlalchemy import select
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, selectinload
 
 from backend.app.api.auth.dependencies import (
     get_current_user,
@@ -377,6 +377,7 @@ def delete_student(
 
 @router.get("/api/students/export/csv")
 def export_students_csv(
+    branch: str | None = None,
     current_user: UserModel = Depends(require_officer_or_coordinator),
     db: Session = Depends(get_db),
 ) -> Response:
@@ -384,7 +385,18 @@ def export_students_csv(
     import csv
     import io
 
-    students = db.execute(select(StudentModel).order_by(StudentModel.roll_no.asc())).scalars().all()
+    stmt = select(StudentModel).options(
+        selectinload(StudentModel.backlogs),
+        selectinload(StudentModel.gap_years),
+        selectinload(StudentModel.offers),
+    )
+    if branch and branch != "all":
+        from backend.app.importers.canonical_maps import get_branch_code
+        canon = get_branch_code(branch)
+        stmt = stmt.where((StudentModel.branch == branch) | (StudentModel.branch == canon))
+
+    stmt = stmt.order_by(StudentModel.roll_no.asc())
+    students = db.execute(stmt).scalars().all()
 
     output = io.StringIO()
     writer = csv.writer(output)
@@ -395,6 +407,10 @@ def export_students_csv(
     ])
 
     for s in students:
+        active_b = len([b for b in s.backlogs if b.status == "active"]) if s.backlogs else 0
+        history_b = len([b for b in s.backlogs if b.status == "cleared"]) if s.backlogs else 0
+        gap_total = sum(g.duration_years for g in s.gap_years) if s.gap_years else 0
+        offers_cnt = len(s.offers) if s.offers else 0
         writer.writerow([
             s.roll_no,
             s.name,
@@ -405,10 +421,10 @@ def export_students_csv(
             s.tenth_percentage,
             s.twelfth_percentage if s.twelfth_percentage is not None else "",
             s.diploma_percentage if s.diploma_percentage is not None else "",
-            s.active_backlogs,
-            s.history_backlogs,
-            s.gap_years,
-            s.existing_offers_count,
+            active_b,
+            history_b,
+            gap_total,
+            offers_cnt,
         ])
 
     AuditService.record_export(
@@ -1262,6 +1278,80 @@ def download_status_sheet_pdf(
         content=pdf_bytes,
         media_type="application/pdf",
         headers={"Content-Disposition": f"attachment; filename=placement_status_{domain_stu.roll_no}.pdf"},
+    )
+
+
+@router.get("/api/portal/status-sheet-csv")
+def download_status_sheet_csv(
+    current_user: UserModel = Depends(require_student),
+    db: Session = Depends(get_db),
+) -> Response:
+    """Generates and downloads candidate's own placement status sheet in CSV format."""
+    import csv
+    import io
+
+    student = _resolve_student(db, current_user)
+    domain_stu = student_entity_to_domain(student)
+    drives_data = portal_get_drives(current_user=current_user, db=db)
+    schedule_data = portal_get_schedule(current_user=current_user, db=db)
+
+    output = io.StringIO()
+    writer = csv.writer(output)
+
+    # Section 1: Candidate Academic Profile
+    writer.writerow(["CANDIDATE PLACEMENT STATUS PROFILE", ""])
+    writer.writerow(["Roll Number", domain_stu.roll_no])
+    writer.writerow(["Candidate Name", domain_stu.name])
+    writer.writerow(["Email", domain_stu.email])
+    writer.writerow(["Branch", domain_stu.branch])
+    writer.writerow(["Program", domain_stu.program])
+    writer.writerow(["Current CGPA", f"{domain_stu.cgpa:.2f}"])
+    writer.writerow(["Class 10th %", f"{domain_stu.tenth_percentage:.1f}"])
+    writer.writerow(["Class 12th %", f"{domain_stu.twelfth_percentage:.1f}" if domain_stu.twelfth_percentage is not None else "N/A"])
+    writer.writerow(["Diploma %", f"{domain_stu.diploma_percentage:.1f}" if domain_stu.diploma_percentage is not None else "N/A"])
+    writer.writerow(["Active Backlogs", len(domain_stu.active_backlogs)])
+    writer.writerow(["History Backlogs", len(domain_stu.cleared_backlogs)])
+    writer.writerow(["Existing Offers", len(domain_stu.existing_offers)])
+    writer.writerow([])
+
+    # Section 2: Drive Decisions & Eligibility Status
+    writer.writerow(["CAMPUS DRIVES & ELIGIBILITY STATUS", "", "", "", "", ""])
+    writer.writerow(["Company Name", "Role", "CTC (LPA)", "Drive Date", "Eligibility Status", "Headline Reason"])
+    for d in drives_data:
+        writer.writerow([
+            d.get("company_name", ""),
+            d.get("role", "Software Engineer"),
+            d.get("ctc_lpa", ""),
+            d.get("drive_date", ""),
+            d.get("status", "").upper(),
+            d.get("headline_reason", ""),
+        ])
+    writer.writerow([])
+
+    # Section 3: Interview Schedule
+    writer.writerow(["INTERVIEW SCHEDULE & SLOTS", "", "", "", "", ""])
+    writer.writerow(["Company Name", "Round", "Start Time", "End Time", "Venue / Mode", "Status"])
+    for s in schedule_data:
+        writer.writerow([
+            s.get("company_name", ""),
+            s.get("round_name", ""),
+            s.get("start_time", ""),
+            s.get("end_time", ""),
+            f"{s.get('venue', '')} ({s.get('mode', 'in-person')})",
+            s.get("status", "SCHEDULED").upper(),
+        ])
+
+    AuditService.record_export(
+        db=db,
+        actor=current_user.username,
+        export_type="STUDENT_STATUS_CSV",
+        candidate_count=1,
+    )
+
+    return Response(
+        content=output.getvalue(),
+        media_type="text/csv",
+        headers={"Content-Disposition": f"attachment; filename=placement_status_{domain_stu.roll_no}.csv"},
     )
 
 

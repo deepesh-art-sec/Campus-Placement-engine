@@ -269,14 +269,16 @@ class WhatIfEngine:
             drive.requirements = req
 
         elif change.change_type == ChangeType.BRANCH_ADDED:
-            assert change.branch_name is not None
-            if change.branch_name not in req.allowed_branches:
-                req.allowed_branches = list(req.allowed_branches) + [change.branch_name]
+            b_name = change.branch_name or (str(change.new_value) if change.new_value is not None else None)
+            assert b_name is not None
+            if b_name not in req.allowed_branches:
+                req.allowed_branches = list(req.allowed_branches) + [b_name]
             drive.requirements = req
 
         elif change.change_type == ChangeType.BRANCH_REMOVED:
-            assert change.branch_name is not None
-            req.allowed_branches = [b for b in req.allowed_branches if b != change.branch_name]
+            b_name = change.branch_name or (str(change.new_value) if change.new_value is not None else None)
+            assert b_name is not None
+            req.allowed_branches = [b for b in req.allowed_branches if b != b_name]
             drive.requirements = req
 
         elif change.change_type == ChangeType.BACKLOG_RULE:

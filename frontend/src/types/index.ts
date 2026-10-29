@@ -12,6 +12,15 @@ export interface User {
 
 export type DriveStatus = "draft" | "needs_review" | "ready" | "published" | "completed";
 
+export interface DriveRequirements {
+  min_cgpa?: number;
+  min_tenth_percentage?: number;
+  min_twelfth_percentage?: number;
+  allowed_branches?: string[];
+  max_active_backlogs?: number;
+  max_gap_years?: number;
+}
+
 export interface Drive {
   id: string;
   company_id: string;
@@ -25,6 +34,7 @@ export interface Drive {
   job_role?: string;
   version: number;
   requirements_summary?: string;
+  requirements?: DriveRequirements;
 }
 
 export interface Student {
@@ -107,6 +117,26 @@ export interface ScheduleSlot {
   end_time?: string;
 }
 
+export interface StudentImpactItem {
+  student_id: string;
+  student_roll_no: string;
+  student_name: string;
+  branch: string;
+  cgpa: number;
+  change_type: "added" | "removed";
+  reason: string;
+}
+
+export interface ClashImpactItem {
+  student_id: string;
+  student_roll_no: string;
+  student_name: string;
+  conflicting_drive_id: string;
+  conflicting_drive_name: string;
+  conflicting_slot_time: string;
+  details: string;
+}
+
 export interface ImpactReportData {
   drive_id: string;
   drive_name: string;
@@ -115,10 +145,20 @@ export interface ImpactReportData {
   students_added_count: number;
   students_removed_count: number;
   clashes_count: number;
+  students_added?: StudentImpactItem[];
+  students_removed?: StudentImpactItem[];
+  newly_clashing_students?: ClashImpactItem[];
   students_added_preview?: string[];
   students_removed_preview?: string[];
   clashes_preview?: string[];
   second_order_policy_effects?: string[];
+  second_order_effects?: Array<{
+    student_id: string;
+    student_name: string;
+    source_drive_name: string;
+    target_drive_name: string;
+    description: string;
+  }>;
 }
 
 export interface EventRecord {

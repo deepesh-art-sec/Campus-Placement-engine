@@ -18,6 +18,7 @@ from backend.app.api.logging.audit_service import AuditService
 from backend.app.domain.models import DriveMode, DriveStatus
 from backend.app.storage.database import get_db
 import json
+from backend.app.importers.canonical_maps import parse_allowed_branches
 from backend.app.storage.models.entities import (
     CompanyModel,
     DriveModel,
@@ -61,8 +62,10 @@ def list_drives(
     """Lists all recruitment drives."""
     stmt = select(DriveModel).order_by(DriveModel.drive_date.asc())
     drives = db.execute(stmt).scalars().all()
-    return [
-        {
+    results = []
+    for d in drives:
+        latest_req = sorted(d.requirement_versions, key=lambda r: r.version_number, reverse=True)[0] if d.requirement_versions else None
+        results.append({
             "id": d.id,
             "company_name": d.company_name,
             "drive_date": d.drive_date.isoformat(),
@@ -70,9 +73,16 @@ def list_drives(
             "status": d.status,
             "ctc_lpa": d.ctc_lpa,
             "version": d.version,
-        }
-        for d in drives
-    ]
+            "requirements": {
+                "min_cgpa": latest_req.min_cgpa if latest_req else 6.0,
+                "min_tenth_percentage": latest_req.min_tenth_percentage if latest_req else 60.0,
+                "min_twelfth_percentage": latest_req.min_twelfth_percentage if latest_req else None,
+                "allowed_branches": parse_allowed_branches(latest_req.allowed_branches_json) if latest_req else ["CSE", "IT", "ECE"],
+                "max_active_backlogs": latest_req.max_active_backlogs if latest_req else 0,
+                "max_gap_years": latest_req.max_gap_years if latest_req else 1,
+            } if latest_req else None,
+        })
+    return results
 
 
 @router.get("/overview-metrics")

@@ -104,7 +104,7 @@ export const CoordinatorNavigation: React.FC<CoordinatorNavigationProps> = ({
         </button>
       </div>
 
-      {/* Navigation Modules (1-12) */}
+      {/* Navigation Modules */}
       <nav className="flex-1 overflow-y-auto p-2 space-y-1">
         {navItems.map((item) => {
           const Icon = item.icon;
@@ -129,24 +129,21 @@ export const CoordinatorNavigation: React.FC<CoordinatorNavigationProps> = ({
               {!isCollapsed && (
                 <div className="flex-1 flex items-center justify-between min-w-0">
                   <span className="truncate">{item.label}</span>
-                  <div className="flex items-center gap-1.5">
-                    {item.badge && (
-                      <span
-                        className={`text-[10px] px-1.5 py-0.2 rounded-md font-bold uppercase tracking-wider ${
-                          item.badgeVariant === "brand"
-                            ? "bg-indigo-500/30 text-indigo-200 border border-indigo-400/30"
-                            : item.badgeVariant === "amber"
-                            ? "bg-amber-500/20 text-amber-300 border border-amber-500/30"
-                            : item.badgeVariant === "rose"
-                            ? "bg-rose-500/20 text-rose-300 border border-rose-500/30"
-                            : "bg-slate-700/50 text-slate-300 border border-slate-600/40"
-                        }`}
-                      >
-                        {item.badge}
-                      </span>
-                    )}
-                    <span className="text-[10px] font-mono text-slate-500">{item.num}</span>
-                  </div>
+                  {item.badge && (
+                    <span
+                      className={`text-[10px] px-1.5 py-0.2 rounded-md font-bold uppercase tracking-wider ${
+                        item.badgeVariant === "brand"
+                          ? "bg-indigo-500/30 text-indigo-200 border border-indigo-400/30"
+                          : item.badgeVariant === "amber"
+                          ? "bg-amber-500/20 text-amber-300 border border-amber-500/30"
+                          : item.badgeVariant === "rose"
+                          ? "bg-rose-500/20 text-rose-300 border border-rose-500/30"
+                          : "bg-slate-700/50 text-slate-300 border border-slate-600/40"
+                      }`}
+                    >
+                      {item.badge}
+                    </span>
+                  )}
                 </div>
               )}
             </button>

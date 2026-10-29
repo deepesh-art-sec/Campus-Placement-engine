@@ -191,3 +191,8 @@ def test_airgap_full_api_pipeline_with_testclient() -> None:
         stu_res = client.get("/api/students?limit=10", headers=headers)
         assert stu_res.status_code == 200
         assert stu_res.json()["total"] >= 2
+
+        # 5. Clean up created drive
+        created_drive_id = d_res.json()["id"]
+        del_res = client.delete(f"/api/drives/{created_drive_id}?reason=Airgap+guardrail+test+cleanup", headers=headers)
+        assert del_res.status_code == 200

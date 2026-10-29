@@ -423,7 +423,10 @@ class SqlAlchemyUnitOfWork:
         self.session: Session | None = None
 
     def __enter__(self) -> SqlAlchemyUnitOfWork:
-        self.session = self.session_factory()
+        if callable(self.session_factory):
+            self.session = self.session_factory()
+        else:
+            self.session = self.session_factory
         self.students = SqlAlchemyStudentRepository(self.session)
         self.drives = SqlAlchemyDriveRepository(self.session)
         self.policies = SqlAlchemyPolicyRepository(self.session)
