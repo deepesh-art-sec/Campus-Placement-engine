@@ -548,6 +548,13 @@ def seed_database(force_recreate: bool = False, random_seed: int = 2026) -> dict
                 writer.writerows(csv_rows)
             print(f"Synchronized fixtures CSV at {csv_path} (1,800 rows).")
 
+        # Stamp Alembic migration revision to head to prevent duplicate column migrations
+        try:
+            import subprocess
+            subprocess.run([sys.executable, "-m", "alembic", "-c", "backend/alembic.ini", "stamp", "head"], cwd=REPO_ROOT, check=False)
+        except Exception:
+            pass
+
         return validate_seeded_database(db)
 
     except Exception as exc:
