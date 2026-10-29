@@ -155,11 +155,18 @@ def list_all_announcements(
         except Exception:
             snippet = f"Real-format {ext} document received by placement cell."
 
+        role = gt.get("role") or "Software Development Engineer"
+        location = gt.get("location") or "Bengaluru / Hyderabad"
+        deadline = gt.get("application_deadline") or "2026-10-25"
+
         results.append({
             "index": idx,
             "filename": f,
             "company_name": comp_name,
-            "label": f"{comp_name} ({ext})",
+            "role": role,
+            "location": location,
+            "application_deadline": deadline,
+            "label": f"{comp_name} - {role} ({ext})",
             "format": ext,
             "file_type_label": format_labels.get(ext, f"{ext} Document"),
             "size_bytes": size_bytes,
@@ -204,6 +211,9 @@ def get_announcement_details(
         "filename": filename,
         "format": ext,
         "company_name": gt.get("company_name") or _clean_company_name(filename, ground_truth),
+        "role": gt.get("role", "Software Development Engineer"),
+        "location": gt.get("location", "Bengaluru / Hyderabad"),
+        "application_deadline": gt.get("application_deadline", "2026-10-25"),
         "size_bytes": len(raw_bytes),
         "ground_truth": gt,
         "full_text": full_text,

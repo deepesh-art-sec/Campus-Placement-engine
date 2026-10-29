@@ -1,6 +1,9 @@
 CAMPUS RECRUITMENT DRIVE ANNOUNCEMENT #07
 Company: Cisco
+Job Role: Software Consulting Engineer
+Job Location: Bengaluru
 Drive Date: 2026-11-19
+Application Deadline: 2026-11-12
 Mode of Drive: On Campus
 CTC Offered: 17.5 LPA
 
@@ -18,4 +21,4 @@ Round 2: Technical Interview Panel 1 - 45 mins
 Round 3: Technical & System Design Panel 2 - 45 mins
 Round 4: HR & Leadership Interview - 30 mins
 
-Students meeting the cut-offs are requested to register on the placement portal by Friday 5:00 PM.
+Students meeting the cut-offs are requested to register on the placement portal by 2026-11-12 5:00 PM.

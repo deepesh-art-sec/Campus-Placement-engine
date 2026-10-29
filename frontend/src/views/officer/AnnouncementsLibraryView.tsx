@@ -21,12 +21,18 @@ import {
   Copy,
   Check,
   Upload,
+  Briefcase,
+  MapPin,
+  Clock,
 } from "lucide-react";
 
 interface AnnouncementItem {
   index: number;
   filename: string;
   company_name: string;
+  role?: string;
+  location?: string;
+  application_deadline?: string;
   label: string;
   format: "EML" | "PDF" | "DOCX" | "TXT" | string;
   file_type_label: string;
@@ -62,7 +68,17 @@ export const AnnouncementsLibraryView: React.FC<AnnouncementsLibraryViewProps> =
   const [sortBy, setSortBy] = useState<"index" | "ctc_desc" | "ctc_asc" | "name">("index");
 
   // Preview Modal State
-  const [previewItem, setPreviewItem] = useState<{ filename: string; text: string; label: string } | null>(null);
+  const [previewItem, setPreviewItem] = useState<{
+    filename: string;
+    text: string;
+    label: string;
+    role?: string;
+    location?: string;
+    application_deadline?: string;
+    ctc_lpa?: number;
+    cgpa_min?: number;
+    drive_date?: string;
+  } | null>(null);
   const [previewLoading, setPreviewLoading] = useState(false);
   const [copied, setCopied] = useState(false);
   const [creatingDriveId, setCreatingDriveId] = useState<string | null>(null);
@@ -141,6 +157,12 @@ export const AnnouncementsLibraryView: React.FC<AnnouncementsLibraryViewProps> =
         filename,
         label,
         text: res.full_text || "No preview content available.",
+        role: res.role || res.ground_truth?.role,
+        location: res.location || res.ground_truth?.location,
+        application_deadline: res.application_deadline || res.ground_truth?.application_deadline,
+        ctc_lpa: res.ground_truth?.ctc_lpa,
+        cgpa_min: res.ground_truth?.cgpa_min,
+        drive_date: res.ground_truth?.drive_date,
       });
     } catch (err: any) {
       setError(err.message || "Failed to load announcement preview.");
@@ -178,6 +200,8 @@ export const AnnouncementsLibraryView: React.FC<AnnouncementsLibraryViewProps> =
     .filter((item) => {
       const matchesSearch =
         item.company_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (item.role && item.role.toLowerCase().includes(searchQuery.toLowerCase())) ||
+        (item.location && item.location.toLowerCase().includes(searchQuery.toLowerCase())) ||
         item.filename.toLowerCase().includes(searchQuery.toLowerCase()) ||
         item.snippet.toLowerCase().includes(searchQuery.toLowerCase());
       const matchesFormat = formatFilter === "ALL" || item.format === formatFilter;
@@ -318,19 +342,32 @@ export const AnnouncementsLibraryView: React.FC<AnnouncementsLibraryViewProps> =
             >
               <div className="space-y-3">
                 {/* Header Line */}
-                <div className="flex items-center justify-between gap-2">
-                  <div className="flex items-center gap-2">
-                    <span className="text-[11px] font-mono font-bold text-slate-500">#{String(item.index).padStart(2, "0")}</span>
-                    <h3 className="font-black text-white text-base group-hover:text-emerald-300 transition-colors">
-                      {item.company_name}
-                    </h3>
+                <div className="flex items-start justify-between gap-2">
+                  <div className="space-y-1 min-w-0">
+                    <div className="flex items-center gap-2">
+                      <span className="text-[11px] font-mono font-bold text-slate-500">#{String(item.index).padStart(2, "0")}</span>
+                      <h3 className="font-black text-white text-base group-hover:text-emerald-300 transition-colors truncate">
+                        {item.company_name}
+                      </h3>
+                    </div>
+                    {/* Role / Job Title */}
+                    <div className="flex items-center gap-1.5 text-xs font-semibold text-emerald-400">
+                      <Briefcase className="w-3.5 h-3.5 shrink-0 text-emerald-400" />
+                      <span className="truncate" title={item.role || "Software Development Engineer"}>
+                        {item.role || "Software Development Engineer"}
+                      </span>
+                    </div>
                   </div>
                   {getFormatBadge(item.format)}
                 </div>
 
-                {/* Subtitle / File type */}
-                <div className="text-[11px] text-slate-400 font-medium truncate" title={item.filename}>
-                  {item.filename} • {(item.size_bytes / 1024).toFixed(1)} KB
+                {/* Subtitle / Location & File size */}
+                <div className="flex items-center justify-between gap-2 text-[11px] text-slate-400 font-medium">
+                  <div className="flex items-center gap-1 text-slate-300 truncate" title={item.location || "Bengaluru / Hyderabad"}>
+                    <MapPin className="w-3 h-3 shrink-0 text-teal-400" />
+                    <span className="truncate">{item.location || "Bengaluru / Hyderabad"}</span>
+                  </div>
+                  <span className="shrink-0 text-slate-500 font-mono text-[10px]">{(item.size_bytes / 1024).toFixed(1)} KB</span>
                 </div>
 
                 {/* Key Ground Truth Criteria Grid */}
@@ -345,11 +382,17 @@ export const AnnouncementsLibraryView: React.FC<AnnouncementsLibraryViewProps> =
                   </div>
                   <div>
                     <span className="text-[10px] text-slate-500 uppercase font-bold block">Drive Date</span>
-                    <span className="text-slate-300 font-mono text-[11px]">{item.drive_date}</span>
+                    <span className="text-slate-300 font-mono text-[11px] flex items-center gap-1">
+                      <Calendar className="w-3 h-3 text-blue-400 shrink-0" />
+                      {item.drive_date}
+                    </span>
                   </div>
                   <div>
-                    <span className="text-[10px] text-slate-500 uppercase font-bold block">Selection Rounds</span>
-                    <span className="text-teal-300 font-mono font-bold">{item.rounds_count} Rounds</span>
+                    <span className="text-[10px] text-rose-400 uppercase font-bold block">Apply Deadline</span>
+                    <span className="text-rose-300 font-mono text-[11px] font-semibold flex items-center gap-1">
+                      <Clock className="w-3 h-3 text-rose-400 shrink-0" />
+                      {item.application_deadline || "TBA"}
+                    </span>
                   </div>
                 </div>
 
@@ -420,6 +463,28 @@ export const AnnouncementsLibraryView: React.FC<AnnouncementsLibraryViewProps> =
               <div>
                 <h3 className="text-base font-black text-white">{previewItem.label}</h3>
                 <span className="text-xs text-slate-400 font-mono">{previewItem.filename}</span>
+                {(previewItem.role || previewItem.location || previewItem.application_deadline) && (
+                  <div className="flex flex-wrap items-center gap-3 mt-1 text-[11px]">
+                    {previewItem.role && (
+                      <span className="flex items-center gap-1 text-emerald-400 font-semibold">
+                        <Briefcase className="w-3 h-3" />
+                        {previewItem.role}
+                      </span>
+                    )}
+                    {previewItem.location && (
+                      <span className="flex items-center gap-1 text-teal-300 font-medium">
+                        <MapPin className="w-3 h-3" />
+                        {previewItem.location}
+                      </span>
+                    )}
+                    {previewItem.application_deadline && (
+                      <span className="flex items-center gap-1 text-rose-300 font-semibold">
+                        <Clock className="w-3 h-3" />
+                        Apply by: {previewItem.application_deadline}
+                      </span>
+                    )}
+                  </div>
+                )}
               </div>
               <div className="flex items-center gap-2">
                 <button
