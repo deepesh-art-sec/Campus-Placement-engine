@@ -202,11 +202,13 @@ def get_student_drive_statuses(
 
     for d in drives:
         dec = db.execute(
-            select(EligibilityDecisionModel).where(
+            select(EligibilityDecisionModel)
+            .where(
                 EligibilityDecisionModel.drive_id == d.id,
                 EligibilityDecisionModel.student_id == stu.id,
             )
-        ).scalar_one_or_none()
+            .order_by(EligibilityDecisionModel.evaluated_at.desc())
+        ).scalars().first()
 
         if dec:
             reasons = json.loads(dec.reasons_json) if dec.reasons_json else []

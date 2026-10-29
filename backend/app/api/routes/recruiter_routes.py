@@ -220,12 +220,14 @@ def get_candidate_verification_breakdown(
 
     # Tenant barrier: Must have eligibility decision for this drive
     dec = db.execute(
-        select(EligibilityDecisionModel).where(
+        select(EligibilityDecisionModel)
+        .where(
             EligibilityDecisionModel.drive_id == drive.id,
             EligibilityDecisionModel.student_id == stu.id,
             EligibilityDecisionModel.status == "eligible",
         )
-    ).scalar_one_or_none()
+        .order_by(EligibilityDecisionModel.evaluated_at.desc())
+    ).scalars().first()
 
     if not dec:
         raise HTTPException(
