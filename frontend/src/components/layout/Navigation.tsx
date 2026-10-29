@@ -119,15 +119,6 @@ export const Navigation: React.FC<NavigationProps> = ({
       icon: Home,
     },
     {
-      moduleNum: "IN",
-      id: "message_box",
-      label: "Message Box & Approvals",
-      accessibleName: "Officer Message Box and Approval Hub",
-      icon: Inbox,
-      badge: livePendingCount > 0 ? `${livePendingCount} Pending` : undefined,
-      badgeVariant: "warning",
-    },
-    {
       moduleNum: "02",
       id: "students",
       label: "Students",
@@ -216,6 +207,15 @@ export const Navigation: React.FC<NavigationProps> = ({
       label: "Operational Export",
       accessibleName: "Operational Export",
       icon: Download,
+    },
+    {
+      moduleNum: "IN",
+      id: "message_box",
+      label: "Message Box & Approvals",
+      accessibleName: "Officer Message Box and Approval Hub",
+      icon: Inbox,
+      badge: livePendingCount > 0 ? `${livePendingCount} Pending` : undefined,
+      badgeVariant: "warning",
     },
     {
       moduleNum: "11",

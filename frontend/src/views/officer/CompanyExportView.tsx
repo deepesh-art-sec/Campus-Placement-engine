@@ -3,7 +3,9 @@ import { api } from "../../api/client";
 import { Drive } from "../../types";
 import { Badge } from "../../components/common/Badge";
 import { AlertBanner } from "../../components/common/AlertBanner";
+import { OfficerMessageBoxView } from "./OfficerMessageBoxView";
 import {
+  Inbox,
   Download,
   FileSpreadsheet,
   CheckCircle2,
@@ -950,6 +952,11 @@ export const CompanyExportView: React.FC = () => {
           </div>
         </div>
       )}
+
+      {/* Down side of Operational Export: Officer Message Box & Approval Hub */}
+      <div className="pt-8 border-t border-slate-200/80">
+        <OfficerMessageBoxView />
+      </div>
     </div>
   );
 };
