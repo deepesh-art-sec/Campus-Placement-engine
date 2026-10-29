@@ -444,3 +444,37 @@ class PendingResultModel(Base):
     officer_name = Column(String(128), nullable=True)
     resolved_at = Column(DateTime, nullable=True)
     resolution_notes = Column(Text, nullable=True)
+
+
+class PlacementRequestModel(Base):
+    __tablename__ = "placement_requests"
+
+    id = Column(String(36), primary_key=True)
+    requester_id = Column(String(36), nullable=False, index=True)
+    requester_role = Column(String(32), nullable=False)  # "student", "coordinator", "recruiter", "officer"
+    requester_name = Column(String(128), nullable=False)
+    request_type = Column(String(64), nullable=False)  # "DATA_CORRECTION", "RULE_DOUBT", "EXTRA_PANEL", "CLASH_PREFERENCE", "RECRUITER_QUERY", "ADD_REMOVE_STUDENT"
+    drive_id = Column(String(36), nullable=True, index=True)
+    student_id = Column(String(36), nullable=True, index=True)
+    subject = Column(String(255), nullable=False)
+    details_json = Column(Text, nullable=False, default="{}")
+    status = Column(String(32), nullable=False, default="PENDING")  # "PENDING", "APPROVED", "REJECTED", "ANSWERED"
+    officer_reply = Column(Text, nullable=True)
+    created_at = Column(DateTime, default=datetime.datetime.utcnow, nullable=False)
+    updated_at = Column(DateTime, default=datetime.datetime.utcnow, onupdate=datetime.datetime.utcnow, nullable=False)
+
+
+class AttendanceRecordModel(Base):
+    __tablename__ = "attendance_records"
+
+    id = Column(String(36), primary_key=True)
+    drive_id = Column(String(36), nullable=False, index=True)
+    student_id = Column(String(36), nullable=False, index=True)
+    student_name = Column(String(128), nullable=False)
+    roll_no = Column(String(64), nullable=False)
+    room_name = Column(String(128), nullable=True)
+    status = Column(String(32), nullable=False, default="PRESENT")  # "PRESENT", "ABSENT", "LATE"
+    notes = Column(Text, nullable=True)
+    marked_by = Column(String(128), nullable=False)
+    created_at = Column(DateTime, default=datetime.datetime.utcnow, nullable=False)
+    updated_at = Column(DateTime, default=datetime.datetime.utcnow, onupdate=datetime.datetime.utcnow, nullable=False)

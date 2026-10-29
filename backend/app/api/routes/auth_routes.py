@@ -79,7 +79,8 @@ def login(
 ) -> AuthUserResponse:
     """Authenticates staff officers, coordinators, and recruiters."""
     client_ip = request.client.host if request.client else "unknown"
-    rate_key = f"{client_ip}:{req.username}"
+    clean_username = req.username.strip()
+    rate_key = f"{client_ip}:{clean_username}"
 
     if login_rate_limiter.is_rate_limited(rate_key):
         raise HTTPException(
@@ -87,8 +88,14 @@ def login(
             detail="Too many failed login attempts. Please wait 60 seconds before retrying.",
         )
 
-    stmt = select(UserModel).where(UserModel.username == req.username)
+    from sqlalchemy import func
+    stmt = select(UserModel).where(func.lower(UserModel.username) == clean_username.lower())
     user = db.execute(stmt).scalar_one_or_none()
+
+    if not user:
+        from backend.app.api.auth.seeder import seed_default_accounts
+        seed_default_accounts()
+        user = db.execute(stmt).scalar_one_or_none()
 
     if not user or not user.is_active or not verify_password(user.password_hash, req.password):
         login_rate_limiter.record_attempt(rate_key)
@@ -163,7 +170,7 @@ def student_login(
         login_rate_limiter.record_attempt(rate_key)
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Code expired - ask your placement officer for a new one.",
+            detail="Authentication failed. Please verify your roll number, access code, or date of birth.",
         )
 
     login_rate_limiter.reset(rate_key)

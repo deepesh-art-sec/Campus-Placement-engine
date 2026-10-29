@@ -236,7 +236,7 @@ export const ScheduleBoardView: React.FC<ScheduleBoardViewProps> = ({ initialDri
         <div>
           <h1 className="text-2xl font-black text-slate-900 tracking-tight">Interview & Test Schedule Grid</h1>
           <p className="text-sm text-slate-500 mt-1">
-            Google OR-Tools CP-SAT discrete solver. Each student is assigned strictly to their exact time slot with 0 repetition.
+            Discrete constraint scheduler solver. Each student is assigned strictly to their exact time slot with 0 repetition.
           </p>
         </div>
 
@@ -270,7 +270,7 @@ export const ScheduleBoardView: React.FC<ScheduleBoardViewProps> = ({ initialDri
       {/* Heavy Action Progress */}
       {scheduling && (
         <ProgressBar
-          label="Running CP-SAT Discrete Constraint Solver..."
+          label="Running Discrete Constraint Scheduler..."
           progressPercent={progress}
           isCancellable={true}
           onCancel={handleCancelScheduling}

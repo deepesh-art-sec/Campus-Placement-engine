@@ -55,7 +55,7 @@ def generate_schedule(
     current_user: UserModel = Depends(require_officer_or_coordinator),
     db: Session = Depends(get_db),
 ) -> dict[str, Any]:
-    """Generates an optimal, clash-free schedule using Google OR-Tools CP-SAT."""
+    """Generates an optimal, clash-free schedule using discrete constraint engine."""
     drive_stmt = select(DriveModel).where(DriveModel.id == req.drive_id)
     drive_entity = db.execute(drive_stmt).scalar_one_or_none()
     if not drive_entity:

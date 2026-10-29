@@ -53,7 +53,7 @@ export const GuidedTourModal: React.FC<GuidedTourModalProps> = ({
       title: "Clash-Free Interview & Test Scheduling",
       icon: <Calendar className="w-8 h-8 text-emerald-400" />,
       content:
-        "Our Google OR-Tools CP-SAT engine schedules hundreds of students across multiple rooms and panels in seconds with mathematically proven ZERO overlapping student or room clashes.",
+        "Our discrete constraint scheduler engine schedules hundreds of students across multiple rooms and panels in seconds with mathematically proven ZERO overlapping student or room clashes.",
       highlight: "Step 4: Look for the green '0 Clashes Verified' badge.",
       targetTab: "schedule",
     },

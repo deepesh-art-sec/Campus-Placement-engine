@@ -22,6 +22,9 @@ def test_migration_upgrade_and_downgrade_cycle() -> None:
 
     try:
         alembic_cfg = Config(INI_PATH)
+        alembic_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "alembic"))
+        alembic_cfg.set_main_option("script_location", alembic_dir)
+        alembic_cfg.set_main_option("version_locations", os.path.join(alembic_dir, "versions"))
         alembic_cfg.set_main_option("sqlalchemy.url", test_db_url)
 
         # 1. Upgrade to head

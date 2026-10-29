@@ -1,0 +1,62 @@
+{
+  "mission": "MISSION 2 \u2014 EXTREME DATA VOLUME",
+  "timestamp": "2026-10-29T13:15:22.271817",
+  "benchmarks": [
+    {
+      "student_count": 1800,
+      "generation_time_s": 0.017,
+      "evaluation_time_s": 0.191,
+      "eval_throughput_per_s": 9442.8,
+      "eligible_count": 180,
+      "ineligible_count": 1620,
+      "flagged_count": 0,
+      "what_if_simulation_time_s": 0.157,
+      "what_if_added_count": 85,
+      "export_sample_size": 180,
+      "export_time_s": 0.036,
+      "export_size_kb": 9.5
+    },
+    {
+      "student_count": 5000,
+      "generation_time_s": 0.042,
+      "evaluation_time_s": 0.427,
+      "eval_throughput_per_s": 11698.5,
+      "eligible_count": 470,
+      "ineligible_count": 4530,
+      "flagged_count": 0,
+      "what_if_simulation_time_s": 0.467,
+      "what_if_added_count": 278,
+      "export_sample_size": 470,
+      "export_time_s": 0.057,
+      "export_size_kb": 16.5
+    },
+    {
+      "student_count": 10000,
+      "generation_time_s": 0.085,
+      "evaluation_time_s": 0.976,
+      "eval_throughput_per_s": 10247.7,
+      "eligible_count": 945,
+      "ineligible_count": 9055,
+      "flagged_count": 0,
+      "what_if_simulation_time_s": 1.119,
+      "what_if_added_count": 554,
+      "export_sample_size": 945,
+      "export_time_s": 0.056,
+      "export_size_kb": 27.8
+    },
+    {
+      "student_count": 25000,
+      "generation_time_s": 0.21,
+      "evaluation_time_s": 2.572,
+      "eval_throughput_per_s": 9721.7,
+      "eligible_count": 2369,
+      "ineligible_count": 22631,
+      "flagged_count": 0,
+      "what_if_simulation_time_s": 4.339,
+      "what_if_added_count": 1425,
+      "export_sample_size": 2000,
+      "export_time_s": 0.085,
+      "export_size_kb": 52.9
+    }
+  ]
+}

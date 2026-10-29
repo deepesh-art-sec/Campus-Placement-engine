@@ -1,0 +1,166 @@
+{
+  "mission": "MISSION 6 & 7 \u2014 ELIGIBILITY FUZZ AND POLICY ADVERSARIAL",
+  "timestamp": "2026-10-29T13:21:50.472884",
+  "test_cases": [
+    {
+      "category": "CGPA Boundary",
+      "name": "7.49 CGPA (Strictly below 7.50)",
+      "passed": true,
+      "expected": "INELIGIBLE",
+      "actual": "ineligible",
+      "details": "Correctly identifies sub-threshold without inappropriate rounding up"
+    },
+    {
+      "category": "CGPA Boundary",
+      "name": "7.50 CGPA (Exact boundary)",
+      "passed": true,
+      "expected": "ELIGIBLE",
+      "actual": "eligible",
+      "details": "Exact threshold value matches requirement"
+    },
+    {
+      "category": "CGPA Boundary",
+      "name": "7.51 CGPA (Above boundary)",
+      "passed": true,
+      "expected": "ELIGIBLE",
+      "actual": "eligible",
+      "details": "Properly passes"
+    },
+    {
+      "category": "Percentage Boundary",
+      "name": "59.9% 10th Marks (Below 60.0%)",
+      "passed": true,
+      "expected": "INELIGIBLE",
+      "actual": "ineligible",
+      "details": "Strict boundary preservation on secondary school marks"
+    },
+    {
+      "category": "Percentage Boundary",
+      "name": "60.0% 10th Marks (Exact 60.0%)",
+      "passed": true,
+      "expected": "ELIGIBLE",
+      "actual": "eligible",
+      "details": "Exact percentage threshold matches requirement"
+    },
+    {
+      "category": "Temporal Backlogs",
+      "name": "Cleared 35 Days Prior",
+      "passed": true,
+      "expected": "ELIGIBLE",
+      "actual": "eligible",
+      "details": "Historical backlog cleared well before recruitment drive is eligible"
+    },
+    {
+      "category": "Temporal Backlogs",
+      "name": "Cleared 1 Day Prior",
+      "passed": true,
+      "expected": "ELIGIBLE",
+      "actual": "eligible",
+      "details": "Backlog cleared on the eve of the drive satisfies active backlogs=0"
+    },
+    {
+      "category": "Temporal Backlogs",
+      "name": "Cleared On Drive Day",
+      "passed": true,
+      "expected": "ELIGIBLE",
+      "actual": "eligible",
+      "details": "Results published on drive morning count as cleared"
+    },
+    {
+      "category": "Temporal Backlogs",
+      "name": "Cleared 1 Day AFTER Drive Date",
+      "passed": true,
+      "expected": "INELIGIBLE",
+      "actual": "ineligible",
+      "details": "Backlog cleared post-drive date was active at evaluation as-of date"
+    },
+    {
+      "category": "Temporal Backlogs",
+      "name": "Active Standing Backlog",
+      "passed": true,
+      "expected": "INELIGIBLE",
+      "actual": "ineligible",
+      "details": "Standing active backlog correctly blocked under 'no active backlogs'"
+    },
+    {
+      "category": "Data Integrity",
+      "name": "Missing 12th Percentage Profile Record",
+      "passed": true,
+      "expected": "FLAGGED",
+      "actual": "flagged",
+      "details": "Ambiguity safety: missing field is routed to TPO review queue instead of silent pass/fail"
+    },
+    {
+      "category": "Unicode Fuzzing",
+      "name": "Name: Fran\u00e7ois M\u00fcller-Garc\u00eda",
+      "passed": true,
+      "expected": "ELIGIBLE",
+      "actual": "eligible",
+      "details": "Full UTF-8 support preserved in student aggregate and audit decision"
+    },
+    {
+      "category": "Unicode Fuzzing",
+      "name": "Name: Dr. A. P. J. Abdul Kalam Jr.",
+      "passed": true,
+      "expected": "ELIGIBLE",
+      "actual": "eligible",
+      "details": "Full UTF-8 support preserved in student aggregate and audit decision"
+    },
+    {
+      "category": "Unicode Fuzzing",
+      "name": "Name: \u041e\u043b\u044c\u0433\u0430 \u0418\u0432\u0430\u043d\u043e\u0432\u0430",
+      "passed": true,
+      "expected": "ELIGIBLE",
+      "actual": "eligible",
+      "details": "Full UTF-8 support preserved in student aggregate and audit decision"
+    },
+    {
+      "category": "Unicode Fuzzing",
+      "name": "Name: Sakura \u685c Tanaka",
+      "passed": true,
+      "expected": "ELIGIBLE",
+      "actual": "eligible",
+      "details": "Full UTF-8 support preserved in student aggregate and audit decision"
+    },
+    {
+      "category": "Offer Policy 1",
+      "name": "Strict One-Offer Non-Dream (Student has 4.5 LPA, target is 8.0 LPA)",
+      "passed": true,
+      "expected": "BLOCKED",
+      "actual": "blocked",
+      "details": "Correctly blocked: 'Blocked under Policy Clause 2.2: You hold an offer from TCS (4.5 LPA). Under the One-Offer policy, you may only appear for Dream companies offering >= 10.0 LPA. This drive offers 8.0 LPA, which is below the Dream exception threshold (10.0 LPA).'"
+    },
+    {
+      "category": "Offer Policy 1",
+      "name": "Strict One-Offer Dream Exception (Target is 25.0 LPA >= 10.0 LPA)",
+      "passed": true,
+      "expected": "ALLOWED",
+      "actual": "allowed",
+      "details": "Dream upgrade allowed: 'Allowed under Policy Clause 2.1: Dream exception approved. Drive CTC of 25.0 LPA meets the Dream threshold (10.0 LPA) and satisfies the 1.0x upgrade rule over your 4.5 LPA offer.'"
+    },
+    {
+      "category": "Offer Policy 2",
+      "name": "Progressive Multiplier (25 LPA vs 10 LPA existing, 2.5x >= 1.5x)",
+      "passed": true,
+      "expected": "ALLOWED",
+      "actual": "allowed",
+      "details": "Multiplier allowed: Allowed: You hold 1 offer(s), which is within your season quota of 2."
+    },
+    {
+      "category": "Offer Policy 2",
+      "name": "Progressive Multiplier Sub-threshold (12 LPA vs 10 LPA, 1.2x < 1.5x)",
+      "passed": true,
+      "expected": "BLOCKED",
+      "actual": "blocked",
+      "details": "Correctly blocked: Blocked under Policy Clause 2.3: Your current offer from Wipro Turbo is 10.0 LPA. Under the 1.5x upgrade policy, any subsequent drive must offer at least 15.0 LPA. This drive offers 12.0 LPA."
+    },
+    {
+      "category": "Offer Policy 3",
+      "name": "Tiered Quota (Dream Company Exception @ 25 LPA)",
+      "passed": true,
+      "expected": "ALLOWED",
+      "actual": "allowed",
+      "details": "Dream company privilege applied: Allowed: You hold 1 offer(s), which is within your season quota of 3."
+    }
+  ]
+}

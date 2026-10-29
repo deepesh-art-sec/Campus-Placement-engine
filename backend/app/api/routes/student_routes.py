@@ -1284,3 +1284,129 @@ def portal_change_password(
         "message": "Password updated successfully.",
         "username": current_user.username,
     }
+
+
+@router.post("/api/portal/correction-request")
+def portal_correction_request(
+    req: dict[str, Any],
+    current_user: UserModel = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> dict[str, Any]:
+    """Allows a student to flag a discrepancy in their academic profile to the officer."""
+    import uuid
+    from backend.app.storage.models.entities import PlacementRequestModel
+
+    field_name = str(req.get("field", "General Profile"))
+    desc = str(req.get("description", "")).strip()
+    new_val = req.get("new_value")
+
+    if not desc:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Please provide a brief description of what looks wrong.",
+        )
+
+    req_id = str(uuid.uuid4())
+    req_entity = PlacementRequestModel(
+        id=req_id,
+        requester_id=current_user.id,
+        requester_role="student",
+        requester_name=current_user.username,
+        request_type="DATA_CORRECTION",
+        student_id=current_user.student_id,
+        subject=f"Student Profile Correction: {field_name}",
+        details_json=json.dumps({"field": field_name, "description": desc, "new_value": new_val}),
+        status="PENDING",
+        created_at=datetime.datetime.utcnow(),
+        updated_at=datetime.datetime.utcnow(),
+    )
+    db.add(req_entity)
+    db.commit()
+
+    return {
+        "status": "success",
+        "request_id": req_id,
+        "message": "Correction request submitted to the Training & Placement Officer.",
+    }
+
+@router.get("/api/portal/calendar-ics")
+def portal_download_calendar_ics(
+    current_user: UserModel = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> Response:
+    """Generates a local RFC-5545 iCalendar (.ics) file for candidate interview slots."""
+    stmt = (
+        select(SlotModel)
+        .where(
+            (SlotModel.student_id == current_user.student_id)
+            | (SlotModel.student_id == current_user.username)
+        )
+        .order_by(SlotModel.start_time.asc())
+    )
+    slots = db.execute(stmt).scalars().all()
+
+    ics_lines = [
+        "BEGIN:VCALENDAR",
+        "VERSION:2.0",
+        "PRODID:-//DEVIATHON 2.0//Campus Placement Engine//EN",
+        "CALSCALE:GREGORIAN",
+        "METHOD:PUBLISH",
+    ]
+
+    for sl in slots:
+        comp_name = sl.drive.company_name if sl.drive else "Campus Recruiter"
+        venue_name = sl.room.name if sl.room else "Placement Cell Cabin"
+        st = sl.start_time.strftime("%Y%m%dT%H%M%SZ")
+        et = sl.end_time.strftime("%Y%m%dT%H%M%SZ") if sl.end_time else st
+
+        ics_lines.extend([
+            "BEGIN:VEVENT",
+            f"UID:{sl.id}@placementengine.local",
+            f"DTSTAMP:{datetime.datetime.utcnow().strftime('%Y%m%dT%H%M%SZ')}",
+            f"DTSTART:{st}",
+            f"DTEND:{et}",
+            f"SUMMARY:Interview: {comp_name} (Round {sl.round_number})",
+            f"LOCATION:{venue_name}",
+            f"DESCRIPTION:Confirmed placement interview slot for {current_user.username}.",
+            "STATUS:CONFIRMED",
+            "END:VEVENT",
+        ])
+
+    ics_lines.append("END:VCALENDAR")
+    ics_content = "\r\n".join(ics_lines)
+
+    return Response(
+        content=ics_content,
+        media_type="text/calendar",
+        headers={"Content-Disposition": f"attachment; filename=schedule_{current_user.username}.ics"},
+    )
+
+@router.get("/api/portal/policy-status")
+def portal_get_policy_status(
+    current_user: UserModel = Depends(require_student),
+    db: Session = Depends(get_db),
+) -> dict[str, Any]:
+    """Returns candidate's institutional offer policy status and upgrade rights."""
+    assert current_user.student_id is not None
+    stmt = select(StudentModel).where(StudentModel.id == current_user.student_id)
+    student = db.execute(stmt).scalar_one_or_none()
+    if not student:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Student not found.")
+
+    domain_stu = student_entity_to_domain(student)
+    policy = STRICT_ONE_OFFER_POLICY
+
+    offers_count = len(domain_stu.existing_offers)
+    max_offers = policy.max_total_offers
+    can_sit_dream = policy.allow_upgrade_to_dream and offers_count < (max_offers + policy.max_dream_offers)
+
+    return {
+        "student_roll_no": domain_stu.roll_no,
+        "policy_name": policy.name,
+        "total_offers_secured": offers_count,
+        "max_offers_allowed": max_offers,
+        "is_locked_out": offers_count >= max_offers and not can_sit_dream,
+        "can_participate_in_dream_drives": can_sit_dream,
+        "dream_threshold_lpa": policy.dream_threshold_lpa,
+        "plain_english_summary": policy.to_plain_english(),
+    }

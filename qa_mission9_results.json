@@ -1,0 +1,175 @@
+{
+  "mission": "MISSION 9 \u2014 ANNOUNCEMENT PARSER STRESS",
+  "timestamp": "2026-10-29T13:22:25.852018",
+  "announcements_evaluated": 25,
+  "perfect_matches": 25,
+  "field_accuracy": {},
+  "file_results": [
+    {
+      "filename": "01_google_announcement.txt",
+      "company": "Google",
+      "perfect_match": true,
+      "mismatches": []
+    },
+    {
+      "filename": "02_microsoft_announcement.txt",
+      "company": "Microsoft",
+      "perfect_match": true,
+      "mismatches": []
+    },
+    {
+      "filename": "03_amazon_announcement.txt",
+      "company": "Amazon",
+      "perfect_match": true,
+      "mismatches": []
+    },
+    {
+      "filename": "04_goldman_sachs_announcement.txt",
+      "company": "Goldman Sachs",
+      "perfect_match": true,
+      "mismatches": []
+    },
+    {
+      "filename": "05_oracle_announcement.txt",
+      "company": "Oracle",
+      "perfect_match": true,
+      "mismatches": []
+    },
+    {
+      "filename": "06_qualcomm_announcement.txt",
+      "company": "Qualcomm",
+      "perfect_match": true,
+      "mismatches": []
+    },
+    {
+      "filename": "07_cisco_announcement.txt",
+      "company": "Cisco",
+      "perfect_match": true,
+      "mismatches": []
+    },
+    {
+      "filename": "08_deloitte_usi_email.eml",
+      "company": "Deloitte USI",
+      "perfect_match": true,
+      "mismatches": []
+    },
+    {
+      "filename": "09_tata_consultancy_services_email.eml",
+      "company": "Tata Consultancy Services",
+      "perfect_match": true,
+      "mismatches": []
+    },
+    {
+      "filename": "10_infosys_power_programmer_email.eml",
+      "company": "Infosys Power Programmer",
+      "perfect_match": true,
+      "mismatches": []
+    },
+    {
+      "filename": "11_wipro_turbo_email.eml",
+      "company": "Wipro Turbo",
+      "perfect_match": true,
+      "mismatches": []
+    },
+    {
+      "filename": "12_accenture_advanced_tech_email.eml",
+      "company": "Accenture Advanced Tech",
+      "perfect_match": true,
+      "mismatches": []
+    },
+    {
+      "filename": "13_siemens_email.eml",
+      "company": "Siemens",
+      "perfect_match": true,
+      "mismatches": []
+    },
+    {
+      "filename": "14_larsen_and_toubro_spec.pdf",
+      "company": "Larsen & Toubro",
+      "perfect_match": true,
+      "mismatches": []
+    },
+    {
+      "filename": "15_texas_instruments_spec.pdf",
+      "company": "Texas Instruments",
+      "perfect_match": true,
+      "mismatches": []
+    },
+    {
+      "filename": "16_intel_spec.pdf",
+      "company": "Intel",
+      "perfect_match": true,
+      "mismatches": []
+    },
+    {
+      "filename": "17_morgan_stanley_spec.pdf",
+      "company": "Morgan Stanley",
+      "perfect_match": true,
+      "mismatches": []
+    },
+    {
+      "filename": "18_samsung_randd_spec.pdf",
+      "company": "Samsung R&D",
+      "perfect_match": true,
+      "mismatches": []
+    },
+    {
+      "filename": "19_tata_motors_spec.pdf",
+      "company": "Tata Motors",
+      "perfect_match": true,
+      "mismatches": []
+    },
+    {
+      "filename": "20_reliance_industries_jd.docx",
+      "company": "Reliance Industries",
+      "perfect_match": true,
+      "mismatches": []
+    },
+    {
+      "filename": "21_itc_limited_jd.docx",
+      "company": "ITC Limited",
+      "perfect_match": true,
+      "mismatches": []
+    },
+    {
+      "filename": "22_biocon_jd.docx",
+      "company": "Biocon",
+      "perfect_match": true,
+      "mismatches": []
+    },
+    {
+      "filename": "23_zs_associates_jd.docx",
+      "company": "ZS Associates",
+      "perfect_match": true,
+      "mismatches": []
+    },
+    {
+      "filename": "24_barclays_jd.docx",
+      "company": "Barclays",
+      "perfect_match": true,
+      "mismatches": []
+    },
+    {
+      "filename": "25_atlassian_jd.docx",
+      "company": "Atlassian",
+      "perfect_match": true,
+      "mismatches": []
+    }
+  ],
+  "stress_tests": [
+    {
+      "test": "100 Repeated Parsings",
+      "passed": true,
+      "duration_seconds": 0.036,
+      "throughput_doc_per_sec": 2800.0
+    },
+    {
+      "test": "Scanned PDF Detection Without Text Layer",
+      "passed": true
+    },
+    {
+      "test": "Dirty Formatted Free Text Extraction",
+      "passed": true
+    }
+  ]
+}

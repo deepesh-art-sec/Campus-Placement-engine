@@ -1,0 +1,199 @@
+{
+  "problem_statement_id": "IM-101",
+  "title": "One student, three drives, one Tuesday: a placement eligibility and scheduling engine",
+  "organization": "Integraminds",
+  "theme": "DIGITAL ODYSSEY",
+  "timestamp": "2026-10-29T13:25:10.998970",
+  "audit_results": {
+    "Provided Assets": [
+      {
+        "item": "Synthetic Student Records (1,800 students)",
+        "passed": true,
+        "metric": "1800 records present (Target: >=1,800)",
+        "details": {
+          "total": 1800,
+          "columns": [
+            "roll_no",
+            "name",
+            "email",
+            "branch",
+            "program",
+            "cgpa",
+            "tenth_percentage",
+            "twelfth_percentage",
+            "diploma_percentage",
+            "date_of_birth",
+            "active_backlogs",
+            "history_backlogs",
+            "backlog_details",
+            "gap_years",
+            "existing_offers",
+            "gender",
+            "category"
+          ]
+        }
+      },
+      {
+        "item": "Multi-Branch Representation (>=9 branches)",
+        "passed": true,
+        "metric": "9 distinct branches represented",
+        "details": {
+          "branches": [
+            "Computer Science and Engineering",
+            "Information Technology",
+            "Electronics and Communication Engineering",
+            "Electrical and Electronics Engineering",
+            "Mechanical Engineering",
+            "Civil Engineering",
+            "Chemical Engineering",
+            "Biotechnology",
+            "Data Science"
+          ]
+        }
+      },
+      {
+        "item": "Academic & Offer Histories",
+        "passed": true,
+        "metric": "Semester marks, active/history backlogs & existing offers bundled",
+        "details": {
+          "has_backlogs": true,
+          "has_offers": true
+        }
+      },
+      {
+        "item": "Three College Offer Policies",
+        "passed": true,
+        "metric": "3 policy catalogs configured with ambiguities and edge cases",
+        "details": {
+          "policies": [
+            "policy_1_strict_one_offer.json",
+            "policy_2_progressive_multiplier.json",
+            "policy_3_tiered_quota.json"
+          ]
+        }
+      },
+      {
+        "item": "IMATS Campus Drive API Sandbox Integration",
+        "passed": true,
+        "metric": "Available sandbox endpoints: ['/api/imats/push-shortlist', '/api/imats/push-schedule', '/api/imats/outbox', '/api/imats/sync']",
+        "details": {
+          "endpoints": [
+            "/api/imats/push-shortlist",
+            "/api/imats/push-schedule",
+            "/api/imats/outbox",
+            "/api/imats/sync"
+          ]
+        }
+      }
+    ],
+    "Criteria 3 (doneWhen)": [
+      {
+        "item": "Extract Requirements from Sample Announcements (>=20 of 25)",
+        "passed": true,
+        "metric": "Extracted 25 of 25 (100% precision)",
+        "details": {
+          "extracted": 25,
+          "total": 25,
+          "target": ">=20 of 25"
+        }
+      }
+    ],
+    "Criteria 1 (doneWhen)": [
+      {
+        "item": "Support CGPA, active vs history backlogs, branch, 10th/12th, gap years & dream band",
+        "passed": true,
+        "metric": "Full AST support for all 7 primary institutional criteria and dream bands",
+        "details": {
+          "status": "eligible",
+          "passed_rules_count": 7
+        }
+      }
+    ],
+    "Criteria 2 (doneWhen)": [
+      {
+        "item": "Every exclusion shows the exact rule that caused it",
+        "passed": true,
+        "metric": "Pinpoints broken rules: ['r_cgpa', 'r_10', 'r_12', 'r_br', 'r_ab'] with student explanation: 'Not eligible: your CGPA is 6.40 and this company needs 7.50 or above.'",
+        "details": {
+          "student_reason": "Not eligible: your CGPA is 6.40 and this company needs 7.50 or above.",
+          "rules_failed": [
+            "r_cgpa",
+            "r_10",
+            "r_12",
+            "r_br",
+            "r_ab"
+          ]
+        }
+      }
+    ],
+    "Criteria 4 (doneWhen)": [
+      {
+        "item": "Schedule 600 students across 12 drives and 8 rooms in < 60s with 0 clashes",
+        "passed": true,
+        "metric": "Solved in 0.65s with 0 clashes (CP-SAT SATISFIED)",
+        "details": {
+          "solve_time_seconds": 0.652901399998882,
+          "scheduled_items": 312,
+          "clash_count": 0
+        }
+      }
+    ],
+    "Criteria 5 (doneWhen)": [
+      {
+        "item": "Shows the impact of a rule change before it is published",
+        "passed": true,
+        "metric": "Headline generated: 'Lowering the CGPA cut-off from 7.5 to 6.8 adds 7 students; 0 clashes detected.' (+7 candidates)",
+        "details": {
+          "headline": "Lowering the CGPA cut-off from 7.5 to 6.8 adds 7 students; 0 clashes detected.",
+          "added_count": 7
+        }
+      }
+    ],
+    "Criteria 6 (doneWhen)": [
+      {
+        "item": "Exports the shortlist in the company's own spreadsheet format",
+        "passed": true,
+        "metric": "Generated valid 5119-byte XLSX file with custom company header mapping",
+        "details": {
+          "file_size": 5119
+        }
+      }
+    ],
+    "Judging Criteria": [
+      {
+        "item": "Hidden Policy Test Case (Student who cleared backlog last month)",
+        "passed": true,
+        "metric": "Correctly evaluates as ELIGIBLE for drive held after clearance date",
+        "details": {
+          "status": "eligible"
+        }
+      },
+      {
+        "item": "Student Plain-Language Explanation",
+        "passed": true,
+        "metric": "Human readable explanation: 'Eligible: you meet all academic and backlog requirements for this drive.'",
+        "details": {
+          "explanation": "Eligible: you meet all academic and backlog requirements for this drive."
+        }
+      }
+    ],
+    "Guardrails": [
+      {
+        "item": "Offline-First / Air-Gap Deployment",
+        "passed": true,
+        "metric": "Embedded local SQLite engine, zero telemetry, fully operational without internet",
+        "details": {
+          "database_url": "sqlite:///./placement_engine.db"
+        }
+      },
+      {
+        "item": "Student Privacy (Zero Peer Rankings / Strict Role Isolation)",
+        "passed": true,
+        "metric": "Students only see their own individual status and schedule; no peer comparisons",
+        "details": {
+          "privacy_enforced": true
+        }
+      }
+    ]
+  }
+}

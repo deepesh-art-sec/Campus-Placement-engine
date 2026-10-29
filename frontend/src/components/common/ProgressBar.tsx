@@ -50,7 +50,7 @@ export const ProgressBar: React.FC<ProgressBarProps> = ({
       {subLabel && (
         <p className="text-xs text-slate-400 italic flex items-center justify-between">
           <span>{subLabel}</span>
-          <span className="text-[11px] text-emerald-400 font-mono">Offline CP-SAT engine</span>
+          <span className="text-[11px] text-emerald-400 font-mono">Deterministic scheduler engine</span>
         </p>
       )}
     </div>

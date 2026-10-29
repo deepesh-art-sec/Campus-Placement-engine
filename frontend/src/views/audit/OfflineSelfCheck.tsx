@@ -87,7 +87,7 @@ export const OfflineSelfCheck: React.FC = () => {
               <Badge variant="success" size="sm">100% Verified Offline</Badge>
             </div>
             <p className="text-xs text-slate-300 mt-1 max-w-md leading-relaxed">
-              All student data, drive requirements, CP-SAT scheduler math, and offer policy enforcement execute strictly within this machine's local loopback interface.
+              All student data, drive requirements, constraint scheduler math, and offer policy enforcement execute strictly within this machine's local loopback interface.
             </p>
           </div>
         </div>

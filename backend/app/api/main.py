@@ -21,6 +21,8 @@ from backend.app.api.auth.csrf import CSRF_COOKIE_NAME
 from backend.app.api.auth.seeder import seed_default_accounts
 from backend.app.api.logging.logger import get_logger
 from backend.app.api.routes import (
+    admin_user_routes,
+    attendance_routes,
     audit_routes,
     auth_routes,
     announcement_routes,
@@ -36,6 +38,7 @@ from backend.app.api.routes import (
     policy_routes,
     publish_routes,
     recruiter_routes,
+    request_routes,
     schedule_routes,
     student_routes,
     user_routes,
@@ -74,6 +77,7 @@ def _get_lan_ip() -> str:
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     """Application lifespan context for startup initialization."""
+    import backend.app.storage.models.entities
     from backend.app.storage.database import Base, engine
     Base.metadata.create_all(bind=engine)
     seed_default_accounts()
@@ -160,6 +164,9 @@ app.include_router(compare_routes.router)
 app.include_router(audit_routes.router)
 app.include_router(export_routes.router)
 app.include_router(recruiter_routes.router)
+app.include_router(request_routes.router)
+app.include_router(attendance_routes.router)
+app.include_router(admin_user_routes.router)
 app.include_router(imats_routes.router)
 app.include_router(announcement_routes.router)
 app.include_router(backup_routes.router)

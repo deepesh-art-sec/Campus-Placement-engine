@@ -1,0 +1,66 @@
+{
+  "mission": "MISSION 10, 11 & 12 \u2014 API, EXPORT & SECURITY STRESS",
+  "timestamp": "2026-10-29T13:25:00.606839",
+  "test_cases": [
+    {
+      "category": "API Security",
+      "name": "Unauthenticated Access to Schedule Generator",
+      "passed": true,
+      "details": "HTTP 401 properly rejected unauthenticated caller"
+    },
+    {
+      "category": "API Security",
+      "name": "Officer Role Authorized Drive Query",
+      "passed": true,
+      "details": "HTTP 200 successfully returned 15 drives for placement officer"
+    },
+    {
+      "category": "API Security",
+      "name": "Student Role Authentication (BT210001)",
+      "passed": true,
+      "details": "HTTP 200 student login successful"
+    },
+    {
+      "category": "API Security",
+      "name": "Student Role Blocked from Officer Routes",
+      "passed": true,
+      "details": "HTTP 403 strictly blocked student from officer schedule generation"
+    },
+    {
+      "category": "API Security",
+      "name": "Student Role Accessing Student Portal",
+      "passed": true,
+      "details": "HTTP 200 successfully permitted access to personal candidate dashboard"
+    },
+    {
+      "category": "Privacy Isolation",
+      "name": "Zero Student Ranking & Peer Isolation",
+      "passed": true,
+      "details": "Student portal strictly returns individual candidate status; zero relative ranking or peer scores exposed"
+    },
+    {
+      "category": "Export Security",
+      "name": "Spreadsheet Formula Injection Defenses",
+      "passed": true,
+      "details": "Exported CSV safely rendered without executing formulas (129 bytes)"
+    },
+    {
+      "category": "Export Security",
+      "name": "Lossless Round-Trip XLSX Data Integrity",
+      "passed": true,
+      "details": "Exported XLSX successfully re-imported with 100% field-level fidelity"
+    },
+    {
+      "category": "Database Integrity",
+      "name": "Transaction Rollback on Integrity Failure",
+      "passed": true,
+      "details": "Aborted write rolled back cleanly; zero ghost records created (Table count preserved at 1,806)"
+    },
+    {
+      "category": "IMATS Integration",
+      "name": "Sandbox Shortlist Push Endpoint",
+      "passed": true,
+      "details": "HTTP 200 properly queued/dispatched to IMATS applicant tracking sandbox"
+    }
+  ]
+}
