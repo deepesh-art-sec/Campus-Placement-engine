@@ -17,7 +17,18 @@ import uuid
 from datetime import date, datetime
 from typing import Any
 
-import pandas as pd
+try:
+    import pandas as pd
+except ImportError:
+    class _DummyPandas:
+        @staticmethod
+        def isna(val: Any) -> bool:
+            return val is None or (isinstance(val, float) and val != val)
+
+        class Timestamp:
+            pass
+
+    pd = _DummyPandas()  # type: ignore
 from pydantic import BaseModel, ConfigDict, Field
 
 from backend.app.domain.models import (
@@ -375,6 +386,8 @@ class StudentImporter:
         Parses CSV or Excel file content, audits every single row, and returns an ImportReport.
         """
         # 1. Read DataFrame
+        if not hasattr(pd, "read_csv"):
+            raise ValueError("pandas is required for bulk spreadsheet parsing on this environment.")
         if filename.endswith(".csv"):
             if isinstance(file_content, bytes):
                 df = pd.read_csv(io.BytesIO(file_content))

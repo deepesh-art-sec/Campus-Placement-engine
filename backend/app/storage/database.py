@@ -12,6 +12,32 @@ from sqlalchemy.orm import DeclarativeBase, Session, sessionmaker
 
 DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./placement_engine.db")
 
+# Vercel Serverless environment compatibility:
+# AWS Lambda root (/var/task) is read-only. When running on Vercel with SQLite, copy
+# the seeded database into temp storage so that write operations (auth, sessions, updates) succeed.
+if (os.getenv("VERCEL") or os.getenv("AWS_LAMBDA_FUNCTION_NAME")) and DATABASE_URL.startswith("sqlite"):
+    import shutil
+    import tempfile
+    from pathlib import Path
+
+    tmp_dir = Path(tempfile.gettempdir())
+    tmp_db = tmp_dir / "placement_engine.db"
+    if not tmp_db.exists():
+        candidates = [
+            Path(os.getcwd()) / "placement_engine.db",
+            Path(__file__).resolve().parents[3] / "placement_engine.db",
+            Path("/var/task/placement_engine.db"),
+        ]
+        for src in candidates:
+            if src.exists():
+                try:
+                    shutil.copy2(src, tmp_db)
+                    break
+                except Exception:
+                    pass
+    if tmp_db.exists():
+        DATABASE_URL = f"sqlite:///{tmp_db.as_posix()}"
+
 # For SQLite, ensure connection arguments for multithreading and robust busy timeouts
 connect_args = {}
 if DATABASE_URL.startswith("sqlite"):

@@ -17,7 +17,12 @@ from typing import Any
 if "pyarrow" not in sys.modules:
     sys.modules["pyarrow"] = None  # type: ignore[assignment]
 
-from ortools.sat.python import cp_model
+try:
+    from ortools.sat.python import cp_model
+    HAS_ORTOOLS = True
+except ImportError:
+    cp_model = None
+    HAS_ORTOOLS = False
 
 from backend.app.scheduler.heuristic import DSaturHeuristicScheduler
 from backend.app.scheduler.infeasibility import InfeasibilityExplainer
@@ -61,6 +66,10 @@ class CpSatPlacementScheduler:
                 solver_name="cp-sat",
                 is_optimal=True,
             )
+
+        # Fallback for serverless or constrained environments where OR-Tools is omitted
+        if not HAS_ORTOOLS or cp_model is None:
+            return self.heuristic.schedule(drives, rooms, cfg, existing_slots=existing_slots)
 
         active_rooms = [r for r in rooms if r.is_active]
         if not active_rooms:
