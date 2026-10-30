@@ -5,6 +5,7 @@ import { Badge } from "../../components/common/Badge";
 import { Drawer } from "../../components/common/Drawer";
 import { ProgressBar } from "../../components/common/ProgressBar";
 import { AlertBanner } from "../../components/common/AlertBanner";
+import { Modal } from "../../components/common/Modal";
 import {
   CheckCircle,
   XCircle,
@@ -17,6 +18,7 @@ import {
   ChevronRight,
   Shield,
   FileCheck,
+  Trash2,
 } from "lucide-react";
 
 interface EligibilityTableViewProps {
@@ -34,6 +36,10 @@ export const EligibilityTableView: React.FC<EligibilityTableViewProps> = ({ init
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedStudent, setSelectedStudent] = useState<EligibilityDecisionItem | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+  const [deleteReason, setDeleteReason] = useState("");
+  const [deleting, setDeleting] = useState(false);
 
   const abortControllerRef = useRef<AbortController | null>(null);
 
@@ -76,6 +82,37 @@ export const EligibilityTableView: React.FC<EligibilityTableViewProps> = ({ init
       fetchDecisions(selectedDriveId);
     }
   }, [selectedDriveId]);
+
+  const handleConfirmDeleteDrive = async () => {
+    if (!selectedDriveId) return;
+    if (!deleteReason.trim()) {
+      setError("Please provide a mandatory reason for removing the drive.");
+      return;
+    }
+    const drvToDelete = drives.find((d) => d.id === selectedDriveId);
+    try {
+      setDeleting(true);
+      setError(null);
+      await api.delete(
+        `/api/drives/${selectedDriveId}?reason=${encodeURIComponent(deleteReason)}`
+      );
+      setSuccess(`Company '${drvToDelete?.company_name || "Drive"}' and all associated records permanently removed.`);
+      setDeleteModalOpen(false);
+      setDeleteReason("");
+      const remaining = drives.filter((d) => d.id !== selectedDriveId);
+      setDrives(remaining);
+      if (remaining.length > 0) {
+        setSelectedDriveId(remaining[0].id);
+      } else {
+        setSelectedDriveId("");
+        setDecisions([]);
+      }
+    } catch (err: any) {
+      setError(err.message || "Failed to remove drive.");
+    } finally {
+      setDeleting(false);
+    }
+  };
 
   const handleRunEvaluation = async () => {
     if (!selectedDriveId) return;
@@ -174,15 +211,30 @@ export const EligibilityTableView: React.FC<EligibilityTableViewProps> = ({ init
           <button
             onClick={handleRunEvaluation}
             disabled={evaluating || !selectedDriveId}
-            className="flex items-center gap-2 px-4 py-2 bg-brand-600 hover:bg-brand-700 text-white text-xs font-bold rounded-xl shadow-xs transition-colors disabled:opacity-50"
+            className="flex items-center gap-2 px-4 py-2 bg-brand-600 hover:bg-brand-700 text-white text-xs font-bold rounded-xl shadow-xs transition-colors disabled:opacity-50 cursor-pointer"
           >
             <Play className="w-3.5 h-3.5 fill-current" />
             <span>Evaluate Candidates</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => {
+              setDeleteReason("");
+              setDeleteModalOpen(true);
+            }}
+            disabled={!selectedDriveId || evaluating || deleting}
+            className="flex items-center gap-1.5 px-3 py-2 bg-rose-50 hover:bg-rose-100 text-rose-600 dark:bg-rose-950/40 dark:hover:bg-rose-900/60 dark:text-rose-300 border border-rose-200 dark:border-rose-800 rounded-xl text-xs font-bold transition-colors disabled:opacity-50 cursor-pointer shadow-2xs"
+            title={`Permanently delete ${currentDrive?.company_name || "selected"} drive`}
+          >
+            <Trash2 className="w-3.5 h-3.5" />
+            <span>Delete Drive</span>
           </button>
         </div>
       </div>
 
       {error && <AlertBanner type="danger" message={error} onClose={() => setError(null)} />}
+      {success && <AlertBanner type="success" message={success} onClose={() => setSuccess(null)} />}
 
       {/* Heavy Action Indicator */}
       {evaluating && (
@@ -428,6 +480,50 @@ export const EligibilityTableView: React.FC<EligibilityTableViewProps> = ({ init
           </div>
         )}
       </Drawer>
+
+      {/* Delete Drive Modal */}
+      {deleteModalOpen && currentDrive && (
+        <Modal
+          isOpen={deleteModalOpen}
+          onClose={() => setDeleteModalOpen(false)}
+          title={`Permanently Remove Drive: ${currentDrive.company_name}`}
+        >
+          <div className="space-y-4">
+            <p className="text-xs text-slate-600 dark:text-slate-300">
+              Removing this company drive will permanently purge candidate applications, eligibility decisions, and slot assignments across all officer and coordinator dashboards.
+            </p>
+            <div>
+              <label className="block text-xs font-bold mb-1 text-slate-800 dark:text-slate-200">
+                Reason for Removal (Mandatory):
+              </label>
+              <textarea
+                value={deleteReason}
+                onChange={(e) => setDeleteReason(e.target.value)}
+                rows={3}
+                placeholder="Specify justification for removing this drive..."
+                className="w-full text-xs p-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-rose-500 focus:outline-none"
+              />
+            </div>
+            <div className="flex justify-end gap-2 pt-2">
+              <button
+                type="button"
+                onClick={() => setDeleteModalOpen(false)}
+                className="px-4 py-2 text-xs font-bold text-slate-600 hover:text-slate-800 dark:text-slate-300 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmDeleteDrive}
+                disabled={deleting}
+                className="px-4 py-2 text-xs font-bold text-white bg-rose-600 hover:bg-rose-700 rounded-xl shadow-xs disabled:opacity-50 cursor-pointer"
+              >
+                {deleting ? "Removing..." : "Confirm Removal"}
+              </button>
+            </div>
+          </div>
+        </Modal>
+      )}
     </div>
   );
 };

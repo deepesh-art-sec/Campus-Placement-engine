@@ -296,6 +296,58 @@ def create_drive(
     db.add(req_version)
     db.commit()
 
+    # Automatically save & mirror company and drive into MongoDB Atlas
+    try:
+        from backend.app.storage.mongodb import get_mongo_db
+        mongo_db = get_mongo_db()
+        if mongo_db is not None:
+            now_iso = datetime.datetime.utcnow().isoformat()
+            mongo_db.companies.update_one(
+                {"_id": company_id},
+                {
+                    "$set": {
+                        "_id": company_id,
+                        "id": company_id,
+                        "name": req.company_name,
+                        "tier": "Tier 1",
+                        "industry": "Technology",
+                        "website": f"https://{req.company_name.lower().replace(' ', '')}.com",
+                        "synced_at": now_iso,
+                    }
+                },
+                upsert=True,
+            )
+            mongo_db.drives.update_one(
+                {"_id": drive_id},
+                {
+                    "$set": {
+                        "_id": drive_id,
+                        "id": drive_id,
+                        "company_id": company_id,
+                        "company_name": req.company_name,
+                        "job_role": req.job_role or "Engineering Trainee",
+                        "drive_date": req.drive_date.isoformat() if req.drive_date else None,
+                        "mode": req.mode.value if hasattr(req.mode, "value") else str(req.mode),
+                        "status": req.status.value if hasattr(req.status, "value") else str(req.status),
+                        "ctc_lpa": req.ctc_lpa,
+                        "version": 1,
+                        "requirements": [
+                            {
+                                "min_cgpa": req.min_cgpa,
+                                "min_tenth_percentage": req.min_tenth_percentage,
+                                "min_twelfth_percentage": req.min_twelfth_percentage,
+                                "allowed_branches": parse_allowed_branches(req.allowed_branches),
+                                "max_active_backlogs": req.max_active_backlogs,
+                            }
+                        ],
+                        "synced_at": now_iso,
+                    }
+                },
+                upsert=True,
+            )
+    except Exception:
+        pass
+
     return {"id": drive_id, "company_name": req.company_name, "version": 1, "message": "Drive registered successfully."}
 
 
@@ -482,6 +534,24 @@ def delete_drive(
     )
 
     db.commit()
+
+    # Synchronize deletion with MongoDB Atlas
+    try:
+        from backend.app.storage.mongodb import get_mongo_db
+        mongo_db = get_mongo_db()
+        if mongo_db is not None:
+            for did in all_drive_ids:
+                mongo_db.drives.delete_one({"_id": did})
+                mongo_db.drive_requirements.delete_many({"drive_id": did})
+                mongo_db.attendance.delete_many({"drive_id": did})
+                mongo_db.eligibility_decisions.delete_many({"drive_id": did})
+            if company_id:
+                mongo_db.companies.delete_one({"_id": company_id})
+            mongo_db.companies.delete_many({"name": company_name})
+            mongo_db.offers.delete_many({"company_name": company_name})
+    except Exception:
+        pass
+
     return {"message": f"Company '{company_name}' and all associated drive data removed completely across all dashboards."}
 
 

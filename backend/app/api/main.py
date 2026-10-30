@@ -11,6 +11,16 @@ import socket
 from collections.abc import AsyncGenerator, Callable
 from contextlib import asynccontextmanager
 from typing import Any
+from pathlib import Path
+try:
+    from dotenv import load_dotenv
+    _env_path = Path(__file__).resolve().parents[3] / ".env"
+    if _env_path.exists():
+        load_dotenv(dotenv_path=_env_path, override=True)
+    else:
+        load_dotenv()
+except ImportError:
+    pass
 
 from fastapi import FastAPI, HTTPException, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
@@ -46,6 +56,8 @@ from backend.app.api.routes import (
     what_if_routes,
     officer_inbox_routes,
     room_routes,
+    mongodb_routes,
+    company_routes,
 )
 
 logger = get_logger("placement_api")
@@ -84,8 +96,27 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     from backend.app.storage.database import Base, engine
     Base.metadata.create_all(bind=engine)
     seed_default_accounts()
+    try:
+        from backend.app.storage.mongodb import ping_mongodb, MongoSyncService
+        m_ping = ping_mongodb()
+        if m_ping.get("connected"):
+            logger.info(f"MongoDB connected to '{m_ping.get('database')}'. Ready for document storage.")
+            if os.getenv("AUTO_SYNC_MONGODB", "false").lower() in ("true", "1", "yes"):
+                from backend.app.storage.database import SessionLocal
+                with SessionLocal() as db_session:
+                    sync_report = MongoSyncService.sync_all(db_session)
+                    logger.info(f"MongoDB initial auto-sync: {sync_report.get('total_documents', 0)} documents active.")
+        else:
+            logger.info(f"MongoDB standby ({m_ping.get('error', 'offline')}). SQLite active as primary engine.")
+    except Exception as e:
+        logger.debug(f"MongoDB initialization notice: {e}")
     logger.info("Placement Engine API initialized successfully.")
     yield
+    try:
+        from backend.app.storage.mongodb import close_mongodb
+        close_mongodb()
+    except Exception:
+        pass
 
 
 app = FastAPI(
@@ -179,6 +210,8 @@ app.include_router(coordinator_routes.router)
 app.include_router(message_routes.router)
 app.include_router(officer_inbox_routes.router)
 app.include_router(room_routes.router)
+app.include_router(mongodb_routes.router)
+app.include_router(company_routes.router)
 
 
 @app.get("/api/health")
