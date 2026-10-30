@@ -97,15 +97,30 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     Base.metadata.create_all(bind=engine)
     seed_default_accounts()
     try:
-        from backend.app.storage.mongodb import ping_mongodb, MongoSyncService
+        from backend.app.storage.mongodb import ping_mongodb, MongoSyncService, enable_realtime_mongo_sync
         m_ping = ping_mongodb()
         if m_ping.get("connected"):
             logger.info(f"MongoDB connected to '{m_ping.get('database')}'. Ready for document storage.")
-            if os.getenv("AUTO_SYNC_MONGODB", "false").lower() in ("true", "1", "yes"):
-                from backend.app.storage.database import SessionLocal
-                with SessionLocal() as db_session:
-                    sync_report = MongoSyncService.sync_all(db_session)
-                    logger.info(f"MongoDB initial auto-sync: {sync_report.get('total_documents', 0)} documents active.")
+            from backend.app.storage.database import SessionLocal
+            from backend.app.storage.models.entities import StudentModel
+            with SessionLocal() as db_session:
+                student_count = db_session.query(StudentModel).count()
+                if student_count == 0:
+                    logger.info("SQLite database is empty; hydrating from MongoDB Atlas cloud store...")
+                    hydrated = MongoSyncService.hydrate_sqlite_from_mongodb(db_session)
+                    logger.info(f"SQLite auto-hydrated from MongoDB: {hydrated.get('total_restored', 0)} records restored.")
+
+                if os.getenv("AUTO_SYNC_MONGODB", "true").lower() in ("true", "1", "yes"):
+                    enable_realtime_mongo_sync()
+                    import threading
+                    def _async_initial_sync():
+                        try:
+                            with SessionLocal() as s:
+                                rep = MongoSyncService.sync_all(s)
+                                logger.info(f"MongoDB initial sync completed in background: {rep.get('total_documents', 0)} documents active.")
+                        except Exception as ex:
+                            logger.warning(f"MongoDB background sync notice: {ex}")
+                    threading.Thread(target=_async_initial_sync, daemon=True, name="MongoInitialSync").start()
         else:
             logger.info(f"MongoDB standby ({m_ping.get('error', 'offline')}). SQLite active as primary engine.")
     except Exception as e:

@@ -94,6 +94,32 @@ def trigger_full_sync(
         )
 
 
+@router.post("/hydrate")
+def trigger_hydrate(
+    current_user: UserModel = Depends(require_officer),
+    db: Session = Depends(get_db),
+) -> dict[str, Any]:
+    """
+    Hydrates SQLite database from MongoDB cloud store.
+    Useful for cold boots, new nodes, or disaster recovery.
+    """
+    try:
+        report = MongoSyncService.hydrate_sqlite_from_mongodb(db)
+        AuditService.record_action(
+            db=db,
+            actor=current_user.username,
+            action="MONGODB_HYDRATE_SQLITE",
+            aggregate_type="DATABASE_HYDRATION",
+            aggregate_id="sqlite",
+            payload={"restored": report.get("counts", {})},
+        )
+        return report
+    except ConnectionError as ce:
+        raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail=str(ce))
+    except Exception as e:
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Hydration failed: {e}")
+
+
 @router.post("/configure")
 def configure_mongodb(
     payload: MongoConfigPayload,

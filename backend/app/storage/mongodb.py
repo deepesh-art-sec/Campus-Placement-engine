@@ -43,6 +43,10 @@ try:
         load_dotenv()
 except ImportError:
     pass
+import queue
+import threading
+import uuid
+from sqlalchemy import event
 from backend.app.storage.models.entities import (
     AcademicRecordModel,
     AttendanceRecordModel,
@@ -52,6 +56,7 @@ from backend.app.storage.models.entities import (
     CoordinatorRequestModel,
     DriveAttendanceModel,
     DriveModel,
+    DriveRequirementVersionModel,
     EligibilityDecisionModel,
     GapYearModel,
     NotificationModel,
@@ -61,6 +66,7 @@ from backend.app.storage.models.entities import (
     RoomModel,
     ScheduleModel,
     SlotModel,
+    StudentApplicationModel,
     StudentModel,
     UserModel,
 )
@@ -517,6 +523,122 @@ class MongoSyncService:
         if audit_ops:
             counts["audit_logs"] = _bulk_upsert(mongo_db.audit_logs, audit_ops)
 
+        # 10. Sync Users
+        users = db.execute(select(UserModel)).scalars().all()
+        user_ops = []
+        for u in users:
+            doc = {
+                "_id": u.id,
+                "id": u.id,
+                "username": u.username,
+                "email": u.email,
+                "password_hash": u.password_hash,
+                "role": u.role,
+                "is_active": u.is_active,
+                "student_id": u.student_id,
+                "company_id": u.company_id,
+                "created_at": u.created_at.isoformat() if u.created_at else None,
+                "synced_at": now_iso,
+            }
+            user_ops.append(UpdateOne({"_id": u.id}, {"$set": doc}, upsert=True))
+        if user_ops:
+            counts["users"] = _bulk_upsert(mongo_db.users, user_ops)
+
+        # 11. Sync Slots
+        slots = db.execute(select(SlotModel)).scalars().all()
+        slot_ops = []
+        for sl in slots:
+            doc = {
+                "_id": sl.id,
+                "id": sl.id,
+                "schedule_id": sl.schedule_id,
+                "drive_id": sl.drive_id,
+                "student_id": sl.student_id,
+                "round_number": sl.round_number,
+                "room_id": sl.room_id,
+                "panel_id": sl.panel_id,
+                "start_time": sl.start_time.isoformat() if sl.start_time else None,
+                "end_time": sl.end_time.isoformat() if sl.end_time else None,
+                "created_at": sl.created_at.isoformat() if sl.created_at else None,
+                "synced_at": now_iso,
+            }
+            slot_ops.append(UpdateOne({"_id": sl.id}, {"$set": doc}, upsert=True))
+        if slot_ops:
+            counts["slots"] = _bulk_upsert(mongo_db.slots, slot_ops)
+
+        # 12. Sync Drive Requirements
+        reqs = db.execute(select(DriveRequirementVersionModel)).scalars().all()
+        req_ops = []
+        for r in reqs:
+            doc = {
+                "_id": r.id,
+                "id": r.id,
+                "drive_id": r.drive_id,
+                "version_number": r.version_number,
+                "raw_source_text": r.raw_source_text,
+                "parse_confidence": r.parse_confidence,
+                "min_cgpa": r.min_cgpa,
+                "min_tenth_percentage": r.min_tenth_percentage,
+                "min_twelfth_percentage": r.min_twelfth_percentage,
+                "min_diploma_percentage": r.min_diploma_percentage,
+                "allowed_branches": json.loads(r.allowed_branches_json or "[]") if getattr(r, "allowed_branches_json", None) else [],
+                "allowed_programs": json.loads(r.allowed_programs_json or "[]") if getattr(r, "allowed_programs_json", None) else [],
+                "max_active_backlogs": r.max_active_backlogs,
+                "allow_history_backlogs": r.allow_history_backlogs,
+                "max_history_backlogs": r.max_history_backlogs,
+                "max_gap_years": r.max_gap_years,
+                "allow_gap_during_degree": r.allow_gap_during_degree,
+                "custom_rules": json.loads(r.custom_rules_json or "{}") if getattr(r, "custom_rules_json", None) else {},
+                "created_at": r.created_at.isoformat() if r.created_at else None,
+                "synced_at": now_iso,
+            }
+            req_ops.append(UpdateOne({"_id": r.id}, {"$set": doc}, upsert=True))
+        if req_ops:
+            counts["drive_requirements"] = _bulk_upsert(mongo_db.drive_requirements, req_ops)
+
+        # 13. Sync Coordinator Requests
+        creqs = db.execute(select(CoordinatorRequestModel)).scalars().all()
+        creq_ops = []
+        for cr in creqs:
+            doc = {
+                "_id": cr.id,
+                "id": cr.id,
+                "request_type": cr.request_type,
+                "title": cr.title,
+                "description": cr.description,
+                "submitted_by": cr.submitted_by,
+                "submitted_at": cr.submitted_at.isoformat() if cr.submitted_at else None,
+                "status": cr.status,
+                "target_id": cr.target_id,
+                "payload": json.loads(cr.payload_json or "{}") if getattr(cr, "payload_json", None) else {},
+                "officer_response": cr.officer_response,
+                "officer_name": cr.officer_name,
+                "resolved_at": cr.resolved_at.isoformat() if cr.resolved_at else None,
+                "comments": json.loads(cr.comments_json or "[]") if getattr(cr, "comments_json", None) else [],
+                "synced_at": now_iso,
+            }
+            creq_ops.append(UpdateOne({"_id": cr.id}, {"$set": doc}, upsert=True))
+        if creq_ops:
+            counts["coordinator_requests"] = _bulk_upsert(mongo_db.coordinator_requests, creq_ops)
+
+        # 14. Sync Applications
+        apps = db.execute(select(StudentApplicationModel)).scalars().all()
+        app_ops = []
+        for ap in apps:
+            doc = {
+                "_id": ap.id,
+                "id": ap.id,
+                "student_id": ap.student_id,
+                "drive_id": ap.drive_id,
+                "status": ap.status,
+                "applied_at": ap.applied_at.isoformat() if ap.applied_at else None,
+                "notes": ap.notes,
+                "synced_at": now_iso,
+            }
+            app_ops.append(UpdateOne({"_id": ap.id}, {"$set": doc}, upsert=True))
+        if app_ops:
+            counts["applications"] = _bulk_upsert(mongo_db.applications, app_ops)
+
         _last_sync_time = now_iso
         total_synced = sum(counts.values())
 
@@ -547,6 +669,519 @@ class MongoSyncService:
         except Exception as e:
             logger.debug(f"Optional MongoDB mirror failed for {collection_name}/{doc_id}: {e}")
             return False
+
+
+
+    @staticmethod
+    def hydrate_sqlite_from_mongodb(db: Session) -> dict[str, Any]:
+        """
+        Reconstructs relational SQLite records from MongoDB documents.
+        Enables instant recovery, cloud deployment hydration (e.g. Vercel /tmp),
+        and zero-loss synchronization when SQLite starts fresh.
+        """
+        mongo_db = get_mongo_db()
+        if mongo_db is None:
+            raise ConnectionError("Cannot hydrate: MongoDB is not connected.")
+
+        counts = {}
+
+        # 1. Hydrate Users
+        user_docs = list(mongo_db.users.find({}))
+        user_count = 0
+        for doc in user_docs:
+            uid = doc.get("id") or str(doc.get("_id"))
+            if not db.query(UserModel).filter_by(id=uid).first():
+                u = UserModel(
+                    id=uid,
+                    username=doc.get("username"),
+                    email=doc.get("email"),
+                    password_hash=doc.get("password_hash"),
+                    role=doc.get("role", "student"),
+                    is_active=doc.get("is_active", True),
+                    student_id=doc.get("student_id"),
+                    company_id=doc.get("company_id"),
+                )
+                db.add(u)
+                user_count += 1
+        db.commit()
+        counts["users"] = user_count
+
+        # 2. Hydrate Policies
+        policy_docs = list(mongo_db.policies.find({}))
+        pol_count = 0
+        for doc in policy_docs:
+            pid = doc.get("id") or str(doc.get("_id"))
+            if not db.query(PolicyModel).filter_by(id=pid).first():
+                p = PolicyModel(
+                    id=pid,
+                    name=doc.get("name", "Default Policy"),
+                    version=doc.get("version", 1),
+                    max_offers_per_student=doc.get("max_offers_per_student", 1),
+                    dream_tier_ctc_lpa=doc.get("dream_tier_ctc_lpa", 10.0),
+                    super_dream_tier_ctc_lpa=doc.get("super_dream_tier_ctc_lpa", 20.0),
+                    allow_dream_upgrade=doc.get("allow_dream_upgrade", True),
+                    upgrade_ctc_multiplier=doc.get("upgrade_ctc_multiplier", 1.5),
+                    strict_backlog_cutoff=doc.get("strict_backlog_cutoff", True),
+                    allow_multiple_offers_if_different_tiers=doc.get("allow_multiple_offers_if_different_tiers", True),
+                    is_active=doc.get("is_active", True),
+                )
+                db.add(p)
+                pol_count += 1
+        db.commit()
+        counts["policies"] = pol_count
+
+        # 3. Hydrate Companies
+        comp_docs = list(mongo_db.companies.find({}))
+        comp_count = 0
+        for doc in comp_docs:
+            cid = doc.get("id") or str(doc.get("_id"))
+            if not db.query(CompanyModel).filter_by(id=cid).first():
+                c = CompanyModel(
+                    id=cid,
+                    name=doc.get("name"),
+                    industry=doc.get("industry"),
+                    tier=doc.get("tier", "Regular"),
+                    website=doc.get("website"),
+                )
+                db.add(c)
+                comp_count += 1
+        db.commit()
+        counts["companies"] = comp_count
+
+        # 4. Hydrate Rooms
+        room_docs = list(mongo_db.rooms.find({}))
+        room_count = 0
+        for doc in room_docs:
+            rid = doc.get("id") or str(doc.get("_id"))
+            if not db.query(RoomModel).filter_by(id=rid).first():
+                r = RoomModel(
+                    id=rid,
+                    name=doc.get("name"),
+                    building=doc.get("building"),
+                    capacity=doc.get("capacity", 30),
+                )
+                db.add(r)
+                room_count += 1
+        db.commit()
+        counts["rooms"] = room_count
+
+        # 5. Hydrate Drives
+        drive_docs = list(mongo_db.drives.find({}))
+        drv_count = 0
+        for doc in drive_docs:
+            did = doc.get("id") or str(doc.get("_id"))
+            if not db.query(DriveModel).filter_by(id=did).first():
+                dd = None
+                if doc.get("drive_date"):
+                    try:
+                        dd = datetime.datetime.fromisoformat(doc["drive_date"])
+                    except Exception:
+                        pass
+                d = DriveModel(
+                    id=did,
+                    company_id=doc.get("company_id"),
+                    company_name=doc.get("company_name"),
+                    drive_date=dd,
+                    mode=doc.get("mode", "in_person"),
+                    ctc_lpa=doc.get("ctc_lpa", 0.0),
+                    status=doc.get("status", "scheduled"),
+                )
+                db.add(d)
+                drv_count += 1
+        db.commit()
+        counts["drives"] = drv_count
+
+        # 6. Hydrate Students + embedded collections
+        stud_docs = list(mongo_db.students.find({}))
+        stud_count = 0
+        for doc in stud_docs:
+            sid = doc.get("id") or str(doc.get("_id"))
+            if not db.query(StudentModel).filter_by(id=sid).first():
+                dob = None
+                if doc.get("date_of_birth"):
+                    try:
+                        dob = datetime.date.fromisoformat(doc["date_of_birth"])
+                    except Exception:
+                        pass
+                s = StudentModel(
+                    id=sid,
+                    roll_no=doc.get("roll_no"),
+                    name=doc.get("name"),
+                    normalized_name=doc.get("normalized_name"),
+                    email=doc.get("email"),
+                    branch=doc.get("branch"),
+                    program=doc.get("program"),
+                    cgpa=doc.get("cgpa", 0.0),
+                    tenth_percentage=doc.get("tenth_percentage", 0.0),
+                    twelfth_percentage=doc.get("twelfth_percentage", 0.0),
+                    diploma_percentage=doc.get("diploma_percentage"),
+                    date_of_birth=dob,
+                    gender=doc.get("gender"),
+                    version=doc.get("version", 1),
+                )
+                db.add(s)
+                # Embedded backlogs
+                for b_doc in doc.get("backlogs", []):
+                    b = BacklogModel(
+                        id=f"bkl_{uuid.uuid4().hex[:12]}",
+                        student_id=sid,
+                        subject=b_doc.get("subject"),
+                        semester=b_doc.get("semester", 1),
+                        status=b_doc.get("status", "cleared"),
+                    )
+                    db.add(b)
+                # Embedded academic records
+                for a_doc in doc.get("academic_records", []):
+                    ar = AcademicRecordModel(
+                        id=f"rec_{uuid.uuid4().hex[:12]}",
+                        student_id=sid,
+                        semester=a_doc.get("semester", 1),
+                        sgpa=a_doc.get("sgpa", 0.0),
+                    )
+                    db.add(ar)
+                # Embedded offers
+                for o_doc in doc.get("offers", []):
+                    off = OfferModel(
+                        id=f"off_{uuid.uuid4().hex[:12]}",
+                        student_id=sid,
+                        company=o_doc.get("company") or o_doc.get("company_name", "Company"),
+                        ctc_lpa=o_doc.get("ctc_lpa", 0.0),
+                        fixed_pay_lpa=o_doc.get("fixed_pay_lpa"),
+                        is_dream=o_doc.get("is_dream", False),
+                        status=o_doc.get("status", "offered"),
+                    )
+                    db.add(off)
+                stud_count += 1
+        db.commit()
+        counts["students"] = stud_count
+
+        # 7. Hydrate Slots
+        slot_docs = list(mongo_db.slots.find({}))
+        slot_count = 0
+        for doc in slot_docs:
+            slid = doc.get("id") or str(doc.get("_id"))
+            if not db.query(SlotModel).filter_by(id=slid).first():
+                st = None
+                et = None
+                if doc.get("start_time"):
+                    try:
+                        st = datetime.datetime.fromisoformat(doc["start_time"])
+                    except Exception:
+                        pass
+                if doc.get("end_time"):
+                    try:
+                        et = datetime.datetime.fromisoformat(doc["end_time"])
+                    except Exception:
+                        pass
+                sl = SlotModel(
+                    id=slid,
+                    schedule_id=doc.get("schedule_id"),
+                    drive_id=doc.get("drive_id"),
+                    student_id=doc.get("student_id"),
+                    round_number=doc.get("round_number", 1),
+                    room_id=doc.get("room_id"),
+                    panel_id=doc.get("panel_id"),
+                    start_time=st,
+                    end_time=et,
+                )
+                db.add(sl)
+                slot_count += 1
+        db.commit()
+        counts["slots"] = slot_count
+
+        total_hydrated = sum(counts.values())
+        logger.info(f"SQLite hydrated from MongoDB Atlas: {total_hydrated} records restored.")
+        return {
+            "status": "success",
+            "message": f"Successfully hydrated {total_hydrated} records from MongoDB Atlas.",
+            "counts": counts,
+            "total_restored": total_hydrated,
+        }
+
+
+# ==============================================================================
+# REAL-TIME ASYNCHRONOUS WRITE-MIRROR QUEUE & LISTENER
+# ==============================================================================
+
+_sync_queue: queue.Queue = queue.Queue(maxsize=10000)
+_worker_running: bool = False
+_worker_thread: threading.Thread | None = None
+_listener_attached: bool = False
+
+
+def _extract_model_for_mongo(obj: Any) -> tuple[str, str, dict[str, Any]] | None:
+    """Serializes SQLAlchemy model instances into collection name, ID, and dictionary."""
+    if not hasattr(obj, "id") or not obj.id:
+        return None
+
+    doc_id = str(obj.id)
+    now_iso = datetime.datetime.utcnow().isoformat()
+
+    if isinstance(obj, StudentModel):
+        return (
+            "students",
+            doc_id,
+            {
+                "_id": doc_id,
+                "id": doc_id,
+                "roll_no": obj.roll_no,
+                "name": obj.name,
+                "normalized_name": obj.normalized_name,
+                "email": obj.email,
+                "branch": obj.branch,
+                "program": obj.program,
+                "cgpa": obj.cgpa,
+                "tenth_percentage": obj.tenth_percentage,
+                "twelfth_percentage": obj.twelfth_percentage,
+                "diploma_percentage": obj.diploma_percentage,
+                "date_of_birth": obj.date_of_birth.isoformat() if obj.date_of_birth else None,
+                "gender": obj.gender,
+                "version": obj.version,
+                "synced_at": now_iso,
+            },
+        )
+    elif isinstance(obj, DriveModel):
+        return (
+            "drives",
+            doc_id,
+            {
+                "_id": doc_id,
+                "id": doc_id,
+                "company_id": obj.company_id,
+                "company_name": obj.company_name,
+                "drive_date": obj.drive_date.isoformat() if obj.drive_date else None,
+                "mode": obj.mode,
+                "ctc_lpa": obj.ctc_lpa,
+                "status": obj.status,
+                "version": obj.version,
+                "synced_at": now_iso,
+            },
+        )
+    elif isinstance(obj, CompanyModel):
+        return (
+            "companies",
+            doc_id,
+            {
+                "_id": doc_id,
+                "id": doc_id,
+                "name": obj.name,
+                "tier": obj.tier,
+                "industry": getattr(obj, "industry", None),
+                "website": getattr(obj, "website", None),
+                "synced_at": now_iso,
+            },
+        )
+    elif isinstance(obj, SlotModel):
+        return (
+            "slots",
+            doc_id,
+            {
+                "_id": doc_id,
+                "id": doc_id,
+                "schedule_id": obj.schedule_id,
+                "drive_id": obj.drive_id,
+                "student_id": obj.student_id,
+                "round_number": obj.round_number,
+                "room_id": obj.room_id,
+                "panel_id": obj.panel_id,
+                "start_time": obj.start_time.isoformat() if obj.start_time else None,
+                "end_time": obj.end_time.isoformat() if obj.end_time else None,
+                "synced_at": now_iso,
+            },
+        )
+    elif isinstance(obj, PolicyModel):
+        return (
+            "policies",
+            doc_id,
+            {
+                "_id": doc_id,
+                "id": doc_id,
+                "name": obj.name,
+                "version": getattr(obj, "version", 1),
+                "max_offers_per_student": getattr(obj, "max_offers_per_student", 1),
+                "dream_tier_ctc_lpa": getattr(obj, "dream_tier_ctc_lpa", 10.0),
+                "super_dream_tier_ctc_lpa": getattr(obj, "super_dream_tier_ctc_lpa", 20.0),
+                "allow_dream_upgrade": getattr(obj, "allow_dream_upgrade", True),
+                "upgrade_ctc_multiplier": getattr(obj, "upgrade_ctc_multiplier", 1.5),
+                "strict_backlog_cutoff": getattr(obj, "strict_backlog_cutoff", True),
+                "allow_multiple_offers_if_different_tiers": getattr(obj, "allow_multiple_offers_if_different_tiers", True),
+                "is_active": getattr(obj, "is_active", True),
+                "synced_at": now_iso,
+            },
+        )
+    elif isinstance(obj, RoomModel):
+        return (
+            "rooms",
+            doc_id,
+            {
+                "_id": doc_id,
+                "id": doc_id,
+                "name": obj.name,
+                "building": obj.building,
+                "capacity": obj.capacity,
+                "synced_at": now_iso,
+            },
+        )
+    elif isinstance(obj, UserModel):
+        return (
+            "users",
+            doc_id,
+            {
+                "_id": doc_id,
+                "id": doc_id,
+                "username": obj.username,
+                "email": obj.email,
+                "password_hash": obj.password_hash,
+                "role": obj.role,
+                "is_active": obj.is_active,
+                "student_id": obj.student_id,
+                "company_id": obj.company_id,
+                "synced_at": now_iso,
+            },
+        )
+    elif isinstance(obj, DriveAttendanceModel):
+        return (
+            "attendance",
+            doc_id,
+            {
+                "_id": doc_id,
+                "id": doc_id,
+                "drive_id": obj.drive_id,
+                "student_id": obj.student_id,
+                "slot_id": obj.slot_id,
+                "room_name": obj.room_name,
+                "status": obj.status,
+                "marked_by": obj.marked_by,
+                "marked_at": obj.marked_at.isoformat() if obj.marked_at else None,
+                "notes": obj.notes,
+                "synced_at": now_iso,
+            },
+        )
+    elif isinstance(obj, EligibilityDecisionModel):
+        return (
+            "eligibility_decisions",
+            doc_id,
+            {
+                "_id": doc_id,
+                "id": doc_id,
+                "drive_id": obj.drive_id,
+                "student_id": obj.student_id,
+                "status": obj.status,
+                "reasons": json.loads(obj.reasons_json or "[]") if getattr(obj, "reasons_json", None) else [],
+                "reason": getattr(obj, "reason", "Evaluated criteria"),
+                "evaluated_at": obj.evaluated_at.isoformat() if obj.evaluated_at else None,
+                "synced_at": now_iso,
+            },
+        )
+    elif isinstance(obj, NotificationModel):
+        return (
+            "notifications",
+            doc_id,
+            {
+                "_id": doc_id,
+                "id": doc_id,
+                "recipient_role": obj.recipient_role,
+                "recipient_username": obj.recipient_username,
+                "category": obj.category,
+                "title": obj.title,
+                "message": obj.message,
+                "is_read": obj.is_read,
+                "created_at": obj.created_at.isoformat() if obj.created_at else None,
+                "synced_at": now_iso,
+            },
+        )
+    elif isinstance(obj, AuditLogModel):
+        return (
+            "audit_logs",
+            doc_id,
+            {
+                "_id": doc_id,
+                "id": doc_id,
+                "actor": obj.actor,
+                "action": obj.action,
+                "entity_type": getattr(obj, "entity_type", "AUDIT"),
+                "entity_id": getattr(obj, "entity_id", obj.id),
+                "changes": json.loads(obj.changes_json or "{}") if getattr(obj, "changes_json", None) else {},
+                "timestamp": obj.timestamp.isoformat() if getattr(obj, "timestamp", None) else None,
+                "synced_at": now_iso,
+            },
+        )
+    elif isinstance(obj, CoordinatorRequestModel):
+        return (
+            "coordinator_requests",
+            doc_id,
+            {
+                "_id": doc_id,
+                "id": doc_id,
+                "request_type": obj.request_type,
+                "title": obj.title,
+                "description": obj.description,
+                "submitted_by": obj.submitted_by,
+                "submitted_at": obj.submitted_at.isoformat() if obj.submitted_at else None,
+                "status": obj.status,
+                "target_id": obj.target_id,
+                "officer_response": obj.officer_response,
+                "officer_name": obj.officer_name,
+                "resolved_at": obj.resolved_at.isoformat() if obj.resolved_at else None,
+                "synced_at": now_iso,
+            },
+        )
+    return None
+
+
+def _mongo_sync_worker():
+    """Background worker continuously pulling from _sync_queue to mirror writes to MongoDB."""
+    while True:
+        try:
+            item = _sync_queue.get()
+            if item is None:
+                break
+            coll_name, doc_id, doc_data = item
+            mongo_db = get_mongo_db()
+            if mongo_db is not None:
+                doc_data["synced_at"] = datetime.datetime.utcnow().isoformat()
+                mongo_db[coll_name].update_one({"_id": doc_id}, {"$set": doc_data}, upsert=True)
+            _sync_queue.task_done()
+        except Exception as e:
+            logger.debug(f"Background MongoDB sync worker error: {e}")
+            time.sleep(0.5)
+
+
+def start_mongo_sync_worker():
+    global _worker_running, _worker_thread
+    if not _worker_running:
+        _worker_running = True
+        _worker_thread = threading.Thread(target=_mongo_sync_worker, daemon=True, name="MongoSyncWorker")
+        _worker_thread.start()
+        logger.info("MongoDB background real-time sync worker started.")
+
+
+def enable_realtime_mongo_sync():
+    """Attaches SQLAlchemy event listeners to mirror every database commit to MongoDB."""
+    global _listener_attached
+    if _listener_attached:
+        return
+    start_mongo_sync_worker()
+
+    @event.listens_for(Session, "after_flush")
+    def capture_flush(session, flush_context):
+        pending = session.info.setdefault("_mongo_pending", [])
+        for obj in list(session.new) + list(session.dirty):
+            extracted = _extract_model_for_mongo(obj)
+            if extracted:
+                pending.append(extracted)
+
+    @event.listens_for(Session, "after_commit")
+    def enqueue_commit(session):
+        pending = session.info.pop("_mongo_pending", [])
+        for coll_name, doc_id, data in pending:
+            try:
+                _sync_queue.put_nowait((coll_name, doc_id, data))
+            except queue.Full:
+                logger.warning(f"Mongo sync queue full; dropped async write for {coll_name}/{doc_id}")
+
+    _listener_attached = True
+    logger.info("SQLAlchemy -> MongoDB real-time write mirror active.")
 
 
 def get_mongodb_status() -> dict[str, Any]:

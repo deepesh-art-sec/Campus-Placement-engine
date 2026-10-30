@@ -412,26 +412,37 @@ export const ScheduleBoardView: React.FC<ScheduleBoardViewProps> = ({ initialDri
       {/* Schedule Matrix Grid (Theme-Adaptive) */}
       <div className="corporate-card overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="w-full border-separate border-spacing-0">
+          <table
+            className="w-full border-separate border-spacing-0"
+            style={{ minWidth: `${Math.max(900, 240 + timeColumns.length * 160)}px` }}
+          >
+            <colgroup>
+              <col style={{ width: "240px", minWidth: "240px", maxWidth: "240px" }} />
+              {timeColumns.map((time) => (
+                <col key={time} style={{ width: "160px", minWidth: "160px" }} />
+              ))}
+            </colgroup>
             <thead>
               <tr className="border-b border-[var(--border-card)]">
                 <th
                   style={{
                     position: "sticky",
                     left: 0,
-                    zIndex: 35,
-                    backgroundColor: "var(--bg-card, #0B1326)",
+                    zIndex: 40,
+                    backgroundColor: "#0B1326",
+                    background: "#0B1326",
                     minWidth: "240px",
                     maxWidth: "240px",
                     width: "240px",
-                    boxShadow: "6px 0 16px -2px rgba(0, 0, 0, 0.85)",
+                    boxShadow: "6px 0 16px -2px rgba(0, 0, 0, 0.95)",
                     borderRight: "2px solid var(--border-card, #16264C)",
-                    whiteSpace: "nowrap",
-                    backgroundClip: "padding-box",
+                    padding: 0,
                   }}
-                  className="p-4 text-xs font-black uppercase tracking-wider text-slate-300 text-left schedule-sticky-header"
+                  className="schedule-sticky-header"
                 >
-                  Campus Classroom / Venue
+                  <div className="w-[240px] min-w-[240px] max-w-[240px] p-4 text-xs font-black uppercase tracking-wider text-slate-300 text-left bg-[#0B1326] whitespace-nowrap">
+                    Campus Classroom / Venue
+                  </div>
                 </th>
                 {timeColumns.map((time) => (
                   <th
@@ -458,18 +469,19 @@ export const ScheduleBoardView: React.FC<ScheduleBoardViewProps> = ({ initialDri
                     style={{
                       position: "sticky",
                       left: 0,
-                      zIndex: 25,
-                      backgroundColor: "var(--bg-card, #0B1326)",
+                      zIndex: 30,
+                      backgroundColor: "#0B1326",
+                      background: "#0B1326",
                       minWidth: "240px",
                       maxWidth: "240px",
                       width: "240px",
-                      boxShadow: "6px 0 16px -2px rgba(0, 0, 0, 0.85)",
+                      boxShadow: "6px 0 16px -2px rgba(0, 0, 0, 0.95)",
                       borderRight: "2px solid var(--border-card, #16264C)",
-                      backgroundClip: "padding-box",
+                      padding: 0,
                     }}
-                    className="p-4 text-xs font-extrabold schedule-sticky-col"
+                    className="schedule-sticky-col"
                   >
-                    <div className="flex items-center gap-2.5 max-w-[210px] overflow-hidden">
+                    <div className="w-[240px] min-w-[240px] max-w-[240px] h-full min-h-[5.5rem] p-4 flex items-center gap-2.5 bg-[#0B1326] text-xs font-extrabold text-white select-none">
                       <div className="w-6 h-6 rounded-md bg-blue-50 dark:bg-blue-950/80 border border-blue-200 dark:border-blue-700/60 flex items-center justify-center text-blue-600 dark:text-cyan-400 shrink-0">
                         <MapPin className="w-3.5 h-3.5" />
                       </div>

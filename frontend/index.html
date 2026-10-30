@@ -26,15 +26,36 @@
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
     <script>
-      // Register local offline service worker and immediately force update
+      // Service worker management: clear in dev mode (port 5173), update in prod
       if ('serviceWorker' in navigator && window.location.protocol.startsWith('http')) {
-        window.addEventListener('load', () => {
-          navigator.serviceWorker.register('/sw.js').then((reg) => {
-            if (reg) reg.update();
-          }).catch((err) => {
-            console.log('Local SW registration note:', err);
+        if (window.location.port === '5173') {
+          navigator.serviceWorker.getRegistrations().then((registrations) => {
+            for (let reg of registrations) reg.unregister();
           });
-        });
+          if ('caches' in window) {
+            caches.keys().then((keys) => {
+              for (let key of keys) caches.delete(key);
+            });
+          }
+        } else {
+          window.addEventListener('load', () => {
+            navigator.serviceWorker.register('/sw.js').then((reg) => {
+              if (reg) {
+                reg.update();
+                reg.addEventListener('updatefound', () => {
+                  const newWorker = reg.installing;
+                  if (newWorker) {
+                    newWorker.addEventListener('statechange', () => {
+                      if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                        window.location.reload();
+                      }
+                    });
+                  }
+                });
+              }
+            }).catch(() => {});
+          });
+        }
       }
     </script>
   </body>
