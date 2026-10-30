@@ -29,7 +29,7 @@ router = APIRouter(prefix="/api/users", tags=["Users & Roles"])
 class CreateUserRequest(BaseModel):
     username: str = Field(min_length=3, max_length=64)
     email: str = Field(min_length=5, max_length=255)
-    role: str = Field(pattern="^(officer|coordinator|recruiter_readonly)$")
+    role: str = Field(pattern="^(officer|coordinator|recruiter|recruiter_readonly)$")
     password: str = Field(min_length=6)
     company_id: str | None = None
 
@@ -51,20 +51,15 @@ def list_users(
     db: Session = Depends(get_db),
 ) -> list[dict[str, Any]]:
     """Lists staff, coordinator, and recruiter accounts (Officer only)."""
-    stmt = select(UserModel).where(UserModel.role != "student")
-    if role:
+    stmt = select(UserModel).where(UserModel.role.in_(["officer", "coordinator", "recruiter", "recruiter_readonly"]))
+    if role and role in ["officer", "coordinator", "recruiter", "recruiter_readonly"]:
         stmt = stmt.where(UserModel.role == role)
     stmt = stmt.order_by(UserModel.created_at.desc())
 
     users = db.execute(stmt).scalars().all()
+    companies_map = {c.id: c.name for c in db.execute(select(CompanyModel)).scalars().all()}
     results = []
     for u in users:
-        company_name = None
-        if u.company_id:
-            comp = db.execute(select(CompanyModel).where(CompanyModel.id == u.company_id)).scalar_one_or_none()
-            if comp:
-                company_name = comp.name
-
         results.append({
             "id": u.id,
             "username": u.username,
@@ -72,7 +67,7 @@ def list_users(
             "role": u.role,
             "is_active": u.is_active,
             "company_id": u.company_id,
-            "company_name": company_name,
+            "company_name": companies_map.get(u.company_id) if u.company_id else None,
             "created_at": u.created_at.isoformat() if u.created_at else None,
         })
     return results
@@ -93,8 +88,8 @@ def create_user_account(
             detail=f"Username '{req.username}' is already in use.",
         )
 
-    # If recruiter, verify company exists
-    if req.role == "recruiter_readonly" and req.company_id:
+    # If recruiter, verify company exists if company_id provided
+    if req.role in ["recruiter", "recruiter_readonly"] and req.company_id:
         comp = db.execute(select(CompanyModel).where(CompanyModel.id == req.company_id)).scalar_one_or_none()
         if not comp:
             raise HTTPException(
@@ -112,7 +107,7 @@ def create_user_account(
         password_hash=pw_hash,
         role=req.role,
         is_active=True,
-        company_id=req.company_id if req.role == "recruiter_readonly" else None,
+        company_id=req.company_id if req.role in ["recruiter", "recruiter_readonly"] else None,
         created_at=datetime.datetime.utcnow(),
     )
     db.add(new_user)

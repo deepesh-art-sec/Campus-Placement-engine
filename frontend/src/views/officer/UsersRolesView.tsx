@@ -26,7 +26,7 @@ interface UserItem {
   id: string;
   username: string;
   email: string;
-  role: "officer" | "coordinator" | "recruiter_readonly";
+  role: "officer" | "coordinator" | "recruiter" | "recruiter_readonly";
   is_active: boolean;
   company_id?: string;
   company_name?: string;
@@ -48,7 +48,6 @@ interface StudentCodeItem {
 
 export const UsersRolesView: React.FC = () => {
   const [users, setUsers] = useState<UserItem[]>([]);
-  const [companies, setCompanies] = useState<CompanyOption[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
@@ -60,9 +59,10 @@ export const UsersRolesView: React.FC = () => {
   const [isCreateModalOpen, setIsCreateModalOpen] = useState<boolean>(false);
   const [newUsername, setNewUsername] = useState("");
   const [newEmail, setNewEmail] = useState("");
-  const [newRole, setNewRole] = useState<"coordinator" | "recruiter_readonly">("coordinator");
+  const [newRole, setNewRole] = useState<"coordinator" | "officer" | "recruiter">("coordinator");
+  const [selectedCompanyId, setSelectedCompanyId] = useState<string>("");
+  const [companies, setCompanies] = useState<CompanyOption[]>([]);
   const [newPassword, setNewPassword] = useState("");
-  const [newCompanyId, setNewCompanyId] = useState("");
   const [creationReason, setCreationReason] = useState("Authorized institutional placement staff addition");
   const [creating, setCreating] = useState(false);
 
@@ -83,20 +83,14 @@ export const UsersRolesView: React.FC = () => {
   const [bulkRoster, setBulkRoster] = useState<StudentCodeItem[]>([]);
   const [bulkIssuing, setBulkIssuing] = useState(false);
   const [copiedCodeIndex, setCopiedCodeIndex] = useState<number | null>(null);
+  const institutionalUsers = users.filter((u) => u.role === 'officer' || u.role === 'coordinator' || u.role === 'recruiter' || u.role === 'recruiter_readonly');
 
   const fetchUsers = async () => {
     try {
       setLoading(true);
       setError(null);
-      const [uRes, cRes] = await Promise.all([
-        api.get<UserItem[]>("/api/users"),
-        api.get<CompanyOption[]>("/api/users/companies"),
-      ]);
+      const uRes = await api.get<UserItem[]>("/api/users");
       setUsers(uRes || []);
-      setCompanies(cRes || []);
-      if (cRes && cRes.length > 0) {
-        setNewCompanyId(cRes[0].id);
-      }
     } catch (err: any) {
       setError(err.message || "Failed to load accounts.");
     } finally {
@@ -106,6 +100,9 @@ export const UsersRolesView: React.FC = () => {
 
   useEffect(() => {
     fetchUsers();
+    api.get<CompanyOption[]>("/api/users/companies").then((res) => {
+      setCompanies(res || []);
+    }).catch(() => {});
   }, []);
 
   const handleCreateUser = async (e: React.FormEvent) => {
@@ -118,7 +115,7 @@ export const UsersRolesView: React.FC = () => {
         email: newEmail.trim(),
         role: newRole,
         password: newPassword,
-        company_id: newRole === "recruiter_readonly" ? newCompanyId : null,
+        company_id: newRole === "recruiter" && selectedCompanyId ? selectedCompanyId : undefined,
       });
 
       setSuccess(`Account for '${newUsername}' (${newRole}) created successfully.`);
@@ -285,7 +282,7 @@ export const UsersRolesView: React.FC = () => {
             <div className="p-12 text-center text-slate-500 text-sm animate-pulse">
               Loading user credentials and roles...
             </div>
-          ) : users.length === 0 ? (
+          ) : institutionalUsers.length === 0 ? (
             <div className="p-12 text-center text-slate-500 text-sm">
               No staff or recruiter accounts found. Click "Create Account" above to provision one.
             </div>
@@ -297,39 +294,36 @@ export const UsersRolesView: React.FC = () => {
                   <th className="px-5 py-3.5">Username</th>
                   <th className="px-5 py-3.5">Email</th>
                   <th className="px-5 py-3.5">Role</th>
-                  <th className="px-5 py-3.5">Linked Company</th>
-                  <th className="px-5 py-3.5">Status</th>
+                                    <th className="px-5 py-3.5">Status</th>
                   <th className="px-5 py-3.5 text-right">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
-                {users.map((u) => (
+                {institutionalUsers.map((u) => (
                   <tr key={u.id} className="hover:bg-slate-50/80 transition-colors">
                     <td className="px-5 py-3.5 font-bold font-mono text-slate-900">{u.username}</td>
                     <td className="px-5 py-3.5 text-slate-600">{u.email}</td>
                     <td className="px-5 py-3.5">
-                      <span
-                        className={`px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider ${
-                          u.role === "officer"
-                            ? "bg-purple-100 text-purple-800 border border-purple-200"
-                            : u.role === "coordinator"
-                            ? "bg-blue-100 text-blue-800 border border-blue-200"
-                            : "bg-emerald-100 text-emerald-800 border border-emerald-200"
-                        }`}
-                      >
-                        {u.role.replace("_readonly", " (ReadOnly)")}
-                      </span>
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        <span
+                          className={`px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider ${
+                            u.role === "officer"
+                              ? "bg-purple-100 text-purple-800 border border-purple-200"
+                              : u.role === "coordinator"
+                              ? "bg-blue-100 text-blue-800 border border-blue-200"
+                              : "bg-emerald-100 text-emerald-800 border border-emerald-200"
+                          }`}
+                        >
+                          {u.role === "officer" ? "Placement Officer" : u.role === "coordinator" ? "Coordinator" : "Recruiter"}
+                        </span>
+                        {u.company_name && (
+                          <span className="text-[11px] font-bold text-slate-500">
+                            • {u.company_name}
+                          </span>
+                        )}
+                      </div>
                     </td>
-                    <td className="px-5 py-3.5 text-slate-700 font-semibold">
-                      {u.company_name ? (
-                        <div className="flex items-center gap-1.5 text-emerald-700">
-                          <Building className="w-3.5 h-3.5 shrink-0" />
-                          <span>{u.company_name}</span>
-                        </div>
-                      ) : (
-                        <span className="text-slate-400 font-mono text-[11px]">—</span>
-                      )}
-                    </td>
+
                     <td className="px-5 py-3.5">
                       {u.is_active ? (
                         <span className="flex items-center gap-1 text-emerald-600 font-bold">
@@ -628,7 +622,7 @@ export const UsersRolesView: React.FC = () => {
 
           <div>
             <label className="block font-bold text-slate-700 uppercase tracking-wider mb-1">
-              Account Role <span className="text-rose-500">*</span>
+              Institutional Account Role <span className="text-rose-500">*</span>
             </label>
             <select
               value={newRole}
@@ -636,21 +630,22 @@ export const UsersRolesView: React.FC = () => {
               className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-semibold text-slate-800 focus:bg-white cursor-pointer"
             >
               <option value="coordinator">Coordinator (Student data corrections, drive setup review)</option>
-              <option value="recruiter_readonly">Recruiter (Read-only shortlist & schedule inspection)</option>
+              <option value="officer">Placement Officer (Administrative & policy authority)</option>
+              <option value="recruiter">Recruiter (Company portal, candidate evaluation, results)</option>
             </select>
           </div>
 
-          {newRole === "recruiter_readonly" && (
+          {newRole === "recruiter" && (
             <div>
               <label className="block font-bold text-slate-700 uppercase tracking-wider mb-1">
-                Link Recruiter to Company <span className="text-rose-500">*</span>
+                Linked Employer / Company (Optional)
               </label>
               <select
-                required
-                value={newCompanyId}
-                onChange={(e) => setNewCompanyId(e.target.value)}
+                value={selectedCompanyId}
+                onChange={(e) => setSelectedCompanyId(e.target.value)}
                 className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-semibold text-slate-800 focus:bg-white cursor-pointer"
               >
+                <option value="">General Placement Partner (All drives accessible)</option>
                 {companies.map((c) => (
                   <option key={c.id} value={c.id}>
                     {c.name} ({c.tier})

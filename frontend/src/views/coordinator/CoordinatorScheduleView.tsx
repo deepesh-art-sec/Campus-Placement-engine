@@ -246,8 +246,6 @@ export const CoordinatorScheduleView: React.FC<CoordinatorScheduleViewProps> = (
                     borderRight: "2px solid var(--border-card, #16264C)",
                     whiteSpace: "nowrap",
                     backgroundClip: "padding-box",
-                    willChange: "transform",
-                    transform: "translateZ(0)",
                   }}
                   className="p-4 text-xs font-black uppercase tracking-wider text-slate-300 text-left schedule-sticky-header"
                 >
@@ -286,8 +284,6 @@ export const CoordinatorScheduleView: React.FC<CoordinatorScheduleViewProps> = (
                       boxShadow: "6px 0 16px -2px rgba(0, 0, 0, 0.85)",
                       borderRight: "2px solid var(--border-card, #16264C)",
                       backgroundClip: "padding-box",
-                      willChange: "transform",
-                      transform: "translateZ(0)",
                     }}
                     className="p-3.5 font-extrabold text-white schedule-sticky-col"
                   >
