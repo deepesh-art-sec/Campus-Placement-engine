@@ -412,16 +412,40 @@ export const ScheduleBoardView: React.FC<ScheduleBoardViewProps> = ({ initialDri
       {/* Schedule Matrix Grid (Theme-Adaptive) */}
       <div className="corporate-card overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="w-full border-collapse">
+          <table className="w-full border-separate border-spacing-0">
             <thead>
               <tr className="border-b border-[var(--border-card)]">
-                <th className="p-4 text-xs font-black uppercase tracking-wider text-slate-300 w-56 min-w-[224px] max-w-[224px] text-left border-r border-[var(--border-card)] sticky left-0 z-20 bg-[var(--bg-card)] shadow-[4px_0_12px_rgba(0,0,0,0.5)]">
+                <th
+                  style={{
+                    position: "sticky",
+                    left: 0,
+                    zIndex: 35,
+                    backgroundColor: "var(--bg-card, #0B1326)",
+                    minWidth: "240px",
+                    maxWidth: "240px",
+                    width: "240px",
+                    boxShadow: "6px 0 16px -2px rgba(0, 0, 0, 0.85)",
+                    borderRight: "2px solid var(--border-card, #16264C)",
+                    whiteSpace: "nowrap",
+                    backgroundClip: "padding-box",
+                    willChange: "transform",
+                    transform: "translateZ(0)",
+                  }}
+                  className="p-4 text-xs font-black uppercase tracking-wider text-slate-300 text-left schedule-sticky-header"
+                >
                   Campus Classroom / Venue
                 </th>
                 {timeColumns.map((time) => (
                   <th
                     key={time}
-                    className="p-3 text-xs font-extrabold text-center min-w-[155px] border-r border-[var(--border-card)] bg-[var(--bg-card)] text-slate-300"
+                    style={{
+                      minWidth: "160px",
+                      width: "160px",
+                      backgroundColor: "var(--bg-card, #0B1326)",
+                      borderRight: "1px solid var(--border-card, #16264C)",
+                      whiteSpace: "nowrap",
+                    }}
+                    className="p-3 text-xs font-extrabold text-center schedule-time-header text-slate-300"
                   >
                     <Clock className="w-3.5 h-3.5 inline mr-1.5 text-blue-600 dark:text-cyan-400" />
                     {time}
@@ -432,12 +456,30 @@ export const ScheduleBoardView: React.FC<ScheduleBoardViewProps> = ({ initialDri
             <tbody className="divide-y divide-[var(--border-card)]">
               {roomsList.map((room) => (
                 <tr key={room.id} className="transition-colors hover:bg-white/[0.02]">
-                  <td className="p-4 text-xs font-extrabold border-r border-[var(--border-card)] sticky left-0 z-10 w-56 min-w-[224px] max-w-[224px] bg-[var(--bg-card)] shadow-[4px_0_12px_rgba(0,0,0,0.5)]">
-                    <div className="flex items-center gap-2.5">
+                  <td
+                    style={{
+                      position: "sticky",
+                      left: 0,
+                      zIndex: 25,
+                      backgroundColor: "var(--bg-card, #0B1326)",
+                      minWidth: "240px",
+                      maxWidth: "240px",
+                      width: "240px",
+                      boxShadow: "6px 0 16px -2px rgba(0, 0, 0, 0.85)",
+                      borderRight: "2px solid var(--border-card, #16264C)",
+                      backgroundClip: "padding-box",
+                      willChange: "transform",
+                      transform: "translateZ(0)",
+                    }}
+                    className="p-4 text-xs font-extrabold schedule-sticky-col"
+                  >
+                    <div className="flex items-center gap-2.5 max-w-[210px] overflow-hidden">
                       <div className="w-6 h-6 rounded-md bg-blue-50 dark:bg-blue-950/80 border border-blue-200 dark:border-blue-700/60 flex items-center justify-center text-blue-600 dark:text-cyan-400 shrink-0">
                         <MapPin className="w-3.5 h-3.5" />
                       </div>
-                      <span className="truncate font-black text-white">{room.name}</span>
+                      <span className="truncate font-black text-white" title={room.name}>
+                        {room.name}
+                      </span>
                     </div>
                   </td>
                   {timeColumns.map((time) => {
@@ -458,7 +500,12 @@ export const ScheduleBoardView: React.FC<ScheduleBoardViewProps> = ({ initialDri
                     return (
                       <td
                         key={time}
-                        className="p-2 border-r border-[var(--border-card)] align-top h-24 min-w-[155px]"
+                        style={{
+                          minWidth: "160px",
+                          width: "160px",
+                          borderRight: "1px solid var(--border-card, #16264C)",
+                        }}
+                        className="p-2 schedule-slot-cell align-top h-24"
                       >
                         {slot ? (
                           <div

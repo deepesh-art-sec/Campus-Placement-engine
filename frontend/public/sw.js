@@ -1,5 +1,5 @@
 // Service Worker for Institutional Offline-First Application Shell
-const CACHE_NAME = "placement-engine-cache-v4";
+const CACHE_NAME = "placement-engine-cache-v7";
 const PRECACHE_URLS = [
   "/",
   "/index.html",
@@ -8,12 +8,12 @@ const PRECACHE_URLS = [
 ];
 
 self.addEventListener("install", (event) => {
+  self.skipWaiting();
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => {
       return cache.addAll(PRECACHE_URLS).catch(() => {});
     })
   );
-  self.skipWaiting();
 });
 
 self.addEventListener("activate", (event) => {
@@ -37,36 +37,24 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
-  // Navigation requests: Try network/local server, fallback to cached index.html
-  if (event.request.mode === "navigate" || event.request.destination === "document") {
-    event.respondWith(
-      fetch(event.request).catch(() => caches.match("/index.html"))
-    );
-    return;
-  }
-
-  // Static assets: cache-first or network-first with offline cache fallback
+  // Network-first strategy for documents and assets to guarantee fresh UI updates
   event.respondWith(
-    caches.match(event.request).then((cachedResponse) => {
-      if (cachedResponse) {
-        fetch(event.request)
-          .then((networkResponse) => {
-            if (networkResponse && networkResponse.status === 200) {
-              caches.open(CACHE_NAME).then((cache) => cache.put(event.request, networkResponse));
-            }
-          })
-          .catch(() => {});
-        return cachedResponse;
-      }
-      return fetch(event.request)
-        .then((response) => {
-          if (response && response.status === 200) {
-            const clone = response.clone();
-            caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone));
+    fetch(event.request)
+      .then((networkResponse) => {
+        if (networkResponse && networkResponse.status === 200) {
+          const clone = networkResponse.clone();
+          caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone));
+        }
+        return networkResponse;
+      })
+      .catch(() => {
+        return caches.match(event.request).then((cached) => {
+          if (cached) return cached;
+          if (event.request.mode === "navigate" || event.request.destination === "document") {
+            return caches.match("/index.html");
           }
-          return response;
-        })
-        .catch(() => caches.match("/index.html"));
-    })
+          return new Response("Offline resource unavailable", { status: 503 });
+        });
+      })
   );
 });

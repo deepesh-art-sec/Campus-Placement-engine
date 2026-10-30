@@ -230,14 +230,41 @@ export const CoordinatorScheduleView: React.FC<CoordinatorScheduleViewProps> = (
       {/* Schedule Matrix Table */}
       <div className="corporate-card overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="w-full border-collapse">
+          <table className="w-full border-separate border-spacing-0">
             <thead>
               <tr className="border-b border-[#152445]">
-                <th className="p-4 text-xs font-black uppercase tracking-wider text-slate-300 w-56 min-w-[224px] max-w-[224px] text-left border-r border-[#152445] sticky left-0 z-20 bg-[var(--bg-card)] shadow-[4px_0_12px_rgba(0,0,0,0.5)]">
+                <th
+                  style={{
+                    position: "sticky",
+                    left: 0,
+                    zIndex: 35,
+                    backgroundColor: "var(--bg-card, #0B1326)",
+                    minWidth: "240px",
+                    maxWidth: "240px",
+                    width: "240px",
+                    boxShadow: "6px 0 16px -2px rgba(0, 0, 0, 0.85)",
+                    borderRight: "2px solid var(--border-card, #16264C)",
+                    whiteSpace: "nowrap",
+                    backgroundClip: "padding-box",
+                    willChange: "transform",
+                    transform: "translateZ(0)",
+                  }}
+                  className="p-4 text-xs font-black uppercase tracking-wider text-slate-300 text-left schedule-sticky-header"
+                >
                   Campus Classroom / Venue
                 </th>
                 {timeColumns.map((time) => (
-                  <th key={time} className="p-2.5 text-xs font-extrabold text-slate-300 text-center min-w-[155px] border-r border-[#152445] bg-[var(--bg-card)]">
+                  <th
+                    key={time}
+                    style={{
+                      minWidth: "160px",
+                      width: "160px",
+                      backgroundColor: "var(--bg-card, #0B1326)",
+                      borderRight: "1px solid var(--border-card, #16264C)",
+                      whiteSpace: "nowrap",
+                    }}
+                    className="p-2.5 text-xs font-extrabold text-slate-300 text-center schedule-time-header"
+                  >
                     <Clock className="w-3 h-3 inline mr-1 text-cyan-400" />
                     {time}
                   </th>
@@ -247,12 +274,28 @@ export const CoordinatorScheduleView: React.FC<CoordinatorScheduleViewProps> = (
             <tbody className="divide-y divide-[#152445] text-xs">
               {roomsList.map((room) => (
                 <tr key={room.id} className="transition-colors hover:bg-white/[0.02]">
-                  <td className="p-3.5 font-extrabold text-white border-r border-[#152445] sticky left-0 z-10 w-56 min-w-[224px] max-w-[224px] bg-[var(--bg-card)] shadow-[4px_0_12px_rgba(0,0,0,0.5)]">
-                    <div className="flex items-center gap-2">
+                  <td
+                    style={{
+                      position: "sticky",
+                      left: 0,
+                      zIndex: 25,
+                      backgroundColor: "var(--bg-card, #0B1326)",
+                      minWidth: "240px",
+                      maxWidth: "240px",
+                      width: "240px",
+                      boxShadow: "6px 0 16px -2px rgba(0, 0, 0, 0.85)",
+                      borderRight: "2px solid var(--border-card, #16264C)",
+                      backgroundClip: "padding-box",
+                      willChange: "transform",
+                      transform: "translateZ(0)",
+                    }}
+                    className="p-3.5 font-extrabold text-white schedule-sticky-col"
+                  >
+                    <div className="flex items-center gap-2 max-w-[210px] overflow-hidden">
                       <div className="w-6 h-6 rounded-md bg-blue-950/80 border border-blue-700/60 flex items-center justify-center text-cyan-400 shrink-0">
                         <MapPin className="w-3.5 h-3.5" />
                       </div>
-                      <span className="truncate font-extrabold">{room.name}</span>
+                      <span className="truncate font-extrabold" title={room.name}>{room.name}</span>
                     </div>
                   </td>
                   {timeColumns.map((time) => {
@@ -264,7 +307,15 @@ export const CoordinatorScheduleView: React.FC<CoordinatorScheduleViewProps> = (
                     });
 
                     return (
-                      <td key={time} className="p-2 border-r border-[#152445] text-center align-top h-24">
+                      <td
+                        key={time}
+                        style={{
+                          minWidth: "160px",
+                          width: "160px",
+                          borderRight: "1px solid var(--border-card, #16264C)",
+                        }}
+                        className="p-2 border-r border-[#152445] text-center align-top h-24"
+                      >
                         {slot ? (
                           <div
                             onClick={() => setInspectedSlot(slot)}
