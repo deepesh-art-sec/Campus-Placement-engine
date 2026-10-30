@@ -302,8 +302,8 @@ export const ScheduleBoardView: React.FC<ScheduleBoardViewProps> = ({ initialDri
       {/* Top Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-black text-slate-900 tracking-tight">Interview & Test Schedule Grid</h1>
-          <p className="text-sm text-slate-500 mt-1">
+          <h1 className="text-2xl font-black text-slate-900 dark:text-white tracking-tight">Interview & Test Schedule Grid</h1>
+          <p className="text-sm text-slate-600 dark:text-slate-400 mt-1">
             Google OR-Tools CP-SAT discrete solver. Each student is assigned strictly to their exact time slot with 0 repetition.
           </p>
         </div>
@@ -312,7 +312,7 @@ export const ScheduleBoardView: React.FC<ScheduleBoardViewProps> = ({ initialDri
           <select
             value={selectedDriveId}
             onChange={(e) => setSelectedDriveId(e.target.value)}
-            className="px-3.5 py-2 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-800 shadow-xs focus:ring-2 focus:ring-blue-500 focus:outline-hidden cursor-pointer"
+            className="px-3.5 py-2 bg-white dark:bg-[#121E36] border border-slate-200 dark:border-[#1E3156] text-slate-800 dark:text-white rounded-xl text-xs font-bold shadow-xs focus:ring-2 focus:ring-blue-500 focus:outline-hidden cursor-pointer"
           >
             {drives.map((d) => (
               <option key={d.id} value={d.id}>
@@ -323,7 +323,7 @@ export const ScheduleBoardView: React.FC<ScheduleBoardViewProps> = ({ initialDri
 
           <button
             onClick={() => setShowClassroomModal(true)}
-            className="flex items-center gap-1.5 px-3.5 py-2 bg-blue-50 hover:bg-blue-100 text-blue-700 text-xs font-bold rounded-xl border border-blue-200 shadow-xs transition-colors cursor-pointer"
+            className="flex items-center gap-1.5 px-3.5 py-2 bg-blue-50 dark:bg-[#14223E] hover:bg-blue-100 dark:hover:bg-[#1A2D52] text-blue-700 dark:text-blue-400 text-xs font-bold rounded-xl border border-blue-200 dark:border-[#1F3560] shadow-xs transition-colors cursor-pointer"
             title="Auto-provision or add classrooms according to student requirements"
           >
             <Building className="w-3.5 h-3.5" />
@@ -355,16 +355,16 @@ export const ScheduleBoardView: React.FC<ScheduleBoardViewProps> = ({ initialDri
         />
       )}
 
-      {/* Verification Status Banner */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between p-4 bg-white rounded-2xl border border-slate-200 shadow-xs gap-4">
+      {/* Verification Status Banner (Theme-Adaptive) */}
+      <div className="corporate-card flex flex-col sm:flex-row sm:items-center justify-between p-4 shadow-xs gap-4">
         <div className="flex items-center gap-3">
           <div
             className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${
               clashCount === 0 && slots.length > 0
-                ? "bg-emerald-100 text-emerald-700"
+                ? "bg-emerald-100 text-emerald-700 border border-emerald-200 dark:bg-emerald-950/80 dark:text-emerald-400 dark:border-emerald-800/60"
                 : clashCount > 0
-                ? "bg-rose-100 text-rose-700"
-                : "bg-slate-100 text-slate-500"
+                ? "bg-rose-100 text-rose-700 border border-rose-200 dark:bg-rose-950/80 dark:text-rose-400 dark:border-rose-800/60"
+                : "bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400"
             }`}
           >
             {clashCount === 0 && slots.length > 0 ? (
@@ -375,7 +375,7 @@ export const ScheduleBoardView: React.FC<ScheduleBoardViewProps> = ({ initialDri
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <h3 className="text-sm font-bold text-slate-900">
+              <h3 className="text-sm font-extrabold tracking-tight">
                 {clashCount === 0 && slots.length > 0
                   ? "0 Clashes Verified (Mathematically Proven)"
                   : clashCount > 0
@@ -383,25 +383,25 @@ export const ScheduleBoardView: React.FC<ScheduleBoardViewProps> = ({ initialDri
                   : "No Active Schedule Slots"}
               </h3>
               {clashCount === 0 && slots.length > 0 && (
-                <span className="text-[10px] font-bold bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-full uppercase tracking-wider">
+                <span className="text-[10px] font-extrabold bg-emerald-100 text-emerald-800 border border-emerald-300 dark:bg-emerald-950 dark:text-emerald-300 dark:border-emerald-700/60 px-2 py-0.5 rounded-full uppercase tracking-wider">
                   Guaranteed
                 </span>
               )}
             </div>
-            <p className="text-xs text-slate-500 mt-0.5">
+            <p className="text-xs opacity-70 mt-0.5">
               {uniqueStudentsCount} unique students scheduled across {roomsList.length} physical venues. Each candidate occupies exactly one time slot per round.
             </p>
           </div>
         </div>
 
         <div className="flex items-center gap-3 shrink-0">
-          <div className="text-right text-xs text-slate-500 hidden sm:block">
-            <span className="font-bold text-slate-800">{slots.length}</span> Total Slots •{" "}
-            <span className="font-bold text-slate-800">{roomsList.length}</span> Classrooms / Venues
+          <div className="text-right text-xs opacity-75 hidden sm:block">
+            <span className="font-extrabold">{slots.length}</span> Total Slots •{" "}
+            <span className="font-extrabold">{roomsList.length}</span> Classrooms / Venues
           </div>
           <button
             onClick={() => fetchSchedule(selectedDriveId)}
-            className="p-2 text-slate-500 hover:text-slate-800 bg-slate-100 hover:bg-slate-200 rounded-lg transition-colors cursor-pointer"
+            className="p-2 opacity-80 hover:opacity-100 bg-slate-100 hover:bg-slate-200 dark:bg-[#14203A] dark:hover:bg-[#1A2C50] border border-slate-200 dark:border-[#1E325A] rounded-lg transition-colors cursor-pointer"
             title="Refresh schedule"
           >
             <RefreshCw className={`w-4 h-4 ${loading ? "animate-spin text-blue-600" : ""}`} />
@@ -409,33 +409,35 @@ export const ScheduleBoardView: React.FC<ScheduleBoardViewProps> = ({ initialDri
         </div>
       </div>
 
-      {/* Schedule Matrix Grid */}
-      <div className="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden">
+      {/* Schedule Matrix Grid (Theme-Adaptive) */}
+      <div className="corporate-card overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full border-collapse">
             <thead>
-              <tr className="bg-slate-50 border-b border-slate-200">
-                <th className="p-4 text-xs font-bold text-slate-700 w-52 text-left border-r border-slate-200 bg-slate-100/60 sticky left-0 z-10">
+              <tr className="border-b border-[var(--border-card)]">
+                <th className="p-4 text-xs font-black uppercase tracking-wider text-slate-300 w-56 min-w-[224px] max-w-[224px] text-left border-r border-[var(--border-card)] sticky left-0 z-20 bg-[var(--bg-card)] shadow-[4px_0_12px_rgba(0,0,0,0.5)]">
                   Campus Classroom / Venue
                 </th>
                 {timeColumns.map((time) => (
                   <th
                     key={time}
-                    className="p-3 text-xs font-bold text-slate-600 text-center min-w-[145px] border-r border-slate-200"
+                    className="p-3 text-xs font-extrabold text-center min-w-[155px] border-r border-[var(--border-card)] bg-[var(--bg-card)] text-slate-300"
                   >
-                    <Clock className="w-3 h-3 inline mr-1 text-slate-400" />
+                    <Clock className="w-3.5 h-3.5 inline mr-1.5 text-blue-600 dark:text-cyan-400" />
                     {time}
                   </th>
                 ))}
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100">
+            <tbody className="divide-y divide-[var(--border-card)]">
               {roomsList.map((room) => (
-                <tr key={room.id} className="hover:bg-slate-50/40 transition-colors">
-                  <td className="p-4 text-xs font-bold text-slate-800 border-r border-slate-200 bg-slate-50/80 sticky left-0 z-10">
-                    <div className="flex items-center gap-1.5">
-                      <MapPin className="w-3.5 h-3.5 text-blue-600 shrink-0" />
-                      <span className="truncate">{room.name}</span>
+                <tr key={room.id} className="transition-colors hover:bg-white/[0.02]">
+                  <td className="p-4 text-xs font-extrabold border-r border-[var(--border-card)] sticky left-0 z-10 w-56 min-w-[224px] max-w-[224px] bg-[var(--bg-card)] shadow-[4px_0_12px_rgba(0,0,0,0.5)]">
+                    <div className="flex items-center gap-2.5">
+                      <div className="w-6 h-6 rounded-md bg-blue-50 dark:bg-blue-950/80 border border-blue-200 dark:border-blue-700/60 flex items-center justify-center text-blue-600 dark:text-cyan-400 shrink-0">
+                        <MapPin className="w-3.5 h-3.5" />
+                      </div>
+                      <span className="truncate font-black text-white">{room.name}</span>
                     </div>
                   </td>
                   {timeColumns.map((time) => {
@@ -456,46 +458,46 @@ export const ScheduleBoardView: React.FC<ScheduleBoardViewProps> = ({ initialDri
                     return (
                       <td
                         key={time}
-                        className="p-2 border-r border-slate-100 align-top h-24"
+                        className="p-2 border-r border-[var(--border-card)] align-top h-24 min-w-[155px]"
                       >
                         {slot ? (
                           <div
                             onClick={() => setSelectedSlot(slot)}
                             className={`${
                               (slot as any).has_clash
-                                ? "bg-rose-950/80 hover:bg-rose-900 border border-rose-500/80"
-                                : "bg-[#111e38]/90 hover:bg-[#16274a] border border-[#1e3258] hover:border-emerald-500/60"
-                            } rounded-xl p-2.5 shadow-sm hover:shadow-emerald-950/30 cursor-pointer transition-all space-y-1.5 group`}
+                                ? "bg-rose-950/90 hover:bg-rose-900/80 border-2 border-rose-500 shadow-lg shadow-rose-950/50"
+                                : "bg-[var(--bg-card)] hover:bg-[var(--bg-card-hover)] border border-[var(--border-card)] border-t-2 border-t-cyan-400 hover:border-cyan-400 shadow-md hover:shadow-cyan-950/40"
+                            } rounded-xl p-2.5 cursor-pointer transition-all space-y-1.5 group`}
                             title={(slot as any).clash_detail || undefined}
                           >
                             <div className="flex items-center justify-between gap-1">
-                              <span className="text-[11.5px] font-bold text-slate-100 block truncate group-hover:text-emerald-300 transition-colors">
+                              <span className="text-xs font-extrabold text-white block truncate group-hover:text-cyan-400 transition-colors">
                                 {slot.student_name}
                               </span>
                               {slot.has_applied && (
-                                <span className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 shrink-0">
+                                <span className="px-1.5 py-0.2 rounded text-[9px] font-extrabold bg-blue-50 text-blue-700 border border-blue-200 dark:bg-blue-950/80 dark:text-blue-300 dark:border-blue-700/60 shrink-0">
                                   Applied
                                 </span>
                               )}
                             </div>
-                            <span className="text-[10.5px] font-mono font-semibold text-cyan-400 block truncate">
+                            <span className="text-[11px] font-mono font-bold text-cyan-400 block truncate">
                               {slot.roll_no}
                             </span>
-                            <div className="flex items-center justify-between text-[10px] text-slate-400 pt-1 border-t border-[#1a2c50]">
+                            <div className="flex items-center justify-between text-[10.5px] font-semibold text-slate-500 dark:text-slate-400 pt-1.5 border-t border-slate-100 dark:border-[#1C2C4E]">
                               <span className="truncate">{slot.round_name}</span>
                               {(slot as any).has_clash ? (
-                                <span className="font-bold text-rose-300 shrink-0 bg-rose-950/80 border border-rose-500/50 px-1.5 py-0.5 rounded text-[9.5px]">
+                                <span className="font-extrabold text-rose-800 dark:text-rose-300 shrink-0 bg-rose-100 dark:bg-rose-950 border border-rose-300 dark:border-rose-500/60 px-1.5 py-0.5 rounded text-[9.5px]">
                                   CLASH
                                 </span>
                               ) : (
-                                <span className="font-bold text-emerald-300 shrink-0 bg-emerald-950/80 border border-emerald-500/30 px-1.5 py-0.5 rounded text-[9.5px]">
+                                <span className="font-extrabold text-emerald-800 dark:text-emerald-300 shrink-0 bg-emerald-100 dark:bg-emerald-950 border border-emerald-300 dark:border-emerald-500/50 px-2 py-0.5 rounded text-[9.5px]">
                                   OK
                                 </span>
                               )}
                             </div>
                           </div>
                         ) : (
-                          <div className="w-full h-full rounded-lg min-h-[64px] border border-dashed border-[#1a2a47] bg-[#091122]/40 flex items-center justify-center text-[10.5px] text-slate-500 font-medium hover:border-slate-700 hover:text-slate-400 transition-colors">
+                          <div className="w-full h-full rounded-xl min-h-[64px] border border-dashed border-[var(--border-card)] bg-[var(--bg-input)]/50 flex items-center justify-center text-xs text-slate-400 font-semibold hover:border-cyan-400 hover:text-cyan-400 transition-all">
                             Available
                           </div>
                         )}
@@ -509,17 +511,17 @@ export const ScheduleBoardView: React.FC<ScheduleBoardViewProps> = ({ initialDri
         </div>
       </div>
 
-      {/* Selected Slot Inspector Modal */}
+      {/* Selected Slot Inspector Modal (Theme-Adaptive) */}
       {selectedSlot && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs">
-          <div className="bg-[#0d1527] rounded-2xl max-w-md w-full p-6 shadow-2xl border border-[#1e3258] space-y-4 text-slate-100">
-            <div className="flex items-center justify-between pb-3 border-b border-[#1b2b4d]">
+          <div className="corporate-card max-w-md w-full p-6 shadow-2xl space-y-4">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-200">
               <div className="flex items-center gap-2">
                 <div className="w-9 h-9 rounded-xl bg-emerald-950/80 border border-emerald-500/30 text-emerald-400 flex items-center justify-center font-bold">
                   <UserCheck className="w-5 h-5" />
                 </div>
                 <div>
-                  <h3 className="text-sm font-bold text-slate-900">Scheduled Interview Slot</h3>
+                  <h3 className="text-sm font-bold text-white">Scheduled Interview Slot</h3>
                   <p className="text-xs text-slate-500">Deterministic discrete solver allocation</p>
                 </div>
               </div>
@@ -532,7 +534,7 @@ export const ScheduleBoardView: React.FC<ScheduleBoardViewProps> = ({ initialDri
             </div>
 
             <div className="space-y-3 text-xs">
-              <div className="p-3 bg-[#080e1c] rounded-xl space-y-1 border border-[#1b2b4d]">
+              <div className="p-3 bg-slate-50 rounded-xl space-y-1 border border-slate-200/80">
                 <div className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider flex items-center justify-between">
                   <span>Candidate</span>
                   {selectedSlot.has_applied && (
@@ -541,12 +543,12 @@ export const ScheduleBoardView: React.FC<ScheduleBoardViewProps> = ({ initialDri
                     </span>
                   )}
                 </div>
-                <div className="text-sm font-black text-slate-100">{selectedSlot.student_name}</div>
-                <div className="font-mono text-slate-400">{selectedSlot.roll_no}</div>
+                <div className="text-sm font-black text-slate-900">{selectedSlot.student_name}</div>
+                <div className="font-mono text-xs font-bold text-blue-700">{selectedSlot.roll_no}</div>
               </div>
 
               <div className="grid grid-cols-2 gap-3">
-                <div className="p-3 bg-[#080e1c] rounded-xl space-y-1 border border-[#1b2b4d]">
+                <div className="p-3 bg-slate-50 rounded-xl space-y-1 border border-slate-200/80">
                   <div className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider flex items-center gap-1">
                     <Clock className="w-3 h-3 text-blue-600" /> Time Window
                   </div>
@@ -555,7 +557,7 @@ export const ScheduleBoardView: React.FC<ScheduleBoardViewProps> = ({ initialDri
                   </div>
                 </div>
 
-                <div className="p-3 bg-[#080e1c] rounded-xl space-y-1 border border-[#1b2b4d]">
+                <div className="p-3 bg-slate-50 rounded-xl space-y-1 border border-slate-200/80">
                   <div className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider flex items-center gap-1">
                     <Building className="w-3 h-3 text-emerald-600" /> Venue
                   </div>
@@ -593,7 +595,7 @@ export const ScheduleBoardView: React.FC<ScheduleBoardViewProps> = ({ initialDri
             <div className="flex items-center justify-between pb-3 border-b border-slate-100">
               <div className="flex items-center gap-2">
                 <Building className="w-5 h-5 text-blue-600" />
-                <h3 className="text-base font-bold text-slate-900">Classroom Allocation & Provisioning</h3>
+                <h3 className="text-base font-bold text-white">Classroom Allocation & Provisioning</h3>
               </div>
               <button
                 onClick={() => setShowClassroomModal(false)}
