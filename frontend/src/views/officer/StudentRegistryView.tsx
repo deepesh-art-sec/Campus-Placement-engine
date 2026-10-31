@@ -891,15 +891,7 @@ export const StudentRegistryView: React.FC = () => {
                         <Edit3 className="w-3 h-3" />
                         <span>Edit</span>
                       </button>
-                      <button
-                        type="button"
-                        onClick={(e) => handleIssueAccessCode(s.roll_no, e)}
-                        className="px-2.5 py-1 text-xs font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 border border-slate-200 rounded-lg transition-colors inline-flex items-center gap-1 cursor-pointer"
-                        title="Generate student portal login code"
-                      >
-                        <Key className="w-3 h-3" />
-                        <span>Code</span>
-                      </button>
+
                     </div>
                   </td>
                 </tr>

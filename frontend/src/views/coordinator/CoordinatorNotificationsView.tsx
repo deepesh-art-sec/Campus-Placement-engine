@@ -84,11 +84,25 @@ export const CoordinatorNotificationsView: React.FC<CoordinatorNotificationsView
   const filteredNotifications = notifications.filter((n) => {
     if (showUnreadOnly && n.is_read) return false;
     if (activeCategory === "all") return true;
+    if (activeCategory === "announcement") return n.category === "announcement" || n.category === "broadcast";
     return n.category === activeCategory;
   });
 
   const getCategoryBadge = (cat: string) => {
     switch (cat) {
+      case "announcement":
+      case "broadcast":
+        return (
+          <span className="flex items-center gap-1 text-[11px] font-semibold text-cyan-700 bg-cyan-50 px-2 py-0.5 rounded border border-cyan-200">
+            <Bell className="w-3 h-3 text-cyan-600" /> Announcement
+          </span>
+        );
+      case "urgent_alert":
+        return (
+          <span className="flex items-center gap-1 text-[11px] font-semibold text-rose-700 bg-rose-50 px-2 py-0.5 rounded border border-rose-200">
+            <AlertTriangle className="w-3 h-3 text-rose-600" /> Urgent Broadcast
+          </span>
+        );
       case "clash_alert":
         return (
           <span className="flex items-center gap-1 text-[11px] font-semibold text-rose-700 bg-rose-50 px-2 py-0.5 rounded border border-rose-200">
@@ -130,6 +144,11 @@ export const CoordinatorNotificationsView: React.FC<CoordinatorNotificationsView
 
   const getTargetTabForNotification = (cat: string): string | null => {
     switch (cat) {
+      case "announcement":
+      case "broadcast":
+        return "drives";
+      case "urgent_alert":
+        return "communication";
       case "clash_alert":
         return "clashes";
       case "needs_review":
@@ -197,6 +216,16 @@ export const CoordinatorNotificationsView: React.FC<CoordinatorNotificationsView
             }`}
           >
             All Alerts ({notifications.length})
+          </button>
+          <button
+            onClick={() => setActiveCategory("announcement")}
+            className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition ${
+              activeCategory === "announcement"
+                ? "bg-cyan-600 text-white shadow-2xs"
+                : "bg-cyan-50 text-cyan-700 hover:bg-cyan-100"
+            }`}
+          >
+            Announcements ({notifications.filter((n) => n.category === "announcement" || n.category === "broadcast").length})
           </button>
           <button
             onClick={() => setActiveCategory("needs_review")}

@@ -101,7 +101,7 @@ export const CoordinatorOverviewView: React.FC<CoordinatorOverviewViewProps> = (
             <Badge variant="brand">Student Placement Coordinator (Read & Prepare)</Badge>
           </div>
           <p className="text-sm text-slate-500 mt-1">
-            Daily campus drive roster, candidate attendance dispatch, student inquiries, and officer approval requests.
+            Daily campus drives, attendance records, student requests, and live operational updates.
           </p>
         </div>
 
@@ -125,13 +125,7 @@ export const CoordinatorOverviewView: React.FC<CoordinatorOverviewViewProps> = (
         </div>
       </div>
 
-      {/* Coordinator Read & Prepare Principle Banner */}
-      <div className="p-4 bg-blue-50 border border-blue-200 rounded-2xl flex items-start gap-3">
-        <Info className="w-5 h-5 text-blue-600 shrink-0 mt-0.5" />
-        <div className="text-xs text-blue-900 leading-relaxed">
-          <strong>Coordinator Operating Rule:</strong> You can inspect student academics, prepare candidate rosters, record attendance, and log drive results. Any policy amendments, cut-off alterations, or drive publications are strictly governed by the Placement Officer and require raising a formal request.
-        </div>
-      </div>
+
 
       {error && <AlertBanner type="danger" message={error} onClose={() => setError(null)} />}
 
@@ -150,7 +144,7 @@ export const CoordinatorOverviewView: React.FC<CoordinatorOverviewViewProps> = (
           </div>
           <button
             type="button"
-            onClick={() => onNavigateTab("on_the_day")}
+            onClick={() => onNavigateTab("ontheday")}
             className="text-[10px] text-blue-600 font-bold hover:underline flex items-center gap-1 cursor-pointer"
           >
             <span>Mark Attendance</span>
@@ -279,14 +273,7 @@ export const CoordinatorOverviewView: React.FC<CoordinatorOverviewViewProps> = (
             <PlusCircle className="w-3.5 h-3.5" />
             <span>Submit Correction Request</span>
           </button>
-          <button
-            type="button"
-            onClick={() => onNavigateTab("on_the_day")}
-            className="flex items-center gap-1.5 px-3 py-1.5 bg-brand-50 hover:bg-brand-100 text-brand-800 font-bold text-xs rounded-xl border border-brand-200 transition-colors cursor-pointer"
-          >
-            <UserCheck className="w-3.5 h-3.5" />
-            <span>Drive Day Attendance</span>
-          </button>
+
           <button
             type="button"
             onClick={() => onNavigateTab("eligibility")}

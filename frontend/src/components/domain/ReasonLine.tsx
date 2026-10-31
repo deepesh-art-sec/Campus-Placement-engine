@@ -42,40 +42,40 @@ export const ReasonLine: React.FC<ReasonLineProps> = ({
   const statusLabel = statusText || status;
 
   const getIcon = () => {
-    if (isPositive) return <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />;
-    if (isNegative) return <XCircle className="w-4 h-4 text-rose-400 shrink-0" />;
-    return <AlertCircle className="w-4 h-4 text-amber-400 shrink-0" />;
+    if (isPositive) return <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />;
+    if (isNegative) return <XCircle className="w-4 h-4 text-rose-600 shrink-0" />;
+    return <AlertCircle className="w-4 h-4 text-amber-600 shrink-0" />;
   };
 
   const borderClasses = isPositive
-    ? "border-emerald-500/30 bg-emerald-950/20 text-emerald-100"
+    ? "border-emerald-200 bg-emerald-50/70 text-emerald-950"
     : isNegative
-    ? "border-rose-500/30 bg-rose-950/20 text-rose-100"
-    : "border-amber-500/30 bg-amber-950/20 text-amber-100";
+    ? "border-rose-200 bg-rose-50/70 text-rose-950"
+    : "border-amber-200 bg-amber-50/70 text-amber-950";
 
   const badgeClasses = isPositive
-    ? "bg-emerald-500/20 text-emerald-300 border-emerald-500/40"
+    ? "bg-emerald-100 text-emerald-800 border-emerald-300"
     : isNegative
-    ? "bg-rose-500/20 text-rose-300 border-rose-500/40"
-    : "bg-amber-500/20 text-amber-300 border-amber-500/40";
+    ? "bg-rose-100 text-rose-800 border-rose-300"
+    : "bg-amber-100 text-amber-800 border-amber-300";
 
   return (
-    <div className={`p-3.5 rounded-2xl border text-xs flex flex-col md:flex-row md:items-center justify-between gap-3 shadow-sm ${borderClasses} ${className}`}>
+    <div className={`p-3.5 rounded-2xl border text-xs flex flex-col md:flex-row md:items-center justify-between gap-3 shadow-xs ${borderClasses} ${className}`}>
       <div className="flex items-start sm:items-center gap-3">
         {getIcon()}
         <div className="flex flex-wrap items-center gap-2">
-          <span className={`px-2 py-0.5 rounded-full font-mono text-[11px] font-bold border uppercase tracking-wider ${badgeClasses}`}>
+          <span className={`px-2.5 py-0.5 rounded-full font-mono text-[11px] font-bold border uppercase tracking-wider ${badgeClasses}`}>
             {statusLabel}
           </span>
-          <span className="font-semibold text-slate-100">{effectiveReason}</span>
+          <span className="font-semibold text-slate-800">{effectiveReason}</span>
         </div>
       </div>
 
       {effectiveAction && (
-        <div className="flex items-center gap-1.5 text-xs text-slate-300 bg-[#080e1c]/80 px-3 py-1.5 rounded-xl border border-[#1e3258] shrink-0">
+        <div className="flex items-center gap-1.5 text-xs text-slate-700 bg-white px-3 py-1.5 rounded-xl border border-slate-200 shadow-xs shrink-0">
           <span className="text-[10px] uppercase font-bold text-slate-500 font-mono">Next:</span>
-          <span className="font-medium text-slate-200">{effectiveAction}</span>
-          <ArrowRight className="w-3.5 h-3.5 text-cyan-400 ml-1" />
+          <span className="font-medium text-slate-800">{effectiveAction}</span>
+          <ArrowRight className="w-3.5 h-3.5 text-blue-600 ml-1" />
         </div>
       )}
     </div>

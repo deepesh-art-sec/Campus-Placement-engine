@@ -644,7 +644,7 @@ export const CompanyExportView: React.FC = () => {
           </div>
 
           {/* IMATS ATS Push Integration */}
-          <div className="bg-gradient-to-r from-[#0d1527] to-[#111e3b] p-6 rounded-2xl border border-emerald-500/30 shadow-lg text-slate-100 space-y-4">
+          <div className="bg-gradient-to-r from-[#0B1F44] to-[#132B5B] p-6 rounded-2xl border border-blue-900/60 shadow-md text-white space-y-4">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-xl bg-emerald-950/80 border border-emerald-500/40 flex items-center justify-center text-emerald-400">
@@ -686,7 +686,7 @@ export const CompanyExportView: React.FC = () => {
             </div>
 
             {imatsStatus && (
-              <div className="p-3 bg-[#080e1c] border border-emerald-500/40 rounded-xl text-xs font-mono text-emerald-300 flex items-center gap-2">
+              <div className="p-3 bg-white/10 border border-white/20 rounded-xl text-xs font-mono text-emerald-300 flex items-center gap-2">
                 <Radio className="w-3.5 h-3.5 animate-pulse text-emerald-400 shrink-0" />
                 <span>{imatsStatus}</span>
               </div>
@@ -854,9 +854,9 @@ export const CompanyExportView: React.FC = () => {
             </div>
 
             {/* Right: Live Student Portal Notification Preview (5 cols) */}
-            <div className="lg:col-span-5 bg-gradient-to-b from-[#080e1c] to-[#0c162d] p-6 rounded-2xl border border-[#1b2b4d] text-slate-100 space-y-4 flex flex-col justify-between">
+            <div className="lg:col-span-5 bg-white p-6 rounded-2xl border border-slate-200/90 text-slate-800 shadow-xs space-y-4 flex flex-col justify-between">
               <div className="space-y-3">
-                <div className="flex items-center justify-between border-b border-[#1b2b4d] pb-2">
+                <div className="flex items-center justify-between border-b border-slate-200 pb-2">
                   <div className="flex items-center gap-2">
                     <Bell className="w-4 h-4 text-purple-400" />
                     <span className="text-xs font-bold text-white uppercase tracking-wider">
@@ -866,7 +866,7 @@ export const CompanyExportView: React.FC = () => {
                   <span className="text-[10px] text-slate-400 font-mono">Candidate View</span>
                 </div>
 
-                <div className="p-4 bg-[#0d1527] border border-[#1b2b4d] rounded-2xl space-y-2">
+                <div className="p-4 bg-slate-50 border border-slate-200/80 rounded-2xl space-y-2">
                   <div className="flex items-center justify-between text-[11px]">
                     <span className="px-2 py-0.5 rounded-full bg-purple-950/80 text-purple-300 border border-purple-800 font-bold uppercase text-[9px]">
                       {messageCategory.replace("_", " ")}
@@ -882,7 +882,7 @@ export const CompanyExportView: React.FC = () => {
                 </div>
               </div>
 
-              <div className="p-3 bg-[#040810]/60 rounded-xl border border-[#1b2b4d] text-[11px] text-slate-400">
+              <div className="p-3 bg-slate-50 rounded-xl border border-slate-200/80 text-[11px] text-slate-600">
                 <div className="font-bold text-emerald-400 flex items-center gap-1.5 mb-1">
                   <CheckCircle2 className="w-3.5 h-3.5" />
                   <span>Offline Broadcast Assurance</span>

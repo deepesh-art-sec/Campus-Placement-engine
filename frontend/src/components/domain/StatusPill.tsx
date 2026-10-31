@@ -49,11 +49,11 @@ export const StatusPill: React.FC<StatusPillProps> = ({
       case "PUBLISHED":
       case "COMPLETED":
         return {
-          bg: "bg-emerald-950/60",
-          text: "text-emerald-300",
-          border: "border-emerald-700/60",
-          icon: <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />,
-          dot: "bg-emerald-400",
+          bg: "bg-emerald-50",
+          text: "text-emerald-700",
+          border: "border-emerald-200",
+          icon: <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />,
+          dot: "bg-emerald-500",
         };
       case "NOT_ELIGIBLE":
       case "REJECTED":
@@ -61,41 +61,41 @@ export const StatusPill: React.FC<StatusPillProps> = ({
       case "ABSENT":
       case "CANCELLED":
         return {
-          bg: "bg-rose-950/60",
-          text: "text-rose-300",
-          border: "border-rose-700/60",
-          icon: <XCircle className="w-3.5 h-3.5 text-rose-400" />,
-          dot: "bg-rose-400",
+          bg: "bg-rose-50",
+          text: "text-rose-700",
+          border: "border-rose-200",
+          icon: <XCircle className="w-3.5 h-3.5 text-rose-600" />,
+          dot: "bg-rose-500",
         };
       case "PENDING":
       case "PENDING_REVIEW":
       case "IN_PROGRESS":
       case "LATE":
         return {
-          bg: "bg-amber-950/60",
-          text: "text-amber-300",
-          border: "border-amber-700/60",
-          icon: <Clock className="w-3.5 h-3.5 text-amber-400" />,
-          dot: "bg-amber-400",
+          bg: "bg-amber-50",
+          text: "text-amber-700",
+          border: "border-amber-200",
+          icon: <Clock className="w-3.5 h-3.5 text-amber-600" />,
+          dot: "bg-amber-500",
         };
       case "OVERRIDDEN":
       case "APPLIED":
       case "OFFERED":
         return {
-          bg: "bg-blue-950/60",
-          text: "text-blue-300",
-          border: "border-blue-700/60",
-          icon: <ShieldCheck className="w-3.5 h-3.5 text-blue-400" />,
-          dot: "bg-blue-400",
+          bg: "bg-blue-50",
+          text: "text-blue-700",
+          border: "border-blue-200",
+          icon: <ShieldCheck className="w-3.5 h-3.5 text-blue-600" />,
+          dot: "bg-blue-500",
         };
       case "DRAFT":
       case "OPTED_OUT":
       default:
         return {
-          bg: "bg-slate-900/80",
-          text: "text-slate-300",
-          border: "border-slate-700/60",
-          icon: <Slash className="w-3.5 h-3.5 text-slate-400" />,
+          bg: "bg-slate-100",
+          text: "text-slate-700",
+          border: "border-slate-200",
+          icon: <Slash className="w-3.5 h-3.5 text-slate-500" />,
           dot: "bg-slate-400",
         };
     }

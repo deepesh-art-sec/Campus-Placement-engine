@@ -61,36 +61,36 @@ export const MultiSelect: React.FC<MultiSelectProps> = ({
   return (
     <div ref={containerRef} className="w-full space-y-1.5 text-left relative">
       {label && (
-        <label className="block text-xs font-bold uppercase tracking-wider text-slate-300">
+        <label className="block text-xs font-bold uppercase tracking-wider text-slate-700">
           {label}
         </label>
       )}
 
       <div
         onClick={() => !disabled && setIsOpen(!isOpen)}
-        className={`min-h-[44px] p-2 bg-[#080e1c] border rounded-xl flex items-center justify-between gap-2 cursor-pointer transition-all ${
+        className={`min-h-[44px] p-2 bg-white border rounded-xl flex items-center justify-between gap-2 cursor-pointer transition-all ${
           error
-            ? "border-rose-500 focus-within:ring-rose-500/30"
-            : "border-[#1e3258] hover:border-emerald-500/60 focus-within:ring-emerald-500/30"
+            ? "border-rose-400 focus-within:ring-rose-100"
+            : "border-slate-300 hover:border-blue-400 focus-within:ring-2 focus-within:ring-blue-100"
         } ${disabled ? "opacity-50 cursor-not-allowed" : ""}`}
       >
         <div className="flex flex-wrap gap-1.5 items-center flex-1">
           {selected.length === 0 ? (
-            <span className="text-xs text-slate-500 font-medium pl-1">{placeholder}</span>
+            <span className="text-xs text-slate-400 font-medium pl-1">{placeholder}</span>
           ) : (
             selected.map((val) => {
               const opt = options.find((o) => o.value === val);
               return (
                 <span
                   key={val}
-                  className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-lg text-xs font-semibold bg-[#111d38] border border-cyan-500/30 text-cyan-300 shadow-xs"
+                  className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-lg text-xs font-semibold bg-blue-50 border border-blue-200 text-blue-700 shadow-2xs"
                 >
                   <span>{opt ? opt.label : val}</span>
                   {!disabled && (
                     <button
                       type="button"
                       onClick={(e) => removeOption(e, val)}
-                      className="hover:text-rose-400 p-0.5"
+                      className="hover:text-rose-600 p-0.5"
                     >
                       <X className="w-3 h-3" />
                     </button>
@@ -107,19 +107,19 @@ export const MultiSelect: React.FC<MultiSelectProps> = ({
       </div>
 
       {isOpen && (
-        <div className="absolute z-50 left-0 right-0 mt-1 bg-[#0d1527] border border-[#1e3258] rounded-2xl shadow-2xl p-2 space-y-2 max-h-60 overflow-y-auto">
+        <div className="absolute z-50 left-0 right-0 mt-1 bg-white border border-slate-200 rounded-2xl shadow-xl p-2 space-y-2 max-h-60 overflow-y-auto">
           <input
             type="text"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             placeholder="Search options..."
-            className="w-full px-3 py-1.5 bg-[#080e1c] border border-[#1e3258] rounded-xl text-xs text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500"
+            className="w-full px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 placeholder-slate-400 focus:bg-white focus:outline-none focus:border-blue-500"
             onClick={(e) => e.stopPropagation()}
           />
 
           <div className="space-y-0.5">
             {filteredOptions.length === 0 ? (
-              <div className="p-3 text-center text-xs text-slate-500">No matching options</div>
+              <div className="p-3 text-center text-xs text-slate-400">No matching options</div>
             ) : (
               filteredOptions.map((opt) => {
                 const isSelected = selected.includes(opt.value);
@@ -129,12 +129,12 @@ export const MultiSelect: React.FC<MultiSelectProps> = ({
                     onClick={() => toggleOption(opt.value)}
                     className={`flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold cursor-pointer transition-colors ${
                       isSelected
-                        ? "bg-emerald-950/60 text-emerald-300 border border-emerald-500/30"
-                        : "text-slate-300 hover:bg-[#111d38] hover:text-white"
+                        ? "bg-blue-50 text-blue-700 border border-blue-200 font-bold"
+                        : "text-slate-700 hover:bg-slate-50 hover:text-slate-900"
                     }`}
                   >
                     <span>{opt.label}</span>
-                    {isSelected && <Check className="w-3.5 h-3.5 text-emerald-400 shrink-0" />}
+                    {isSelected && <Check className="w-3.5 h-3.5 text-blue-600 shrink-0" />}
                   </div>
                 );
               })
@@ -144,9 +144,9 @@ export const MultiSelect: React.FC<MultiSelectProps> = ({
       )}
 
       {error ? (
-        <p className="text-xs font-medium text-rose-400 mt-1">{error}</p>
+        <p className="text-xs font-medium text-rose-600 mt-1">{error}</p>
       ) : helperText ? (
-        <p className="text-[11px] text-slate-400 mt-1">{helperText}</p>
+        <p className="text-[11px] text-slate-500 mt-1">{helperText}</p>
       ) : null}
     </div>
   );

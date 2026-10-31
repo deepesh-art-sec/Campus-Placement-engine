@@ -27,6 +27,7 @@ router = APIRouter(prefix="/api/announcements", tags=["25 Announcements Library"
 
 _loader = DocumentLoader()
 _extractor = NLPEngine()
+_snippet_cache: dict[str, str] = {}
 
 
 def _get_announcements_dir() -> str:
@@ -95,6 +96,52 @@ def _clean_company_name(filename: str, ground_truth: dict[str, Any] | None = Non
     return " ".join(words) or clean.title()
 
 
+
+def _get_drive_date_and_deadline(filename: str, idx: int, gt: dict[str, Any]) -> tuple[str, str]:
+    """Generates distinct staggered drive dates and deadlines across the recruitment season."""
+    staggered_dates = [
+        ("2026-11-02", "2026-10-28"),
+        ("2026-11-04", "2026-10-30"),
+        ("2026-11-06", "2026-11-01"),
+        ("2026-11-09", "2026-11-04"),
+        ("2026-11-11", "2026-11-06"),
+        ("2026-11-13", "2026-11-08"),
+        ("2026-11-16", "2026-11-11"),
+        ("2026-11-18", "2026-11-13"),
+        ("2026-11-20", "2026-11-15"),
+        ("2026-11-22", "2026-11-17"),
+        ("2026-11-24", "2026-11-19"),
+        ("2026-11-26", "2026-11-21"),
+        ("2026-11-28", "2026-11-23"),
+        ("2026-11-30", "2026-11-25"),
+        ("2026-12-02", "2026-11-27"),
+        ("2026-12-04", "2026-11-29"),
+        ("2026-12-07", "2026-12-02"),
+        ("2026-12-09", "2026-12-04"),
+        ("2026-12-11", "2026-12-06"),
+        ("2026-12-14", "2026-12-09"),
+        ("2026-12-16", "2026-12-11"),
+        ("2026-12-18", "2026-12-13"),
+        ("2026-12-21", "2026-12-16"),
+        ("2026-12-23", "2026-12-18"),
+        ("2026-12-26", "2026-12-20"),
+    ]
+    if idx > 0 and idx <= len(staggered_dates):
+        fallback_drive, fallback_deadline = staggered_dates[idx - 1]
+    else:
+        file_hash = sum(ord(c) for c in filename) % len(staggered_dates)
+        fallback_drive, fallback_deadline = staggered_dates[file_hash]
+
+    drive_date = gt.get("drive_date")
+    if not drive_date or drive_date in ("2026-11-20", "2026-10-25"):
+        drive_date = fallback_drive
+
+    deadline = gt.get("application_deadline")
+    if not deadline or deadline in ("2026-10-25", "2026-11-20"):
+        deadline = fallback_deadline
+
+    return drive_date, deadline
+
 def _get_ground_truth() -> dict[str, Any]:
     """Loads ground truth criteria metadata."""
     try:
@@ -146,18 +193,21 @@ def list_all_announcements(
         if search and search.lower() not in comp_name.lower() and search.lower() not in name_part.lower():
             continue
 
-        # Load preview snippet
-        snippet = ""
-        try:
-            with open(file_path, "rb") as fp:
-                full_text = _loader.load_from_bytes(fp.read(), f)
-            snippet = full_text[:280].strip().replace("\n", " ") + "..."
-        except Exception:
-            snippet = f"Real-format {ext} document received by placement cell."
+                # Load preview snippet
+        if f in _snippet_cache:
+            snippet = _snippet_cache[f]
+        else:
+            try:
+                with open(file_path, "rb") as fp:
+                    full_text = _loader.load_from_bytes(fp.read(), f)
+                snippet = " ".join(full_text[:280].split()) + "..."
+            except Exception:
+                snippet = f"Real-format {ext} document received by placement cell."
+            _snippet_cache[f] = snippet
 
         role = gt.get("role") or "Software Development Engineer"
         location = gt.get("location") or "Bengaluru / Hyderabad"
-        deadline = gt.get("application_deadline") or "2026-10-25"
+        drive_date_val, deadline_val = _get_drive_date_and_deadline(f, idx, gt)
 
         results.append({
             "index": idx,
@@ -165,14 +215,14 @@ def list_all_announcements(
             "company_name": comp_name,
             "role": role,
             "location": location,
-            "application_deadline": deadline,
+            "application_deadline": deadline_val,
             "label": f"{comp_name} - {role} ({ext})",
             "format": ext,
             "file_type_label": format_labels.get(ext, f"{ext} Document"),
             "size_bytes": size_bytes,
             "ctc_lpa": gt.get("ctc_lpa", 10.0),
             "cgpa_min": gt.get("cgpa_min", 7.0),
-            "drive_date": gt.get("drive_date", "2026-11-20"),
+            "drive_date": drive_date_val,
             "mode": gt.get("mode", "on_campus"),
             "allowed_branches": gt.get("allowed_branches", ["All Branches"]),
             "active_backlogs_max": gt.get("active_backlogs_max", 0),
@@ -430,10 +480,55 @@ def create_drive_from_announcement(
     db.add(req_v)
     db.commit()
 
+    try:
+        from backend.app.storage.mongodb import MongoSyncService
+        MongoSyncService.sync_document(
+            collection_name="drives",
+            doc_id=drive.id,
+            data={
+                "id": drive.id,
+                "company_id": drive.company_id,
+                "company_name": drive.company_name,
+                "drive_date": drive.drive_date.isoformat() if drive.drive_date else None,
+                "mode": drive.mode,
+                "ctc_lpa": drive.ctc_lpa,
+                "status": drive.status,
+            },
+        )
+    except Exception:
+        pass
+
     return {
         "status": "created",
         "message": f"Campus drive for '{company_name}' successfully initialized from {filename}!",
         "drive_id": drive.id,
         "company_name": drive.company_name,
         "ctc_lpa": drive.ctc_lpa,
+    }
+
+
+@router.delete("/{filename}")
+def delete_announcement(
+    filename: str,
+    current_user: UserModel = Depends(require_officer_or_coordinator),
+) -> dict[str, Any]:
+    """Deletes an announcement file from the library."""
+    ann_dir = _get_announcements_dir()
+    file_path = os.path.join(ann_dir, filename)
+
+    if not os.path.exists(file_path):
+        return {"status": "success", "message": f"Announcement '{filename}' removed."}
+
+    try:
+        os.remove(file_path)
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Could not delete announcement: {str(e)}",
+        )
+
+    return {
+        "status": "success",
+        "message": f"Announcement '{filename}' successfully deleted from repository.",
+        "filename": filename,
     }

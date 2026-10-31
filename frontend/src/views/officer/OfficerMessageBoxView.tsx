@@ -298,7 +298,7 @@ export const OfficerMessageBoxView: React.FC = () => {
   return (
     <div className="space-y-6 max-w-7xl mx-auto pb-12">
       {/* Top Banner & Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-gradient-to-r from-[#0d1527] via-[#101b33] to-[#0a1426] p-5 sm:p-6 rounded-3xl border border-[#1b2b4d] shadow-xl">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-gradient-to-r from-[#0B1F44] via-[#132B5B] to-[#0F285A] p-5 sm:p-6 rounded-3xl border border-blue-900/60 shadow-lg text-white">
         <div className="space-y-1.5">
           <div className="flex items-center gap-2.5">
             <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-blue-700 via-teal-600 to-emerald-500 flex items-center justify-center text-white shadow-lg shadow-emerald-500/20 ring-2 ring-emerald-500/20">
@@ -324,7 +324,7 @@ export const OfficerMessageBoxView: React.FC = () => {
           <button
             type="button"
             onClick={() => setShowComposeModal(true)}
-            className="flex items-center gap-1.5 px-3.5 py-2 bg-gradient-to-r from-blue-600 via-teal-600 to-emerald-600 hover:from-blue-500 hover:via-teal-500 hover:to-emerald-500 text-white rounded-xl text-xs font-bold transition-all shadow-md shadow-emerald-900/30 border border-emerald-400/30 cursor-pointer"
+            className="flex items-center gap-1.5 px-3.5 py-2 bg-gradient-to-r bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl text-xs font-bold transition-all shadow-md shadow-emerald-900/30 border border-emerald-400/30 cursor-pointer"
           >
             <Send className="w-3.5 h-3.5" />
             <span>Compose Message / Broadcast</span>
@@ -334,7 +334,7 @@ export const OfficerMessageBoxView: React.FC = () => {
             type="button"
             onClick={fetchData}
             disabled={loading}
-            className="p-2 bg-[#111d38] hover:bg-[#162447] text-slate-300 hover:text-white rounded-xl border border-[#1b2b4d] transition-all cursor-pointer disabled:opacity-50"
+            className="p-2 bg-white/10 hover:bg-white/20 text-white rounded-xl border border-white/20 transition-all cursor-pointer disabled:opacity-50"
             title="Refresh inbox data"
           >
             <RefreshCw className={`w-4 h-4 ${loading ? "animate-spin text-emerald-400" : ""}`} />
@@ -352,8 +352,8 @@ export const OfficerMessageBoxView: React.FC = () => {
           onClick={() => setActiveTab("pending")}
           className={`p-3.5 rounded-2xl border transition-all cursor-pointer ${
             activeTab === "pending"
-              ? "bg-[#111d38] border-amber-500/50 shadow-md shadow-amber-950/20"
-              : "bg-[#0d1527]/90 border-[#1b2b4d] hover:border-slate-700"
+              ? "bg-amber-50/80 border-amber-300 shadow-xs"
+              : "bg-white border-slate-200/90 hover:border-slate-300 shadow-xs"
           }`}
         >
           <div className="flex items-center justify-between text-xs text-slate-400 mb-1">
@@ -370,8 +370,8 @@ export const OfficerMessageBoxView: React.FC = () => {
           onClick={() => setActiveTab("coordinator")}
           className={`p-3.5 rounded-2xl border transition-all cursor-pointer ${
             activeTab === "coordinator"
-              ? "bg-[#111d38] border-indigo-500/50 shadow-md shadow-indigo-950/20"
-              : "bg-[#0d1527]/90 border-[#1b2b4d] hover:border-slate-700"
+              ? "bg-blue-50/80 border-blue-300 shadow-xs"
+              : "bg-white border-slate-200/90 hover:border-slate-300 shadow-xs"
           }`}
         >
           <div className="flex items-center justify-between text-xs text-slate-400 mb-1">
@@ -388,8 +388,8 @@ export const OfficerMessageBoxView: React.FC = () => {
           onClick={() => setActiveTab("results")}
           className={`p-3.5 rounded-2xl border transition-all cursor-pointer ${
             activeTab === "results"
-              ? "bg-[#111d38] border-emerald-500/50 shadow-md shadow-emerald-950/20"
-              : "bg-[#0d1527]/90 border-[#1b2b4d] hover:border-slate-700"
+              ? "bg-emerald-50/80 border-emerald-300 shadow-xs"
+              : "bg-white border-slate-200/90 hover:border-slate-300 shadow-xs"
           }`}
         >
           <div className="flex items-center justify-between text-xs text-slate-400 mb-1">
@@ -406,8 +406,8 @@ export const OfficerMessageBoxView: React.FC = () => {
           onClick={() => setActiveTab("students")}
           className={`p-3.5 rounded-2xl border transition-all cursor-pointer ${
             activeTab === "students"
-              ? "bg-[#111d38] border-teal-500/50 shadow-md shadow-teal-950/20"
-              : "bg-[#0d1527]/90 border-[#1b2b4d] hover:border-slate-700"
+              ? "bg-teal-50/80 border-teal-300 shadow-xs"
+              : "bg-white border-slate-200/90 hover:border-slate-300 shadow-xs"
           }`}
         >
           <div className="flex items-center justify-between text-xs text-slate-400 mb-1">
@@ -424,8 +424,8 @@ export const OfficerMessageBoxView: React.FC = () => {
           onClick={() => setActiveTab("recruiters")}
           className={`p-3.5 rounded-2xl border transition-all cursor-pointer ${
             activeTab === "recruiters"
-              ? "bg-[#111d38] border-blue-500/50 shadow-md shadow-blue-950/20"
-              : "bg-[#0d1527]/90 border-[#1b2b4d] hover:border-slate-700"
+              ? "bg-blue-50/80 border-blue-300 shadow-xs"
+              : "bg-white border-slate-200/90 hover:border-slate-300 shadow-xs"
           }`}
         >
           <div className="flex items-center justify-between text-xs text-slate-400 mb-1">
@@ -442,8 +442,8 @@ export const OfficerMessageBoxView: React.FC = () => {
           onClick={() => setActiveTab("all")}
           className={`p-3.5 rounded-2xl border transition-all cursor-pointer ${
             activeTab === "all"
-              ? "bg-[#111d38] border-slate-500/50 shadow-md"
-              : "bg-[#0d1527]/90 border-[#1b2b4d] hover:border-slate-700"
+              ? "bg-slate-100 border-slate-300 shadow-xs"
+              : "bg-white border-slate-200/90 hover:border-slate-300 shadow-xs"
           }`}
         >
           <div className="flex items-center justify-between text-xs text-slate-400 mb-1">
@@ -458,7 +458,7 @@ export const OfficerMessageBoxView: React.FC = () => {
       </div>
 
       {/* Filter Tabs & Search Controls */}
-      <div className="bg-[#0d1527] p-3.5 rounded-2xl border border-[#1b2b4d] flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3 shadow-md">
+      <div className="bg-white p-3.5 rounded-2xl border border-slate-200/90 flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3 shadow-xs">
         {/* Navigation Tabs */}
         <div className="flex items-center gap-1.5 overflow-x-auto pb-1 md:pb-0 scrollbar-none">
           {[
@@ -475,8 +475,8 @@ export const OfficerMessageBoxView: React.FC = () => {
               onClick={() => setActiveTab(t.id)}
               className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition-all cursor-pointer ${
                 activeTab === t.id
-                  ? "bg-gradient-to-r from-blue-700 to-emerald-600 text-white shadow-xs"
-                  : "text-slate-400 hover:text-white hover:bg-[#111d38]"
+                  ? "bg-gradient-to-r bg-blue-600 text-white font-bold shadow-xs"
+                  : "text-slate-600 hover:text-slate-900 hover:bg-slate-100"
               }`}
             >
               <span>{t.label}</span>
@@ -504,14 +504,14 @@ export const OfficerMessageBoxView: React.FC = () => {
               placeholder="Search sender, student, roll no..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-8 pr-3 py-1.5 bg-[#080e1c] border border-[#1e3258] rounded-xl text-xs text-white placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-emerald-500"
+              className="w-full pl-8 pr-3 py-1.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-white placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-emerald-500"
             />
           </div>
 
           <select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
-            className="px-2.5 py-1.5 bg-[#080e1c] border border-[#1e3258] rounded-xl text-xs font-semibold text-slate-300 focus:outline-none cursor-pointer"
+            className="px-2.5 py-1.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-300 focus:outline-none cursor-pointer"
           >
             <option value="all">Status: All</option>
             <option value="pending">Status: Pending</option>
@@ -524,12 +524,12 @@ export const OfficerMessageBoxView: React.FC = () => {
       {/* Main Items Feed */}
       <div className="space-y-3.5">
         {loading && items.length === 0 ? (
-          <div className="p-12 text-center bg-[#0d1527] rounded-3xl border border-[#1b2b4d] text-slate-400">
+          <div className="p-12 text-center bg-white rounded-3xl border border-slate-200 text-slate-400">
             <RefreshCw className="w-8 h-8 animate-spin mx-auto mb-3 text-emerald-400" />
             <p className="text-sm font-semibold">Loading Message Box items...</p>
           </div>
         ) : items.length === 0 ? (
-          <div className="p-12 text-center bg-[#0d1527] rounded-3xl border border-[#1b2b4d] text-slate-400 space-y-2">
+          <div className="p-12 text-center bg-white rounded-3xl border border-slate-200 text-slate-400 space-y-2">
             <Inbox className="w-10 h-10 mx-auto text-slate-600 mb-2" />
             <p className="text-base font-bold text-white">No requests or messages found</p>
             <p className="text-xs text-slate-500">
@@ -544,8 +544,8 @@ export const OfficerMessageBoxView: React.FC = () => {
               key={item.id}
               className={`p-5 rounded-2xl border transition-all duration-150 space-y-3.5 ${
                 item.is_pending
-                  ? "bg-[#0d1527] border-amber-500/40 shadow-lg shadow-amber-950/10 hover:border-amber-400/60"
-                  : "bg-[#0a1222] border-[#1b2b4d] hover:border-slate-700"
+                  ? "bg-white border-amber-500/40 shadow-lg shadow-amber-950/10 hover:border-amber-400/60"
+                  : "bg-slate-50 border-slate-200 hover:border-slate-300"
               }`}
             >
               {/* Card Header */}
@@ -592,14 +592,14 @@ export const OfficerMessageBoxView: React.FC = () => {
 
               {/* Payload & Context Details Preview */}
               {item.payload && Object.keys(item.payload).length > 0 && (
-                <div className="bg-[#060b14] p-3 rounded-xl border border-[#1b2b4d] text-xs space-y-1.5">
+                <div className="bg-slate-50 p-3 rounded-xl border border-slate-200 text-xs space-y-1.5">
                   <div className="text-[11px] font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
                     <FileText className="w-3.5 h-3.5 text-emerald-400" />
                     <span>Operational Data & Criteria Payload:</span>
                   </div>
                   <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2 pt-1 font-mono text-[11px]">
                     {Object.entries(item.payload).map(([k, v]) => (
-                      <div key={k} className="bg-[#0b1325] px-2.5 py-1.5 rounded-lg border border-[#1e3258]">
+                      <div key={k} className="bg-white px-2.5 py-1.5 rounded-lg border border-slate-200 text-slate-800">
                         <span className="text-slate-500 block text-[9px] uppercase">{k.replace(/_/g, " ")}</span>
                         <span className="font-bold text-slate-200 truncate block">
                           {typeof v === "object" ? JSON.stringify(v) : String(v)}
@@ -622,10 +622,10 @@ export const OfficerMessageBoxView: React.FC = () => {
               )}
 
               {/* Card Footer Actions */}
-              <div className="pt-2 border-t border-[#1b2b4d] flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div className="pt-2 border-t border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                 <div className="flex items-center gap-2 text-xs">
                   {item.target_name && (
-                    <span className="px-2 py-0.5 bg-[#111d38] text-slate-300 rounded-lg border border-[#1e3258] font-mono text-[11px]">
+                    <span className="px-2 py-0.5 bg-slate-100 text-slate-700 rounded-lg border border-slate-200 font-mono text-[11px]">
                       Target: {item.target_name}
                     </span>
                   )}
@@ -672,7 +672,7 @@ export const OfficerMessageBoxView: React.FC = () => {
                   <button
                     type="button"
                     onClick={() => setDiscussionItem(item)}
-                    className="flex items-center gap-1 px-3 py-1.5 bg-[#111d38] hover:bg-[#162447] text-slate-300 hover:text-white rounded-xl text-xs font-bold border border-[#1b2b4d] transition cursor-pointer"
+                    className="flex items-center gap-1 px-3 py-1.5 bg-white hover:bg-slate-100 text-slate-700 hover:text-slate-900 rounded-xl text-xs font-bold border border-slate-200 shadow-2xs transition cursor-pointer"
                   >
                     <MessageSquare className="w-3.5 h-3.5 text-indigo-400" />
                     <span>Reply</span>
@@ -687,8 +687,8 @@ export const OfficerMessageBoxView: React.FC = () => {
       {/* APPROVE CONFIRMATION MODAL */}
       {approveItem && (
         <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-[#0d1527] border border-[#1b2b4d] rounded-3xl max-w-lg w-full p-6 text-slate-100 space-y-4 shadow-2xl">
-            <div className="flex items-center justify-between pb-3 border-b border-[#1b2b4d]">
+          <div className="bg-white border border-slate-200 rounded-3xl max-w-lg w-full p-6 text-slate-100 space-y-4 shadow-2xl">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-200">
               <div className="flex items-center gap-2 text-emerald-400 font-bold text-base">
                 <CheckCircle2 className="w-5 h-5" />
                 <span>Confirm Officer Approval</span>
@@ -706,7 +706,7 @@ export const OfficerMessageBoxView: React.FC = () => {
               <p className="font-semibold text-slate-300">
                 You are approving the following inbound request from <strong className="text-white">{approveItem.sender_name}</strong>:
               </p>
-              <div className="p-3 bg-[#080e1c] rounded-xl border border-[#1e3258] space-y-1">
+              <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 space-y-1">
                 <div className="font-bold text-white text-sm">{approveItem.title}</div>
                 <div className="text-slate-400">{approveItem.description}</div>
               </div>
@@ -733,15 +733,15 @@ export const OfficerMessageBoxView: React.FC = () => {
                 value={approveNote}
                 onChange={(e) => setApproveNote(e.target.value)}
                 placeholder="e.g. Verified with marksheet; approved and enforced."
-                className="w-full px-3.5 py-2.5 bg-[#080e1c] border border-[#1e3258] rounded-xl text-xs text-white placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-white placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-emerald-500"
               />
             </div>
 
-            <div className="flex items-center justify-end gap-3 pt-3 border-t border-[#1b2b4d]">
+            <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-200">
               <button
                 type="button"
                 onClick={() => setApproveItem(null)}
-                className="px-4 py-2 bg-[#111d38] hover:bg-[#162447] text-slate-300 rounded-xl text-xs font-bold transition cursor-pointer"
+                className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold transition cursor-pointer"
               >
                 Cancel
               </button>
@@ -762,8 +762,8 @@ export const OfficerMessageBoxView: React.FC = () => {
       {/* REJECT MODAL */}
       {rejectItem && (
         <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-[#0d1527] border border-[#1b2b4d] rounded-3xl max-w-lg w-full p-6 text-slate-100 space-y-4 shadow-2xl">
-            <div className="flex items-center justify-between pb-3 border-b border-[#1b2b4d]">
+          <div className="bg-white border border-slate-200 rounded-3xl max-w-lg w-full p-6 text-slate-100 space-y-4 shadow-2xl">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-200">
               <div className="flex items-center gap-2 text-rose-400 font-bold text-base">
                 <XCircle className="w-5 h-5" />
                 <span>Reject Inbound Request</span>
@@ -793,15 +793,15 @@ export const OfficerMessageBoxView: React.FC = () => {
                 value={rejectReason}
                 onChange={(e) => setRejectReason(e.target.value)}
                 placeholder="e.g. Grade sheet verification failed; cutoff criteria not fulfilled."
-                className="w-full px-3.5 py-2.5 bg-[#080e1c] border border-[#1e3258] rounded-xl text-xs text-white placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-rose-500"
+                className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-white placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-rose-500"
               />
             </div>
 
-            <div className="flex items-center justify-end gap-3 pt-3 border-t border-[#1b2b4d]">
+            <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-200">
               <button
                 type="button"
                 onClick={() => setRejectItem(null)}
-                className="px-4 py-2 bg-[#111d38] hover:bg-[#162447] text-slate-300 rounded-xl text-xs font-bold transition cursor-pointer"
+                className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold transition cursor-pointer"
               >
                 Cancel
               </button>
@@ -822,8 +822,8 @@ export const OfficerMessageBoxView: React.FC = () => {
       {/* THREAD DISCUSSION MODAL */}
       {discussionItem && (
         <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-[#0d1527] border border-[#1b2b4d] rounded-3xl max-w-xl w-full max-h-[85vh] flex flex-col overflow-hidden text-slate-100 shadow-2xl">
-            <div className="p-5 border-b border-[#1b2b4d] flex items-center justify-between bg-[#080e1c]">
+          <div className="bg-white border border-slate-200 rounded-3xl max-w-xl w-full max-h-[85vh] flex flex-col overflow-hidden text-slate-100 shadow-2xl">
+            <div className="p-5 border-b border-slate-200 flex items-center justify-between bg-slate-50">
               <div>
                 <h3 className="font-bold text-white text-base flex items-center gap-2">
                   <MessageSquare className="w-4 h-4 text-indigo-400" />
@@ -842,7 +842,7 @@ export const OfficerMessageBoxView: React.FC = () => {
 
             <div className="p-5 overflow-y-auto space-y-3.5 flex-1">
               {/* Original Item Box */}
-              <div className="bg-[#080e1c] p-3.5 rounded-2xl border border-[#1b2b4d] space-y-1.5 text-xs">
+              <div className="bg-slate-50 p-3.5 rounded-2xl border border-slate-200 space-y-1.5 text-xs">
                 <div className="flex items-center justify-between text-slate-400">
                   <span className="font-bold text-white">Initial Request:</span>
                   <span>from {discussionItem.sender_name} ({discussionItem.source_dashboard})</span>
@@ -859,7 +859,7 @@ export const OfficerMessageBoxView: React.FC = () => {
                       className={`p-3 rounded-xl border text-xs space-y-1 ${
                         c.role === "officer"
                           ? "bg-indigo-950/40 border-indigo-800/40 ml-4"
-                          : "bg-[#0b1325] border-[#1e3258] mr-4"
+                          : "bg-white border-slate-200 mr-4"
                       }`}
                     >
                       <div className="flex items-center justify-between text-[11px] text-slate-400">
@@ -877,13 +877,13 @@ export const OfficerMessageBoxView: React.FC = () => {
               </div>
             </div>
 
-            <form onSubmit={handleAddComment} className="p-4 border-t border-[#1b2b4d] bg-[#080e1c] flex gap-2">
+            <form onSubmit={handleAddComment} className="p-4 border-t border-slate-200 bg-slate-50 flex gap-2">
               <input
                 type="text"
                 placeholder="Type officer response or instruction note..."
                 value={commentText}
                 onChange={(e) => setCommentText(e.target.value)}
-                className="flex-1 px-3.5 py-2 text-xs bg-[#0b1325] border border-[#1e3258] rounded-xl text-white placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                className="flex-1 px-3.5 py-2 text-xs bg-white border border-slate-300 rounded-xl text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-indigo-500"
               />
               <button
                 type="submit"
@@ -901,8 +901,8 @@ export const OfficerMessageBoxView: React.FC = () => {
       {/* COMPOSE & BROADCAST MODAL */}
       {showComposeModal && (
         <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-[#0d1527] border border-[#1b2b4d] rounded-3xl max-w-lg w-full p-6 text-slate-100 space-y-4 shadow-2xl">
-            <div className="flex items-center justify-between pb-3 border-b border-[#1b2b4d]">
+          <div className="bg-white border border-slate-200 rounded-3xl max-w-lg w-full p-6 text-slate-100 space-y-4 shadow-2xl">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-200">
               <div className="flex items-center gap-2 text-emerald-400 font-bold text-base">
                 <Send className="w-5 h-5" />
                 <span>Compose Official Message / Notice</span>
@@ -924,7 +924,7 @@ export const OfficerMessageBoxView: React.FC = () => {
                 <select
                   value={composeTarget}
                   onChange={(e) => setComposeTarget(e.target.value)}
-                  className="w-full px-3 py-2 bg-[#080e1c] border border-[#1e3258] rounded-xl text-xs text-white focus:outline-none cursor-pointer"
+                  className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-white focus:outline-none cursor-pointer"
                 >
                   <option value="all">All Portals (Campus-wide Announcement)</option>
                   <option value="students">Student Portal (All Registered Candidates)</option>
@@ -945,7 +945,7 @@ export const OfficerMessageBoxView: React.FC = () => {
                     placeholder="e.g. BT210001"
                     value={composeRecipient}
                     onChange={(e) => setComposeRecipient(e.target.value)}
-                    className="w-full px-3 py-2 bg-[#080e1c] border border-[#1e3258] rounded-xl text-xs text-white placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-white placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-emerald-500"
                   />
                 </div>
               )}
@@ -957,7 +957,7 @@ export const OfficerMessageBoxView: React.FC = () => {
                 <select
                   value={composeCategory}
                   onChange={(e) => setComposeCategory(e.target.value)}
-                  className="w-full px-3 py-2 bg-[#080e1c] border border-[#1e3258] rounded-xl text-xs text-white focus:outline-none cursor-pointer"
+                  className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-white focus:outline-none cursor-pointer"
                 >
                   <option value="announcement">Official Announcement</option>
                   <option value="urgent_alert">Urgent Placement Alert</option>
@@ -975,7 +975,7 @@ export const OfficerMessageBoxView: React.FC = () => {
                   placeholder="e.g. Important instructions regarding Day 1 interview cabins"
                   value={composeTitle}
                   onChange={(e) => setComposeTitle(e.target.value)}
-                  className="w-full px-3 py-2 bg-[#080e1c] border border-[#1e3258] rounded-xl text-xs text-white placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                  className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-white placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-emerald-500"
                 />
               </div>
 
@@ -989,22 +989,22 @@ export const OfficerMessageBoxView: React.FC = () => {
                   placeholder="Type official notice details, venue instructions, or operational announcements..."
                   value={composeMessage}
                   onChange={(e) => setComposeMessage(e.target.value)}
-                  className="w-full px-3 py-2 bg-[#080e1c] border border-[#1e3258] rounded-xl text-xs text-white placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                  className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-white placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-emerald-500"
                 />
               </div>
 
-              <div className="flex items-center justify-end gap-3 pt-3 border-t border-[#1b2b4d]">
+              <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-200">
                 <button
                   type="button"
                   onClick={() => setShowComposeModal(false)}
-                  className="px-4 py-2 bg-[#111d38] hover:bg-[#162447] text-slate-300 rounded-xl text-xs font-bold transition cursor-pointer"
+                  className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold transition cursor-pointer"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={dispatching || !composeTitle.trim() || !composeMessage.trim()}
-                  className="px-4 py-2 bg-gradient-to-r from-blue-600 via-teal-600 to-emerald-600 hover:from-blue-500 hover:via-teal-500 hover:to-emerald-500 text-white rounded-xl text-xs font-bold shadow-md shadow-emerald-950/40 border border-emerald-400/30 transition cursor-pointer disabled:opacity-50 flex items-center gap-1.5"
+                  className="px-4 py-2 bg-gradient-to-r bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl text-xs font-bold shadow-md shadow-emerald-950/40 border border-emerald-400/30 transition cursor-pointer disabled:opacity-50 flex items-center gap-1.5"
                 >
                   <Send className="w-3.5 h-3.5" />
                   <span>{dispatching ? "Dispatching..." : "Send / Broadcast"}</span>

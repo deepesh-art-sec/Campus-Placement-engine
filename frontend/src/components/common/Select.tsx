@@ -40,15 +40,15 @@ export const Select: React.FC<SelectProps> = ({
         <select
           id={generatedId}
           disabled={disabled}
-          className={`w-full appearance-none px-3.5 py-2.5 pr-10 bg-[#080e1c] border rounded-xl text-xs sm:text-sm font-semibold text-white transition-all focus:bg-[#0d1527] focus:outline-none focus:ring-2 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer ${
+          className={`w-full appearance-none px-3.5 py-2.5 pr-10 bg-[var(--bg-input)] border rounded-xl text-xs sm:text-sm font-semibold text-white transition-all focus:outline-none focus:ring-2 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer ${
             error
-              ? "border-rose-500/80 focus:border-rose-500 focus:ring-rose-500/30 text-rose-200"
-              : "border-[#1e3258] focus:border-emerald-500 focus:ring-emerald-500/30"
+              ? "border-rose-500 focus:border-rose-400 focus:ring-rose-500/20 text-rose-300"
+              : "border-[var(--border-input)] focus:border-cyan-400 focus:ring-cyan-400/20"
           } ${className}`}
           {...props}
         >
           {options.map((opt) => (
-            <option key={opt.value} value={opt.value} className="bg-[#0d1527] text-white">
+            <option key={opt.value} value={opt.value} className="bg-[#0A1122] text-white">
               {opt.label}
             </option>
           ))}
@@ -60,9 +60,9 @@ export const Select: React.FC<SelectProps> = ({
       </div>
 
       {error ? (
-        <p className="text-xs font-medium text-rose-400 mt-1">{error}</p>
+        <p className="text-xs text-rose-400 font-semibold">{error}</p>
       ) : helperText ? (
-        <p className="text-[11px] text-slate-400 mt-1">{helperText}</p>
+        <p className="text-xs text-slate-400">{helperText}</p>
       ) : null}
     </div>
   );

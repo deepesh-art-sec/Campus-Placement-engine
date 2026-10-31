@@ -105,7 +105,7 @@ export const RuleEditorView: React.FC = () => {
               setSaveSuccess(true);
               setTimeout(() => setSaveSuccess(false), 3000);
             }}
-            className="flex items-center gap-2 px-4 py-2 bg-brand-600 hover:bg-brand-700 text-white text-xs font-bold rounded-xl shadow-xs transition-colors"
+            className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-xl shadow-xs transition-colors cursor-pointer"
           >
             <Save className="w-4 h-4" />
             <span>Save Rule Profile</span>
@@ -131,11 +131,11 @@ export const RuleEditorView: React.FC = () => {
       )}
 
       {/* Live Eligible Counter Box */}
-      <div className="bg-gradient-to-r from-brand-900 to-slate-900 text-white p-6 rounded-2xl shadow-lg border border-brand-800 flex flex-col md:flex-row items-center justify-between gap-6">
+      <div className="bg-[#0B1F44] text-white p-6 rounded-2xl shadow-lg border border-blue-900/50 flex flex-col md:flex-row items-center justify-between gap-6">
         <div className="space-y-1 text-center md:text-left">
           <div className="flex items-center gap-2 justify-center md:justify-start">
-            <Sparkles className="w-4 h-4 text-brand-400" />
-            <span className="text-xs font-bold tracking-wider text-brand-300 uppercase">
+            <Sparkles className="w-4 h-4 text-blue-400" />
+            <span className="text-xs font-bold tracking-wider text-blue-300 uppercase">
               Live Real-Time Pool
             </span>
           </div>
@@ -148,13 +148,13 @@ export const RuleEditorView: React.FC = () => {
         </div>
 
         <div className="flex items-center gap-3">
-          <div className="w-32 bg-slate-800 rounded-full h-3.5 overflow-hidden border border-slate-700">
+          <div className="w-32 bg-[#071530] rounded-full h-3.5 overflow-hidden border border-blue-900/60">
             <div
-              className="bg-brand-500 h-3.5 rounded-full transition-all duration-300"
+              className="bg-blue-500 h-3.5 rounded-full transition-all duration-300"
               style={{ width: `${eligiblePercent}%` }}
             />
           </div>
-          <span className="text-lg font-mono font-black text-brand-400">{eligiblePercent}%</span>
+          <span className="text-lg font-mono font-black text-blue-400">{eligiblePercent}%</span>
         </div>
       </div>
 
@@ -162,7 +162,7 @@ export const RuleEditorView: React.FC = () => {
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         <div className="lg:col-span-8 bg-white p-6 rounded-2xl border border-slate-200 shadow-xs space-y-6">
           <h2 className="text-base font-bold text-slate-900 flex items-center gap-2">
-            <Sliders className="w-4 h-4 text-brand-600" />
+            <Sliders className="w-4 h-4 text-blue-600" />
             Academic Threshold Controls
           </h2>
 
@@ -170,7 +170,7 @@ export const RuleEditorView: React.FC = () => {
           <div className="space-y-2">
             <div className="flex items-center justify-between text-xs font-bold text-slate-700">
               <span>Minimum Cumulative GPA (CGPA)</span>
-              <span className="text-brand-700 font-mono text-sm bg-brand-50 px-2 py-0.5 rounded border border-brand-200">
+              <span className="text-blue-700 font-mono text-sm bg-blue-50 px-2 py-0.5 rounded border border-blue-200">
                 {cgpaMin.toFixed(1)} / 10.0
               </span>
             </div>
@@ -181,7 +181,7 @@ export const RuleEditorView: React.FC = () => {
               step="0.1"
               value={cgpaMin}
               onChange={(e) => setCgpaMin(parseFloat(e.target.value))}
-              className="w-full accent-brand-600 cursor-pointer"
+              className="w-full accent-blue-600 cursor-pointer"
             />
             <div className="flex justify-between text-[11px] text-slate-400">
               <span>0.0 (Open)</span>
@@ -196,7 +196,7 @@ export const RuleEditorView: React.FC = () => {
             <div className="space-y-2">
               <div className="flex items-center justify-between text-xs font-bold text-slate-700">
                 <span>Class 10th Minimum %</span>
-                <span className="font-mono text-brand-700">{tenthMin}%</span>
+                <span className="font-mono text-blue-700 font-bold">{tenthMin}%</span>
               </div>
               <input
                 type="range"
@@ -205,14 +205,14 @@ export const RuleEditorView: React.FC = () => {
                 step="5"
                 value={tenthMin}
                 onChange={(e) => setTenthMin(parseFloat(e.target.value))}
-                className="w-full accent-brand-600 cursor-pointer"
+                className="w-full accent-blue-600 cursor-pointer"
               />
             </div>
 
             <div className="space-y-2">
               <div className="flex items-center justify-between text-xs font-bold text-slate-700">
                 <span>Class 12th Minimum %</span>
-                <span className="font-mono text-brand-700">{twelfthMin}%</span>
+                <span className="font-mono text-blue-700 font-bold">{twelfthMin}%</span>
               </div>
               <input
                 type="range"
@@ -221,7 +221,7 @@ export const RuleEditorView: React.FC = () => {
                 step="5"
                 value={twelfthMin}
                 onChange={(e) => setTwelfthMin(parseFloat(e.target.value))}
-                className="w-full accent-brand-600 cursor-pointer"
+                className="w-full accent-blue-600 cursor-pointer"
               />
             </div>
           </div>
@@ -235,7 +235,7 @@ export const RuleEditorView: React.FC = () => {
                 <select
                   value={maxActiveBacklogs}
                   onChange={(e) => setMaxActiveBacklogs(parseInt(e.target.value))}
-                  className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold"
+                  className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold cursor-pointer"
                 >
                   <option value={0}>0 (Strictly No Active Backlogs)</option>
                   <option value={1}>Max 1 Active Backlog</option>
@@ -249,7 +249,7 @@ export const RuleEditorView: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => setAllowHistoryBacklogs(!allowHistoryBacklogs)}
-                  className={`w-full py-2 px-3 rounded-xl text-xs font-semibold border flex items-center justify-center gap-2 transition-colors ${
+                  className={`w-full py-2 px-3 rounded-xl text-xs font-semibold border flex items-center justify-center gap-2 transition-colors cursor-pointer ${
                     allowHistoryBacklogs
                       ? "bg-emerald-50 text-emerald-800 border-emerald-200"
                       : "bg-rose-50 text-rose-800 border-rose-200"
@@ -278,9 +278,9 @@ export const RuleEditorView: React.FC = () => {
                     key={branch}
                     type="button"
                     onClick={() => toggleBranch(branch)}
-                    className={`p-2 rounded-xl text-xs font-semibold text-left border transition-all ${
+                    className={`p-2 rounded-xl text-xs font-semibold text-left border transition-all cursor-pointer ${
                       isSelected
-                        ? "bg-brand-50 border-brand-300 text-brand-900 shadow-xs"
+                        ? "bg-blue-50 border-blue-300 text-blue-900 shadow-xs"
                         : "bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100"
                     }`}
                   >
@@ -296,14 +296,14 @@ export const RuleEditorView: React.FC = () => {
         <div className="lg:col-span-4 space-y-6">
           <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-xs space-y-4">
             <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2">
-              <Info className="w-4 h-4 text-brand-600" />
+              <Info className="w-4 h-4 text-blue-600" />
               Plain-English Student Rule
             </h3>
             <div className="p-3.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-700 leading-relaxed font-medium">
               "Candidates are eligible if they possess a CGPA of at least{" "}
-              <strong className="text-brand-900">{cgpaMin.toFixed(1)}</strong>, minimum{" "}
+              <strong className="text-blue-900">{cgpaMin.toFixed(1)}</strong>, minimum{" "}
               <strong>{tenthMin}%</strong> in 10th and <strong>{twelfthMin}%</strong> in 12th, enrolled in{" "}
-              <strong className="text-brand-900">{allowedBranches.join(", ") || "All Branches"}</strong>, with no more than{" "}
+              <strong className="text-blue-900">{allowedBranches.join(", ") || "All Branches"}</strong>, with no more than{" "}
               <strong>{maxActiveBacklogs === -1 ? "unlimited" : maxActiveBacklogs}</strong> active backlogs."
             </div>
           </div>
@@ -323,7 +323,7 @@ export const RuleEditorView: React.FC = () => {
                   key={attr}
                   type="button"
                   onClick={() => handleProtectedAttributeClick(attr)}
-                  className="px-2.5 py-1 bg-white hover:bg-rose-50 text-slate-600 hover:text-rose-700 border border-slate-200 rounded-lg text-xs font-medium transition-colors"
+                  className="px-2.5 py-1 bg-white hover:bg-rose-50 text-slate-600 hover:text-rose-700 border border-slate-200 rounded-lg text-xs font-medium transition-colors cursor-pointer"
                 >
                   Try: {attr}
                 </button>

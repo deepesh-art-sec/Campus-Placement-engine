@@ -1,5 +1,5 @@
 """
-Recruiter Read-Only Corporate Portal Routes.
+Recruiter Corporate Portal Routes.
 Strictly restricts corporate campus recruiters to their own company's drive,
 shortlist, schedule, and attendance data. Enforces rigorous tenant isolation.
 """
@@ -17,6 +17,14 @@ from fastapi import APIRouter, Depends, HTTPException, Query, Response, status
 from pydantic import BaseModel, Field
 from sqlalchemy import select
 from sqlalchemy.orm import Session
+
+try:
+    import openpyxl
+    from openpyxl.styles import Alignment, Border, Font, PatternFill, Side
+    from openpyxl.utils import get_column_letter
+    OPENPYXL_AVAILABLE = True
+except ImportError:
+    OPENPYXL_AVAILABLE = False
 
 from backend.app.api.auth.dependencies import require_recruiter
 from backend.app.api.logging.audit_service import AuditService
@@ -43,9 +51,26 @@ router = APIRouter(prefix="/api/recruiter", tags=["Recruiter Portal"])
 
 class RecruiterInquiryCreate(BaseModel):
     subject: str = Field(..., min_length=3, max_length=150)
-    category: str = Field(..., description="schedule_change, logistics, candidate_inquiry, rule_feedback")
+    category: str = Field(..., description="schedule_change, logistics, candidate_inquiry, rule_feedback, urgent_alert")
     message: str = Field(..., min_length=5, max_length=2000)
     candidate_roll_no: str | None = None
+
+
+class CreateRoundPayload(BaseModel):
+    round_number: int = Field(..., ge=1, le=10)
+    round_name: str = Field(..., min_length=2, max_length=150)
+    round_type: str = Field(default="technical_interview")
+    mode: str = Field(default="in_person")
+    duration_minutes: int = Field(default=30, ge=10, le=180)
+    instructions: str | None = None
+
+
+class MarkAttendancePayload(BaseModel):
+    slot_id: str | None = None
+    student_id: str | None = None
+    roll_no: str | None = None
+    status: str = Field(..., description="present, absent, late, completed, pending")
+    notes: str | None = None
 
 
 def get_recruiter_drive_entity(current_user: UserModel, db: Session) -> DriveModel:
@@ -57,9 +82,22 @@ def get_recruiter_drive_entity(current_user: UserModel, db: Session) -> DriveMod
             detail="Recruiter account is not associated with an authorized corporate partner.",
         )
 
-    # Fetch recruiter's company drive
-    stmt_drv = select(DriveModel).where(DriveModel.company_id == company_id).order_by(DriveModel.drive_date.desc())
-    drive = db.execute(stmt_drv).scalars().first()
+    # Fetch recruiter's company drive (prefer drive with active slots/candidates)
+    stmt_drv = select(DriveModel).where(DriveModel.company_id == company_id)
+    all_drives = db.execute(stmt_drv).scalars().all()
+    if not all_drives:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="No active campus recruitment drives found for your organization.",
+        )
+    drive = None
+    for d in all_drives:
+        has_slots = db.execute(select(SlotModel).where(SlotModel.drive_id == d.id)).scalars().first()
+        if has_slots:
+            drive = d
+            break
+    if not drive:
+        drive = sorted(all_drives, key=lambda d: d.drive_date, reverse=True)[0]
     if not drive:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -68,8 +106,77 @@ def get_recruiter_drive_entity(current_user: UserModel, db: Session) -> DriveMod
     return drive
 
 
+def get_drive_rounds(drive_id: str, db: Session) -> list[dict[str, Any]]:
+    """Helper returning configured recruitment rounds for a drive."""
+    req_v = db.execute(
+        select(DriveRequirementVersionModel)
+        .where(DriveRequirementVersionModel.drive_id == drive_id)
+        .order_by(DriveRequirementVersionModel.version_number.desc())
+    ).scalars().first()
+
+    rounds: list[dict[str, Any]] = []
+    if req_v and req_v.custom_rules_json:
+        try:
+            data = json.loads(req_v.custom_rules_json)
+            if isinstance(data, dict) and "rounds" in data and isinstance(data["rounds"], list):
+                rounds = data["rounds"]
+        except Exception:
+            rounds = []
+
+    if not rounds:
+        slot_rounds = db.execute(
+            select(SlotModel.round_number)
+            .where(SlotModel.drive_id == drive_id)
+            .distinct()
+            .order_by(SlotModel.round_number.asc())
+        ).scalars().all()
+
+        if slot_rounds:
+            for r_num in slot_rounds:
+                rounds.append({
+                    "round_number": r_num,
+                    "round_name": f"Round {r_num}: Technical & Managerial Interview",
+                    "round_type": "technical_interview",
+                    "mode": "in_person",
+                    "duration_minutes": 30,
+                    "instructions": "Candidate technical competencies and problem-solving evaluation.",
+                    "created_at": datetime.datetime.utcnow().isoformat(),
+                })
+        else:
+            rounds = [
+                {
+                    "round_number": 1,
+                    "round_name": "Round 1: Online Technical Assessment",
+                    "round_type": "coding_test",
+                    "mode": "online",
+                    "duration_minutes": 60,
+                    "instructions": "Algorithmic thinking and problem solving.",
+                    "created_at": datetime.datetime.utcnow().isoformat(),
+                },
+                {
+                    "round_number": 2,
+                    "round_name": "Round 2: Technical Interview I",
+                    "round_type": "technical_interview",
+                    "mode": "in_person",
+                    "duration_minutes": 45,
+                    "instructions": "Core fundamentals and systems design.",
+                    "created_at": datetime.datetime.utcnow().isoformat(),
+                },
+                {
+                    "round_number": 3,
+                    "round_name": "Round 3: HR & Management Fit",
+                    "round_type": "hr_interview",
+                    "mode": "in_person",
+                    "duration_minutes": 30,
+                    "instructions": "Cultural alignment and leadership potential.",
+                    "created_at": datetime.datetime.utcnow().isoformat(),
+                },
+            ]
+    return rounds
+
+
 # -----------------------------------------------------------------------------
-# 1. Home / My Drive (Module 1)
+# 1. Home / My Drive
 # -----------------------------------------------------------------------------
 
 @router.get("/my-drive")
@@ -77,7 +184,7 @@ def get_recruiter_drive_overview(
     current_user: UserModel = Depends(require_recruiter),
     db: Session = Depends(get_db),
 ) -> dict[str, Any]:
-    """Returns company recruitment drive metadata, status, version, and campus contacts."""
+    """Returns company recruitment drive metadata, dynamic rounds, status, and campus contacts."""
     drive = get_recruiter_drive_entity(current_user, db)
 
     # Shortlist count
@@ -95,6 +202,17 @@ def get_recruiter_drive_overview(
     company = db.execute(select(CompanyModel).where(CompanyModel.id == drive.company_id)).scalar_one_or_none()
     company_name = company.name if company else drive.company_name
 
+    # Check verified offers count
+    offers_count = len(
+        db.execute(
+            select(OfferModel).where(
+                (OfferModel.company == drive.company_name) | (OfferModel.company == drive.company_id)
+            )
+        ).scalars().all()
+    )
+
+    rounds = get_drive_rounds(drive.id, db)
+
     return {
         "drive_id": drive.id,
         "company_id": drive.company_id,
@@ -107,11 +225,11 @@ def get_recruiter_drive_overview(
         "status": drive.status,
         "version": drive.version,
         "version_date": drive.created_at.strftime("%d %b %Y %H:%M"),
-        "number_of_rounds": 3,
+        "number_of_rounds": len(rounds),
         "total_shortlisted": eligible_count,
         "total_scheduled": slots_count,
         "attendance_enabled": True,
-        "results_released": True,
+        "results_released": offers_count > 0,
         "officer_contact": {
             "name": "Prof. R. K. Sharma",
             "title": "Head, Training & Placement Cell",
@@ -123,7 +241,7 @@ def get_recruiter_drive_overview(
 
 
 # -----------------------------------------------------------------------------
-# 2. Approved Shortlist (Module 2)
+# 2. Approved Shortlist
 # -----------------------------------------------------------------------------
 
 @router.get("/shortlist")
@@ -194,7 +312,7 @@ def get_recruiter_shortlist(
 
 
 # -----------------------------------------------------------------------------
-# 3. Why This Student (Module 3)
+# 3. Why This Student Breakdown
 # -----------------------------------------------------------------------------
 
 @router.get("/candidate/{candidate_roll}/why")
@@ -203,13 +321,9 @@ def get_candidate_verification_breakdown(
     current_user: UserModel = Depends(require_recruiter),
     db: Session = Depends(get_db),
 ) -> dict[str, Any]:
-    """
-    Verification breakdown confirming candidate satisfies 100% of the company's rules.
-    Enforces strict tenant barrier: candidate must be on this company's approved shortlist.
-    """
+    """Verification breakdown confirming candidate satisfies 100% of the company's rules."""
     drive = get_recruiter_drive_entity(current_user, db)
 
-    # Locate student
     stu = db.execute(
         select(StudentModel).where(
             (StudentModel.roll_no == candidate_roll) | (StudentModel.id == candidate_roll)
@@ -218,7 +332,6 @@ def get_candidate_verification_breakdown(
     if not stu:
         raise HTTPException(status_code=404, detail="Candidate record not found.")
 
-    # Tenant barrier: Must have eligibility decision for this drive
     dec = db.execute(
         select(EligibilityDecisionModel)
         .where(
@@ -235,7 +348,6 @@ def get_candidate_verification_breakdown(
             detail="Access denied. Candidate is not shortlisted for your organization's recruitment drive.",
         )
 
-    # Get requirements
     req_version = db.execute(
         select(DriveRequirementVersionModel)
         .where(DriveRequirementVersionModel.drive_id == drive.id)
@@ -300,7 +412,6 @@ def get_candidate_verification_breakdown(
         },
     ]
 
-    # Check application status
     app_record = db.execute(
         select(StudentApplicationModel).where(
             StudentApplicationModel.drive_id == drive.id,
@@ -325,7 +436,7 @@ def get_candidate_verification_breakdown(
 
 
 # -----------------------------------------------------------------------------
-# 4. Drive Schedule (Module 4)
+# 4. Drive Schedule & Dynamic Rounds
 # -----------------------------------------------------------------------------
 
 @router.get("/schedule")
@@ -333,7 +444,7 @@ def get_recruiter_schedule(
     current_user: UserModel = Depends(require_recruiter),
     db: Session = Depends(get_db),
 ) -> dict[str, Any]:
-    """Returns interview & evaluation rounds timetable for this company only."""
+    """Returns interview timetable for this company only."""
     drive = get_recruiter_drive_entity(current_user, db)
 
     slots = db.execute(
@@ -341,14 +452,18 @@ def get_recruiter_schedule(
     ).scalars().all()
 
     students_cache = {s.id: s for s in db.execute(select(StudentModel)).scalars().all()}
+    rounds_config = {r["round_number"]: r["round_name"] for r in get_drive_rounds(drive.id, db)}
 
     formatted_slots = []
     for sl in slots:
         stu = students_cache.get(sl.student_id)
+        round_name = rounds_config.get(
+            sl.round_number, f"Round {sl.round_number}: Technical & Managerial Interview"
+        )
         formatted_slots.append({
             "slot_id": sl.id,
             "round_number": sl.round_number,
-            "round_name": f"Round {sl.round_number}: Technical & Managerial Interview",
+            "round_name": round_name,
             "start_time": sl.start_time.strftime("%d %b %Y %H:%M"),
             "end_time": sl.end_time.strftime("%H:%M"),
             "venue": sl.room.name if sl.room else "Interview Cabin 01",
@@ -365,11 +480,107 @@ def get_recruiter_schedule(
         "drive_date": drive.drive_date.isoformat(),
         "total_slots": len(formatted_slots),
         "slots": formatted_slots,
+        "version": drive.version,
+    }
+
+
+@router.get("/rounds")
+def get_recruiter_rounds(
+    current_user: UserModel = Depends(require_recruiter),
+    db: Session = Depends(get_db),
+) -> dict[str, Any]:
+    """Returns all interview & evaluation rounds configured for this drive."""
+    drive = get_recruiter_drive_entity(current_user, db)
+    rounds = get_drive_rounds(drive.id, db)
+    return {
+        "drive_id": drive.id,
+        "company_name": drive.company_name,
+        "total_rounds": len(rounds),
+        "rounds": rounds,
+    }
+
+
+@router.post("/rounds", status_code=status.HTTP_201_CREATED)
+def create_recruiter_round(
+    payload: CreateRoundPayload,
+    current_user: UserModel = Depends(require_recruiter),
+    db: Session = Depends(get_db),
+) -> dict[str, Any]:
+    """Allows recruiter/officer to configure a new interview round for active drive."""
+    drive = get_recruiter_drive_entity(current_user, db)
+    existing_rounds = get_drive_rounds(drive.id, db)
+
+    for r in existing_rounds:
+        if r.get("round_number") == payload.round_number:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Round {payload.round_number} is already configured for this drive.",
+            )
+
+    new_round = {
+        "round_number": payload.round_number,
+        "round_name": payload.round_name,
+        "round_type": payload.round_type,
+        "mode": payload.mode,
+        "duration_minutes": payload.duration_minutes,
+        "instructions": payload.instructions or "",
+        "created_at": datetime.datetime.utcnow().isoformat(),
+        "created_by": current_user.username,
+    }
+    existing_rounds.append(new_round)
+    existing_rounds.sort(key=lambda x: x.get("round_number", 0))
+
+    req_v = db.execute(
+        select(DriveRequirementVersionModel)
+        .where(DriveRequirementVersionModel.drive_id == drive.id)
+        .order_by(DriveRequirementVersionModel.version_number.desc())
+    ).scalars().first()
+
+    custom_data: dict[str, Any] = {}
+    if req_v and req_v.custom_rules_json:
+        try:
+            custom_data = json.loads(req_v.custom_rules_json)
+        except Exception:
+            custom_data = {}
+    custom_data["rounds"] = existing_rounds
+
+    if req_v:
+        req_v.custom_rules_json = json.dumps(custom_data)
+    else:
+        new_v = DriveRequirementVersionModel(
+            id=f"drv_req_{uuid.uuid4().hex[:10]}",
+            drive_id=drive.id,
+            version_number=drive.version or 1,
+            custom_rules_json=json.dumps(custom_data),
+        )
+        db.add(new_v)
+
+    drive.version = (drive.version or 1) + 1
+    db.commit()
+
+    AuditService.record_action(
+        db=db,
+        actor=current_user.username,
+        action="RECRUITER_ROUND_CREATED",
+        aggregate_type="DRIVE_ROUND",
+        aggregate_id=f"{drive.id}_r{payload.round_number}",
+        payload={
+            "drive_id": drive.id,
+            "round_number": payload.round_number,
+            "round_name": payload.round_name,
+        },
+    )
+
+    return {
+        "message": f"Successfully created round: {payload.round_name}.",
+        "round": new_round,
+        "total_rounds": len(existing_rounds),
+        "drive_version": drive.version,
     }
 
 
 # -----------------------------------------------------------------------------
-# 5. Requirements Used (Module 5)
+# 5. Requirements Used
 # -----------------------------------------------------------------------------
 
 @router.get("/requirements")
@@ -431,7 +642,7 @@ def get_recruiter_requirements_used(
 
 
 # -----------------------------------------------------------------------------
-# 6. Changes & Versions Timeline (Module 6)
+# 6. Backward Compatibility Versions API
 # -----------------------------------------------------------------------------
 
 @router.get("/versions")
@@ -439,50 +650,17 @@ def get_recruiter_version_timeline(
     current_user: UserModel = Depends(require_recruiter),
     db: Session = Depends(get_db),
 ) -> dict[str, Any]:
-    """Returns version timeline with before/after diffs so corporate HR tracks changes."""
+    """Returns version timeline with before/after diffs."""
     drive = get_recruiter_drive_entity(current_user, db)
-
-    now = datetime.datetime.utcnow()
-    timeline = [
-        {
-            "version_number": 3,
-            "timestamp": (now - datetime.timedelta(hours=6)).strftime("%d %b %Y %H:%M"),
-            "headline": "Cut-off adjusted from 7.0 to 6.5; 38 students added; schedule synchronized.",
-            "officer_note": "Approved by Placement Officer per recruiter email requesting wider talent pool.",
-            "diff": [
-                {"parameter": "Minimum CGPA", "previous": "7.00", "updated": "6.50", "impact": "+38 shortlisted candidates"},
-                {"parameter": "Interview Panels", "previous": "3 Panels", "updated": "4 Panels (Panel D added)", "impact": "0 clash slots added in Lab 3"},
-            ],
-        },
-        {
-            "version_number": 2,
-            "timestamp": (now - datetime.timedelta(days=2)).strftime("%d %b %Y %H:%M"),
-            "headline": "Deterministic schedule generated with 0 clashes verified by solver.",
-            "officer_note": "CP-SAT constraint solver matched candidate round durations and panel capacities.",
-            "diff": [
-                {"parameter": "Schedule Timetable", "previous": "Unallocated", "updated": "Slots mapped", "impact": "All shortlisted students allocated interview cabins"},
-            ],
-        },
-        {
-            "version_number": 1,
-            "timestamp": (now - datetime.timedelta(days=5)).strftime("%d %b %Y %H:%M"),
-            "headline": "Initial recruitment drive announcement published by Placement Cell.",
-            "officer_note": "Rules parsed from company JD document and approved by Head T&P.",
-            "diff": [
-                {"parameter": "Drive Status", "previous": "Draft", "updated": "Published", "impact": "Batch eligibility evaluated"},
-            ],
-        },
-    ]
-
     return {
         "company_name": drive.company_name,
         "current_version": drive.version,
-        "timeline": timeline,
+        "timeline": [],
     }
 
 
 # -----------------------------------------------------------------------------
-# 7. Exports in Company Format (Module 7)
+# 7. Exports (CSV and XLSX)
 # -----------------------------------------------------------------------------
 
 @router.get("/export/shortlist.csv")
@@ -490,7 +668,7 @@ def export_shortlist_csv(
     current_user: UserModel = Depends(require_recruiter),
     db: Session = Depends(get_db),
 ) -> Response:
-    """Exports company shortlist formatted to corporate column mappings and logs audit."""
+    """Exports company shortlist in CSV format and logs audit."""
     drive = get_recruiter_drive_entity(current_user, db)
 
     dec_stmt = select(EligibilityDecisionModel).where(
@@ -503,6 +681,14 @@ def export_shortlist_csv(
         select(StudentModel).where(StudentModel.id.in_(shortlist_ids))
     ).scalars().all() if shortlist_ids else []
 
+    apps = db.execute(
+        select(StudentApplicationModel).where(
+            StudentApplicationModel.drive_id == drive.id,
+            StudentApplicationModel.status == "applied",
+        )
+    ).scalars().all()
+    applied_ids = {a.student_id for a in apps}
+
     output = io.StringIO()
     writer = csv.writer(output)
     writer.writerow([
@@ -514,6 +700,7 @@ def export_shortlist_csv(
         "Secondary 10th %",
         "Higher Secondary 12th %",
         "Active Backlogs",
+        "Application Status",
     ])
 
     for s in students:
@@ -527,6 +714,7 @@ def export_shortlist_csv(
             f"{s.tenth_percentage:.1f}",
             f"{(s.twelfth_percentage or 0.0):.1f}",
             active_b,
+            "Applied" if s.id in applied_ids else "Shortlisted",
         ])
 
     csv_data = output.getvalue()
@@ -549,12 +737,122 @@ def export_shortlist_csv(
     )
 
 
+@router.get("/export/shortlist.xlsx")
+def export_shortlist_xlsx(
+    current_user: UserModel = Depends(require_recruiter),
+    db: Session = Depends(get_db),
+) -> Response:
+    """Exports company shortlist in XLSX (Excel) format with corporate styling."""
+    drive = get_recruiter_drive_entity(current_user, db)
+
+    dec_stmt = select(EligibilityDecisionModel).where(
+        EligibilityDecisionModel.drive_id == drive.id,
+        EligibilityDecisionModel.status == "eligible",
+    )
+    shortlist_ids = [d.student_id for d in db.execute(dec_stmt).scalars().all()]
+
+    students = db.execute(
+        select(StudentModel).where(StudentModel.id.in_(shortlist_ids))
+    ).scalars().all() if shortlist_ids else []
+
+    apps = db.execute(
+        select(StudentApplicationModel).where(
+            StudentApplicationModel.drive_id == drive.id,
+            StudentApplicationModel.status == "applied",
+        )
+    ).scalars().all()
+    applied_ids = {a.student_id for a in apps}
+
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.title = "Shortlist Roster"
+
+    headers = [
+        "Roll Number",
+        "Candidate Full Name",
+        "Degree Program",
+        "Engineering Branch",
+        "Aggregate CGPA",
+        "Secondary 10th %",
+        "Higher Secondary 12th %",
+        "Active Backlogs",
+        "Application Status",
+    ]
+    ws.append(headers)
+
+    header_fill = PatternFill(start_color="0B1F44", end_color="0B1F44", fill_type="solid")
+    header_font = Font(name="Calibri", size=11, bold=True, color="FFFFFF")
+    thin_border = Border(
+        left=Side(style='thin', color='D9D9D9'),
+        right=Side(style='thin', color='D9D9D9'),
+        top=Side(style='thin', color='D9D9D9'),
+        bottom=Side(style='thin', color='D9D9D9'),
+    )
+
+    for col_num in range(1, len(headers) + 1):
+        cell = ws.cell(row=1, column=col_num)
+        cell.fill = header_fill
+        cell.font = header_font
+        cell.alignment = Alignment(horizontal="center", vertical="center")
+
+    for s in students:
+        active_b = len([b for b in s.backlogs if b.status == "active"])
+        app_status = "Applied" if s.id in applied_ids else "Shortlisted"
+        ws.append([
+            s.roll_no,
+            s.name,
+            s.program,
+            s.branch,
+            round(s.cgpa, 2),
+            round(s.tenth_percentage, 1),
+            round(s.twelfth_percentage, 1) if s.twelfth_percentage else "N/A",
+            active_b,
+            app_status,
+        ])
+
+    for row in ws.iter_rows(min_row=2, max_row=max(2, len(students) + 1), min_col=1, max_col=len(headers)):
+        for cell in row:
+            cell.border = thin_border
+            if cell.column in (1, 5, 6, 7, 8, 9):
+                cell.alignment = Alignment(horizontal="center", vertical="center")
+            else:
+                cell.alignment = Alignment(vertical="center")
+
+    for col in ws.columns:
+        max_len = max(len(str(cell.value or "")) for cell in col)
+        col_letter = get_column_letter(col[0].column)
+        ws.column_dimensions[col_letter].width = max(max_len + 4, 14)
+
+    output = io.BytesIO()
+    wb.save(output)
+    output.seek(0)
+    xlsx_data = output.getvalue()
+
+    filename = f"{drive.company_name.replace(' ', '_')}_Shortlist_v{drive.version}.xlsx"
+
+    AuditService.record_export(
+        db=db,
+        actor=current_user.username,
+        export_type="RECRUITER_SHORTLIST_XLSX",
+        format="XLSX",
+        row_count=len(students),
+        filename=filename,
+        filter_hash=drive.id,
+    )
+
+    return Response(
+        content=xlsx_data,
+        media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+    )
+
+
 @router.get("/export/schedule.csv")
 def export_schedule_csv(
     current_user: UserModel = Depends(require_recruiter),
     db: Session = Depends(get_db),
 ) -> Response:
-    """Exports interview schedule for recruiter and logs audit."""
+    """Exports interview schedule for recruiter in CSV format."""
     drive = get_recruiter_drive_entity(current_user, db)
 
     slots = db.execute(
@@ -606,8 +904,100 @@ def export_schedule_csv(
     )
 
 
+@router.get("/export/schedule.xlsx")
+def export_schedule_xlsx(
+    current_user: UserModel = Depends(require_recruiter),
+    db: Session = Depends(get_db),
+) -> Response:
+    """Exports interview schedule in XLSX format with corporate styling."""
+    drive = get_recruiter_drive_entity(current_user, db)
+
+    slots = db.execute(
+        select(SlotModel).where(SlotModel.drive_id == drive.id).order_by(SlotModel.start_time.asc())
+    ).scalars().all()
+    students_cache = {s.id: s for s in db.execute(select(StudentModel)).scalars().all()}
+
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.title = "Schedule Matrix"
+
+    headers = [
+        "Round Number",
+        "Slot Time",
+        "Interview Cabin / Venue",
+        "Evaluation Panel",
+        "Candidate Name",
+        "Candidate Roll No",
+        "Candidate Branch",
+    ]
+    ws.append(headers)
+
+    header_fill = PatternFill(start_color="0B1F44", end_color="0B1F44", fill_type="solid")
+    header_font = Font(name="Calibri", size=11, bold=True, color="FFFFFF")
+    thin_border = Border(
+        left=Side(style='thin', color='D9D9D9'),
+        right=Side(style='thin', color='D9D9D9'),
+        top=Side(style='thin', color='D9D9D9'),
+        bottom=Side(style='thin', color='D9D9D9'),
+    )
+
+    for col_num in range(1, len(headers) + 1):
+        cell = ws.cell(row=1, column=col_num)
+        cell.fill = header_fill
+        cell.font = header_font
+        cell.alignment = Alignment(horizontal="center", vertical="center")
+
+    for sl in slots:
+        stu = students_cache.get(sl.student_id)
+        ws.append([
+            f"Round {sl.round_number}",
+            sl.start_time.strftime("%d-%b-%Y %H:%M"),
+            sl.room.name if sl.room else "Cabin 1",
+            sl.panel.name if sl.panel else "Panel A",
+            stu.name if stu else "Candidate",
+            stu.roll_no if stu else "N/A",
+            stu.branch if stu else "Engineering",
+        ])
+
+    for row in ws.iter_rows(min_row=2, max_row=max(2, len(slots) + 1), min_col=1, max_col=len(headers)):
+        for cell in row:
+            cell.border = thin_border
+            if cell.column in (1, 2, 6):
+                cell.alignment = Alignment(horizontal="center", vertical="center")
+            else:
+                cell.alignment = Alignment(vertical="center")
+
+    for col in ws.columns:
+        max_len = max(len(str(cell.value or "")) for cell in col)
+        col_letter = get_column_letter(col[0].column)
+        ws.column_dimensions[col_letter].width = max(max_len + 4, 14)
+
+    output = io.BytesIO()
+    wb.save(output)
+    output.seek(0)
+    xlsx_data = output.getvalue()
+
+    filename = f"{drive.company_name.replace(' ', '_')}_Schedule_v{drive.version}.xlsx"
+
+    AuditService.record_export(
+        db=db,
+        actor=current_user.username,
+        export_type="RECRUITER_SCHEDULE_XLSX",
+        format="XLSX",
+        row_count=len(slots),
+        filename=filename,
+        filter_hash=drive.id,
+    )
+
+    return Response(
+        content=xlsx_data,
+        media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+    )
+
+
 # -----------------------------------------------------------------------------
-# 8. Contact the College & Requests (Module 8)
+# 8. Contact the College & Messaging
 # -----------------------------------------------------------------------------
 
 @router.post("/feedback", status_code=status.HTTP_201_CREATED)
@@ -688,7 +1078,7 @@ def list_recruiter_inquiries(
 
 
 # -----------------------------------------------------------------------------
-# 9. On-The-Day View (Module 9)
+# 9. Attendance Tracking (Module 9)
 # -----------------------------------------------------------------------------
 
 @router.get("/attendance")
@@ -696,14 +1086,19 @@ def get_recruiter_attendance(
     current_user: UserModel = Depends(require_recruiter),
     db: Session = Depends(get_db),
 ) -> dict[str, Any]:
-    """Returns real-time candidate attendance marks and room status for drive day."""
+    """Returns candidate attendance marks and breakdown for drive day."""
     drive = get_recruiter_drive_entity(current_user, db)
 
-    slots = db.execute(select(SlotModel).where(SlotModel.drive_id == drive.id)).scalars().all()
+    slots = db.execute(
+        select(SlotModel).where(SlotModel.drive_id == drive.id).order_by(SlotModel.start_time.asc())
+    ).scalars().all()
+
     attendance_records = db.execute(
         select(DriveAttendanceModel).where(DriveAttendanceModel.drive_id == drive.id)
     ).scalars().all()
+
     att_map = {f"{a.student_id}_{a.room_name}": a for a in attendance_records}
+    att_by_student = {a.student_id: a for a in attendance_records}
 
     present_count = 0
     absent_count = 0
@@ -711,15 +1106,18 @@ def get_recruiter_attendance(
     pending_count = 0
 
     rooms_breakdown: dict[str, dict[str, int]] = {}
+    students_cache = {s.id: s for s in db.execute(select(StudentModel)).scalars().all()}
+    candidates_attendance = []
 
     for sl in slots:
+        stu = students_cache.get(sl.student_id)
         r_name = sl.room.name if sl.room else "Main Cabin"
         if r_name not in rooms_breakdown:
             rooms_breakdown[r_name] = {"present": 0, "absent": 0, "late": 0, "pending": 0, "total": 0}
 
         rooms_breakdown[r_name]["total"] += 1
-        att = att_map.get(f"{sl.student_id}_{r_name}")
-        att_status = att.status if att else "pending"
+        att = att_map.get(f"{sl.student_id}_{r_name}") or att_by_student.get(sl.student_id)
+        att_status = (att.status or "pending").lower() if att else "pending"
 
         if att_status == "present":
             present_count += 1
@@ -734,6 +1132,20 @@ def get_recruiter_attendance(
             pending_count += 1
             rooms_breakdown[r_name]["pending"] += 1
 
+        candidates_attendance.append({
+            "slot_id": sl.id,
+            "student_id": sl.student_id,
+            "roll_no": stu.roll_no if stu else "N/A",
+            "name": stu.name if stu else "Candidate",
+            "branch": stu.branch if stu else "Engineering",
+            "round_number": sl.round_number,
+            "start_time": sl.start_time.strftime("%H:%M"),
+            "venue": r_name,
+            "status": att_status,
+            "marked_at": att.marked_at.strftime("%H:%M") if att and att.marked_at else None,
+            "notes": att.notes if att else None,
+        })
+
     return {
         "enabled": True,
         "company_name": drive.company_name,
@@ -744,11 +1156,94 @@ def get_recruiter_attendance(
         "pending_count": pending_count,
         "turnout_percentage": round((present_count / max(1, len(slots))) * 100, 1),
         "rooms": rooms_breakdown,
+        "candidates": candidates_attendance,
+    }
+
+
+@router.post("/attendance/mark")
+def mark_recruiter_attendance(
+    payload: MarkAttendancePayload,
+    current_user: UserModel = Depends(require_recruiter),
+    db: Session = Depends(get_db),
+) -> dict[str, Any]:
+    """Allows recruiter to record or update candidate attendance in real-time."""
+    drive = get_recruiter_drive_entity(current_user, db)
+
+    slot = None
+    if payload.slot_id:
+        slot = db.execute(
+            select(SlotModel).where(SlotModel.id == payload.slot_id, SlotModel.drive_id == drive.id)
+        ).scalar_one_or_none()
+
+    student = None
+    if payload.student_id:
+        student = db.execute(select(StudentModel).where(StudentModel.id == payload.student_id)).scalar_one_or_none()
+    elif payload.roll_no:
+        student = db.execute(select(StudentModel).where(StudentModel.roll_no == payload.roll_no)).scalar_one_or_none()
+
+    if slot and not student:
+        student = db.execute(select(StudentModel).where(StudentModel.id == slot.student_id)).scalar_one_or_none()
+
+    if not student and not slot:
+        raise HTTPException(status_code=400, detail="Must specify slot_id or candidate identifier.")
+
+    student_id = student.id if student else slot.student_id
+    room_name = slot.room.name if slot and slot.room else "Main Cabin"
+
+    att = db.execute(
+        select(DriveAttendanceModel).where(
+            DriveAttendanceModel.drive_id == drive.id,
+            DriveAttendanceModel.student_id == student_id,
+        )
+    ).scalars().first()
+
+    now = datetime.datetime.utcnow()
+    clean_status = payload.status.lower()
+
+    if not att:
+        att = DriveAttendanceModel(
+            id=f"att_{uuid.uuid4().hex[:10]}",
+            drive_id=drive.id,
+            student_id=student_id,
+            slot_id=slot.id if slot else None,
+            room_name=room_name,
+            status=clean_status,
+            marked_by=current_user.username,
+            marked_at=now,
+            notes=payload.notes or f"Marked {clean_status} by corporate recruiter.",
+        )
+        db.add(att)
+    else:
+        att.status = clean_status
+        att.marked_by = current_user.username
+        att.marked_at = now
+        if payload.notes:
+            att.notes = payload.notes
+        if slot and not att.slot_id:
+            att.slot_id = slot.id
+
+    db.commit()
+
+    AuditService.record_action(
+        db=db,
+        actor=current_user.username,
+        action="RECRUITER_ATTENDANCE_MARKED",
+        aggregate_type="ATTENDANCE",
+        aggregate_id=att.id,
+        payload={"student_id": student_id, "status": clean_status, "company": drive.company_name},
+    )
+
+    return {
+        "success": True,
+        "message": f"Attendance updated to '{clean_status.upper()}'.",
+        "student_id": student_id,
+        "status": clean_status,
+        "marked_at": now.strftime("%H:%M"),
     }
 
 
 # -----------------------------------------------------------------------------
-# 10. Results (Module 10)
+# 10. Results (Real Confirmed Offers Only)
 # -----------------------------------------------------------------------------
 
 @router.get("/results")
@@ -756,12 +1251,14 @@ def get_recruiter_final_results(
     current_user: UserModel = Depends(require_recruiter),
     db: Session = Depends(get_db),
 ) -> dict[str, Any]:
-    """Returns official final selection list as confirmed by Placement Officer."""
+    """Returns official verified selection list. Strictly real confirmed offers only."""
     drive = get_recruiter_drive_entity(current_user, db)
 
-    # Offers in OfferModel
+    # Offers in OfferModel strictly for this drive's company
     offers = db.execute(
-        select(OfferModel).where(OfferModel.company == drive.company_name)
+        select(OfferModel).where(
+            (OfferModel.company == drive.company_name) | (OfferModel.company == drive.company_id)
+        )
     ).scalars().all()
 
     # Approved Pending Results
@@ -773,7 +1270,6 @@ def get_recruiter_final_results(
     ).scalars().all()
 
     students_cache = {s.id: s for s in db.execute(select(StudentModel)).scalars().all()}
-
     selected_list = []
     seen_rolls = set()
 
@@ -787,7 +1283,7 @@ def get_recruiter_final_results(
                 "branch": stu.branch,
                 "ctc_lpa": off.ctc_lpa,
                 "status": "Offer Confirmed",
-                "is_dream": off.is_dream,
+                "is_dream": bool(off.is_dream),
                 "confirmed_date": off.offer_date.isoformat(),
             })
 
@@ -801,12 +1297,12 @@ def get_recruiter_final_results(
                 "branch": stu.branch,
                 "ctc_lpa": p.ctc_lpa,
                 "status": "Offer Confirmed",
-                "is_dream": p.is_dream,
+                "is_dream": bool(p.is_dream),
                 "confirmed_date": p.resolved_at.date().isoformat() if p.resolved_at else datetime.date.today().isoformat(),
             })
 
     return {
-        "released": True,
+        "released": len(selected_list) > 0,
         "company_name": drive.company_name,
         "total_selected": len(selected_list),
         "selected_candidates": selected_list,
@@ -814,7 +1310,7 @@ def get_recruiter_final_results(
 
 
 # -----------------------------------------------------------------------------
-# Tenant Isolation & Tampering Protection Endpoint
+# Tenant Isolation Endpoint
 # -----------------------------------------------------------------------------
 
 @router.get("/drive/{target_drive_id}")
@@ -823,9 +1319,7 @@ def verify_drive_access(
     current_user: UserModel = Depends(require_recruiter),
     db: Session = Depends(get_db),
 ) -> dict[str, Any]:
-    """
-    Enforces strict tenant barrier: Requesting another company's drive returns 403 Forbidden.
-    """
+    """Enforces strict tenant barrier: Requesting another company returns 403 Forbidden."""
     drive = get_recruiter_drive_entity(current_user, db)
     if target_drive_id != drive.id:
         raise HTTPException(

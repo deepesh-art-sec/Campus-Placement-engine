@@ -283,14 +283,14 @@ export const CoordinatorDashboard: React.FC = () => {
     <div className="space-y-6 pb-12">
       {/* Toast Notification */}
       {notification && (
-        <div className="fixed bottom-6 right-6 z-50 bg-[#0d1527] border border-emerald-500/50 text-emerald-300 px-4 py-3 rounded-2xl shadow-2xl flex items-center gap-2 text-xs font-bold animate-in fade-in slide-in-from-bottom-2">
+        <div className="fixed bottom-6 right-6 z-50 bg-white border border-emerald-400 text-emerald-800 shadow-lg px-4 py-3 rounded-2xl shadow-2xl flex items-center gap-2 text-xs font-bold animate-in fade-in slide-in-from-bottom-2">
           <CheckCircle className="w-4 h-4 text-emerald-400" />
           <span>{notification}</span>
         </div>
       )}
 
       {/* Top Coordinator Banner */}
-      <div className="bg-[#0d1527] border border-[#1e3258] rounded-2xl p-6 shadow-xl flex flex-wrap items-center justify-between gap-4">
+      <div className="bg-white border border-slate-200/90 rounded-2xl p-6 shadow-xs text-slate-800 flex flex-wrap items-center justify-between gap-4">
         <div>
           <div className="flex items-center gap-2 mb-1.5">
             <span className="px-2.5 py-0.5 rounded-full text-xs font-mono font-bold bg-cyan-950 text-cyan-300 border border-cyan-700/60 flex items-center gap-1.5">
@@ -317,7 +317,7 @@ export const CoordinatorDashboard: React.FC = () => {
           <select
             value={selectedDriveId}
             onChange={(e) => handleDriveChange(e.target.value)}
-            className="w-full px-3 py-2 bg-[#080e1c] border border-[#1e3258] rounded-xl text-xs font-semibold text-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
+            className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-500"
           >
             {drives.map((d) => (
               <option key={d.id} value={d.id}>
@@ -329,10 +329,10 @@ export const CoordinatorDashboard: React.FC = () => {
       </div>
 
       {/* Navigation Sub-Tabs */}
-      <div className="flex items-center gap-1.5 bg-[#080e1c] p-1.5 rounded-2xl border border-[#1e3258] overflow-x-auto no-scrollbar">
+      <div className="flex items-center gap-1.5 bg-slate-100 p-1.5 rounded-2xl border border-slate-200 overflow-x-auto no-scrollbar">
         {[
           { id: "overview", label: "Overview", icon: ClipboardList },
-          { id: "attendance", label: "On-the-Day Attendance", icon: CheckCircle, badge: `${presentCount} Present` },
+          { id: "attendance", label: "Attendance", icon: CheckCircle, badge: `${presentCount} Present` },
           { id: "students", label: "Student Roster", icon: Users },
           { id: "drives", label: "Drive Details", icon: Briefcase },
           { id: "schedule", label: "Schedule & Clashes", icon: Calendar },
@@ -347,7 +347,7 @@ export const CoordinatorDashboard: React.FC = () => {
               className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
                 isActive
                   ? "bg-gradient-to-r from-blue-700 to-emerald-600 text-white shadow-md shadow-emerald-950"
-                  : "text-slate-400 hover:text-white hover:bg-[#111d38]"
+                  : "text-slate-600 hover:text-slate-900 hover:bg-slate-100"
               }`}
             >
               <Icon className="w-4 h-4" />
@@ -355,7 +355,7 @@ export const CoordinatorDashboard: React.FC = () => {
               {tab.badge && (
                 <span
                   className={`text-[10px] font-mono px-1.5 py-0.2 rounded-full ${
-                    isActive ? "bg-white/20 text-white" : "bg-[#1e3258] text-slate-300"
+                    isActive ? "bg-white/20 text-white" : "bg-slate-200 text-slate-700"
                   }`}
                 >
                   {tab.badge}
@@ -440,19 +440,19 @@ export const CoordinatorDashboard: React.FC = () => {
                 subtitle="Rules governing on-campus verification & role scope"
               />
               <CardBody className="space-y-3 text-xs text-slate-300">
-                <div className="flex items-start gap-2.5 p-3 rounded-xl bg-[#080e1c] border border-[#1e3258]">
+                <div className="flex items-start gap-2.5 p-3 rounded-xl bg-slate-50 border border-slate-200">
                   <CheckCircle className="w-4 h-4 text-emerald-400 flex-shrink-0 mt-0.5" />
                   <span>
                     <strong>Mark Attendance in Real-Time:</strong> Interview panels rely on the live roster to call in candidates. Toggle status as students enter the interview lab.
                   </span>
                 </div>
-                <div className="flex items-start gap-2.5 p-3 rounded-xl bg-[#080e1c] border border-[#1e3258]">
+                <div className="flex items-start gap-2.5 p-3 rounded-xl bg-slate-50 border border-slate-200">
                   <FileEdit className="w-4 h-4 text-cyan-400 flex-shrink-0 mt-0.5" />
                   <span>
                     <strong>Candidate Data Discrepancies:</strong> You cannot modify CGPA, backlogs, or offer policy directly. Submit a formal change request to the Placement Officer.
                   </span>
                 </div>
-                <div className="flex items-start gap-2.5 p-3 rounded-xl bg-[#080e1c] border border-[#1e3258]">
+                <div className="flex items-start gap-2.5 p-3 rounded-xl bg-slate-50 border border-slate-200">
                   <AlertCircle className="w-4 h-4 text-amber-400 flex-shrink-0 mt-0.5" />
                   <span>
                     <strong>Schedule Clashes:</strong> If a student has back-to-back or overlapping rounds with another company, flag the clash immediately.
@@ -467,14 +467,7 @@ export const CoordinatorDashboard: React.FC = () => {
                 subtitle="Shortcuts for frequent day-of-drive tasks"
               />
               <CardBody className="space-y-3">
-                <Button
-                  variant="primary"
-                  className="w-full justify-center"
-                  onClick={() => setActiveTab("attendance")}
-                >
-                  <CheckCircle className="w-4 h-4 mr-2" />
-                  Start On-The-Day Attendance
-                </Button>
+
                 <Button
                   variant="secondary"
                   className="w-full justify-center"
@@ -501,12 +494,12 @@ export const CoordinatorDashboard: React.FC = () => {
       {activeTab === "attendance" && (
         <Card>
           <CardHeader
-            title="On-The-Day Attendance Marking"
+            title="Attendance Marking"
             subtitle="Click once to mark candidate attendance. Changes sync directly to the scheduler & recruiter dashboard."
           />
           <CardBody className="space-y-4">
             {/* Quick Filter Header */}
-            <div className="flex flex-wrap items-center justify-between gap-4 p-3 bg-[#080e1c] rounded-xl border border-[#1e3258]">
+            <div className="flex flex-wrap items-center justify-between gap-4 p-3 bg-slate-50 rounded-xl border border-slate-200">
               <div className="flex items-center gap-3">
                 <span className="text-xs font-mono uppercase text-slate-400 font-bold">Live Status:</span>
                 <span className="text-xs font-mono text-emerald-400 font-bold">{presentCount} Present</span>
@@ -524,7 +517,7 @@ export const CoordinatorDashboard: React.FC = () => {
             <div className="overflow-x-auto">
               <table className="w-full text-left text-xs border-collapse">
                 <thead>
-                  <tr className="bg-[#080e1c] text-slate-400 font-mono font-bold uppercase tracking-wider border-b border-[#1e3258]">
+                  <tr className="bg-slate-50 text-slate-600 font-mono font-bold uppercase tracking-wider border-b border-slate-200">
                     <th className="p-3">Roll Number</th>
                     <th className="p-3">Candidate Name</th>
                     <th className="p-3">Branch</th>
@@ -534,7 +527,7 @@ export const CoordinatorDashboard: React.FC = () => {
                     <th className="p-3 text-right">Quick Mark Action</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-[#1e3258]/60">
+                <tbody className="divide-y divide-slate-100">
                   {students.slice(0, 50).map((s, idx) => {
                     const existingAtt = attendanceRecords.find((r) => r.student_roll === s.roll_number);
                     const currentStatus = existingAtt?.status || "PENDING";
@@ -542,7 +535,7 @@ export const CoordinatorDashboard: React.FC = () => {
                     const room = idx % 2 === 0 ? "Interview Lab 101" : "Interview Lab 102";
 
                     return (
-                      <tr key={s.roll_number} className="hover:bg-[#111d38]/50 transition-colors">
+                      <tr key={s.roll_number} className="hover:bg-slate-50 transition-colors">
                         <td className="p-3 font-mono font-bold text-cyan-400">{s.roll_number}</td>
                         <td className="p-3 font-semibold text-white">{s.name}</td>
                         <td className="p-3 font-mono text-slate-300">{s.branch}</td>
@@ -552,7 +545,7 @@ export const CoordinatorDashboard: React.FC = () => {
                           <StatusPill status={currentStatus} size="sm" />
                         </td>
                         <td className="p-3 text-right">
-                          <div className="inline-flex items-center gap-1.5 bg-[#080e1c] p-1 rounded-xl border border-[#1e3258]">
+                          <div className="inline-flex items-center gap-1.5 bg-slate-50 p-1 rounded-xl border border-slate-200">
                             <button
                               type="button"
                               onClick={() => handleMarkAttendance(s.roll_number, slot, room, "PRESENT")}
@@ -660,17 +653,17 @@ export const CoordinatorDashboard: React.FC = () => {
                 action={<StatusPill status={d.status} size="sm" />}
               />
               <CardBody className="space-y-3 text-xs">
-                <div className="flex justify-between py-1 border-b border-[#1e3258]/60">
+                <div className="flex justify-between py-1 border-b border-slate-100">
                   <span className="text-slate-400">Package (CTC):</span>
                   <span className="font-mono font-bold text-white">
                     {d.ctc_lpa ? `₹${d.ctc_lpa} LPA` : "Not specified"}
                   </span>
                 </div>
-                <div className="flex justify-between py-1 border-b border-[#1e3258]/60">
+                <div className="flex justify-between py-1 border-b border-slate-100">
                   <span className="text-slate-400">Venue:</span>
                   <span className="text-slate-200">{d.venue || "Placement Center Block A"}</span>
                 </div>
-                <div className="flex justify-between py-1 border-b border-[#1e3258]/60">
+                <div className="flex justify-between py-1 border-b border-slate-100">
                   <span className="text-slate-400">Interview Mode:</span>
                   <span className="text-emerald-400 font-semibold">In-Person Panel</span>
                 </div>
@@ -747,7 +740,7 @@ export const CoordinatorDashboard: React.FC = () => {
                 No active change requests submitted yet.
               </div>
             ) : (
-              <div className="divide-y divide-[#1e3258]/60">
+              <div className="divide-y divide-slate-100">
                 {requests.map((r) => (
                   <div key={r.id} className="p-4 flex flex-wrap items-center justify-between gap-4">
                     <div>
@@ -755,7 +748,7 @@ export const CoordinatorDashboard: React.FC = () => {
                         <span className="font-mono font-bold text-xs text-white">
                           #{r.id.slice(0, 8)}
                         </span>
-                        <span className="text-xs px-2 py-0.5 rounded bg-[#111d38] text-cyan-300 font-mono border border-[#1e3258]">
+                        <span className="text-xs px-2 py-0.5 rounded bg-[#111d38] text-cyan-300 font-mono border border-slate-200">
                           {r.request_type}
                         </span>
                         <StatusPill status={r.status} size="sm" />
@@ -798,7 +791,7 @@ export const CoordinatorDashboard: React.FC = () => {
               value={correctionRoll}
               onChange={(e) => setCorrectionRoll(e.target.value)}
               placeholder="e.g. BT21001"
-              className="w-full px-3 py-2 bg-[#080e1c] border border-[#1e3258] rounded-xl text-white font-mono"
+              className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-white font-mono"
             />
           </div>
 
@@ -810,7 +803,7 @@ export const CoordinatorDashboard: React.FC = () => {
               <select
                 value={correctionField}
                 onChange={(e) => setCorrectionField(e.target.value)}
-                className="w-full px-3 py-2 bg-[#080e1c] border border-[#1e3258] rounded-xl text-white font-mono"
+                className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-white font-mono"
               >
                 <option value="cgpa">CGPA</option>
                 <option value="backlogs">Active Backlogs</option>
@@ -827,7 +820,7 @@ export const CoordinatorDashboard: React.FC = () => {
                 value={correctionCurrent}
                 onChange={(e) => setCorrectionCurrent(e.target.value)}
                 placeholder="e.g. 7.1"
-                className="w-full px-3 py-2 bg-[#080e1c] border border-[#1e3258] rounded-xl text-white font-mono"
+                className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-white font-mono"
               />
             </div>
           </div>
@@ -842,7 +835,7 @@ export const CoordinatorDashboard: React.FC = () => {
               value={correctionProposed}
               onChange={(e) => setCorrectionProposed(e.target.value)}
               placeholder="e.g. 7.85 (Semester 6 marksheet verified)"
-              className="w-full px-3 py-2 bg-[#080e1c] border border-[#1e3258] rounded-xl text-white font-mono"
+              className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-white font-mono"
             />
           </div>
 
@@ -856,7 +849,7 @@ export const CoordinatorDashboard: React.FC = () => {
               value={correctionReason}
               onChange={(e) => setCorrectionReason(e.target.value)}
               placeholder="Explain physical verification details or marksheet reference for the officer..."
-              className="w-full px-3 py-2 bg-[#080e1c] border border-[#1e3258] rounded-xl text-white"
+              className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-white"
             />
           </div>
 
@@ -895,7 +888,7 @@ export const CoordinatorDashboard: React.FC = () => {
               value={clashNote}
               onChange={(e) => setClashNote(e.target.value)}
               placeholder="e.g. Student BT21045 is scheduled for Round 2 at 11:00 in Lab 101, but is also shortlisted for Amazon panel at 11:15 in Lab 102."
-              className="w-full px-3 py-2 bg-[#080e1c] border border-[#1e3258] rounded-xl text-white"
+              className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-white"
             />
           </div>
           <div className="pt-2 flex justify-end gap-3">

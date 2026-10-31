@@ -36,14 +36,14 @@ export const DatePicker: React.FC<DatePickerProps> = ({
       {label && (
         <label
           htmlFor={generatedId}
-          className="block text-xs font-bold uppercase tracking-wider text-slate-300"
+          className="block text-xs font-bold uppercase tracking-wider text-slate-700"
         >
           {label}
         </label>
       )}
 
       <div className="relative flex items-center">
-        <div className="absolute left-3.5 pointer-events-none text-cyan-400">
+        <div className="absolute left-3.5 pointer-events-none text-blue-600">
           <Calendar className="w-4 h-4" />
         </div>
 
@@ -53,10 +53,10 @@ export const DatePicker: React.FC<DatePickerProps> = ({
           value={value}
           onChange={(e) => onChange?.(e.target.value)}
           disabled={disabled}
-          className={`w-full pl-10 pr-4 py-2.5 bg-[#080e1c] border rounded-xl text-xs sm:text-sm font-semibold text-white transition-all focus:bg-[#0d1527] focus:outline-none focus:ring-2 disabled:opacity-50 disabled:cursor-not-allowed [color-scheme:dark] ${
+          className={`w-full pl-10 pr-4 py-2.5 bg-white border rounded-xl text-xs sm:text-sm font-semibold text-slate-900 transition-all focus:bg-white focus:outline-none focus:ring-2 disabled:opacity-50 disabled:cursor-not-allowed [color-scheme:light] ${
             error
-              ? "border-rose-500/80 focus:border-rose-500 focus:ring-rose-500/30 text-rose-200"
-              : "border-[#1e3258] focus:border-emerald-500 focus:ring-emerald-500/30"
+              ? "border-rose-400 focus:border-rose-500 focus:ring-rose-100 text-rose-700"
+              : "border-slate-300 focus:border-blue-500 focus:ring-blue-100"
           } ${className}`}
           {...props}
         />
@@ -67,21 +67,21 @@ export const DatePicker: React.FC<DatePickerProps> = ({
           <button
             type="button"
             onClick={() => onPresetSelect(getPresetDate(0))}
-            className="px-2 py-0.5 rounded-md text-[10.5px] font-semibold bg-[#111d38] hover:bg-[#17264a] text-slate-300 hover:text-white border border-[#1e3258] transition-colors"
+            className="px-2 py-0.5 rounded-md text-[10.5px] font-semibold bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200 transition-colors"
           >
             Today
           </button>
           <button
             type="button"
             onClick={() => onPresetSelect(getPresetDate(1))}
-            className="px-2 py-0.5 rounded-md text-[10.5px] font-semibold bg-[#111d38] hover:bg-[#17264a] text-slate-300 hover:text-white border border-[#1e3258] transition-colors"
+            className="px-2 py-0.5 rounded-md text-[10.5px] font-semibold bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200 transition-colors"
           >
             Tomorrow
           </button>
           <button
             type="button"
             onClick={() => onPresetSelect(getPresetDate(7))}
-            className="px-2 py-0.5 rounded-md text-[10.5px] font-semibold bg-[#111d38] hover:bg-[#17264a] text-slate-300 hover:text-white border border-[#1e3258] transition-colors"
+            className="px-2 py-0.5 rounded-md text-[10.5px] font-semibold bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200 transition-colors"
           >
             +7 Days
           </button>
@@ -89,9 +89,9 @@ export const DatePicker: React.FC<DatePickerProps> = ({
       )}
 
       {error ? (
-        <p className="text-xs font-medium text-rose-400 mt-1">{error}</p>
+        <p className="text-xs font-medium text-rose-600 mt-1">{error}</p>
       ) : helperText ? (
-        <p className="text-[11px] text-slate-400 mt-1">{helperText}</p>
+        <p className="text-[11px] text-slate-500 mt-1">{helperText}</p>
       ) : null}
     </div>
   );

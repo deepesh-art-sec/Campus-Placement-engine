@@ -22,6 +22,8 @@ REPLACEMENTS: dict[str, str] = {
     "\u25aa": "*",  # Black small square
     "\u2026": "...",# Ellipsis
     "\u00a0": " ",  # Non-breaking space
+    "\u20b9": "INR ", # Indian Rupee symbol
+    "\u20a8": "Rs. ", # Rs symbol
     "\t": " ",
 }
 

@@ -1,0 +1,19 @@
+============================= test session starts =============================
+platform win32 -- Python 3.13.7, pytest-9.1.1, pluggy-1.7.0
+rootdir: C:\Users\Nitro-V\.gemini\antigravity\scratch\deviathon-placement-engine
+configfile: pyproject.toml
+plugins: anyio-4.15.1, hypothesis-6.170.9, cov-7.1.0
+collected 21 items
+
+backend\tests\test_nlp_announcement_extraction_system.py ............... [ 71%]
+...                                                                      [ 85%]
+backend\tests\test_gemini_extraction.py ...                              [100%]
+
+============================== warnings summary ===============================
+.venv\Lib\site-packages\fitz\__init__.py:17
+  C:\Users\Nitro-V\.gemini\antigravity\scratch\deviathon-placement-engine\.venv\Lib\site-packages\fitz\__init__.py:17: FutureWarning: The `fitz` API is deprecated and will be removed in future. Use `import pymupdf` instead.
+    warnings.warn(
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+================== 21 passed, 1 warning in 81.50s (0:01:21) ===================
+

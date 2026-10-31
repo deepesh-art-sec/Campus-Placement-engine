@@ -428,9 +428,12 @@ export const ScheduleBoardView: React.FC<ScheduleBoardViewProps> = ({ initialDri
                   style={{
                     position: "sticky",
                     left: 0,
-                    zIndex: 40,
+                    zIndex: 50,
                     backgroundColor: "#0B1326",
                     background: "#0B1326",
+                    isolation: "isolate",
+                    transform: "translate3d(0, 0, 0)",
+                    WebkitTransform: "translate3d(0, 0, 0)",
                     minWidth: "240px",
                     maxWidth: "240px",
                     width: "240px",

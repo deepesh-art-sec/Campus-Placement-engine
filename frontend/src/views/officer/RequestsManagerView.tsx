@@ -107,14 +107,14 @@ export const RequestsManagerView: React.FC = () => {
       key: "id",
       header: "Request ID",
       sortable: true,
-      render: (item) => <span className="font-mono text-cyan-400 font-bold">#{item.id.slice(0, 8)}</span>,
+      render: (item) => <span className="font-mono text-blue-600 font-bold">#{item.id.slice(0, 8)}</span>,
     },
     {
       key: "request_type",
       header: "Type",
       sortable: true,
       render: (item) => (
-        <span className="font-mono text-[11px] bg-[#111d38] text-slate-200 px-2 py-0.5 rounded border border-[#1e3258]">
+        <span className="font-mono text-[11px] bg-slate-100 text-slate-700 px-2 py-0.5 rounded border border-slate-200">
           {item.request_type.replace(/_/g, " ")}
         </span>
       ),
@@ -126,7 +126,7 @@ export const RequestsManagerView: React.FC = () => {
       render: (item) => (
         <div className="flex items-center gap-1.5 font-mono text-xs">
           <User className="w-3.5 h-3.5 text-slate-400" />
-          <span className="capitalize text-slate-200">{item.requester_role}</span>
+          <span className="capitalize text-slate-800 font-semibold">{item.requester_role}</span>
         </div>
       ),
     },
@@ -135,8 +135,8 @@ export const RequestsManagerView: React.FC = () => {
       header: "Target Entity",
       sortable: true,
       render: (item) => (
-        <span className="font-mono text-xs text-white">
-          {item.target_entity}: <strong className="text-cyan-300">{item.target_id}</strong>
+        <span className="font-mono text-xs text-slate-800">
+          {item.target_entity}: <strong className="text-blue-700 font-bold">{item.target_id}</strong>
         </span>
       ),
     },
@@ -151,7 +151,7 @@ export const RequestsManagerView: React.FC = () => {
       header: "Submitted",
       sortable: true,
       render: (item) => (
-        <span className="text-slate-400 font-mono text-[11px]">
+        <span className="text-slate-500 font-mono text-[11px]">
           {new Date(item.created_at).toLocaleDateString()}
         </span>
       ),
@@ -179,21 +179,21 @@ export const RequestsManagerView: React.FC = () => {
     <div className="space-y-6 pb-16">
       {/* Toast Notification */}
       {notification && (
-        <div className="fixed bottom-6 right-6 z-50 bg-[#0d1527] border border-emerald-500/50 text-emerald-300 px-4 py-3 rounded-2xl shadow-2xl flex items-center gap-2 text-xs font-bold animate-in fade-in slide-in-from-bottom-2">
-          <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+        <div className="fixed bottom-6 right-6 z-50 bg-white border border-emerald-200 text-emerald-950 px-4 py-3 rounded-2xl shadow-xl flex items-center gap-2 text-xs font-bold animate-in fade-in slide-in-from-bottom-2">
+          <CheckCircle2 className="w-4 h-4 text-emerald-600" />
           <span>{notification}</span>
         </div>
       )}
 
       {/* Header */}
-      <div className="bg-[#0d1527] p-6 rounded-3xl border border-[#1e3258] shadow-xl flex flex-wrap items-center justify-between gap-4">
+      <div className="bg-[#0B1F44] p-6 rounded-3xl border border-blue-900/40 shadow-lg text-white flex flex-wrap items-center justify-between gap-4">
         <div>
           <div className="flex items-center gap-2 mb-1.5">
-            <span className="px-2.5 py-0.5 rounded-full text-xs font-mono font-bold bg-cyan-950 text-cyan-300 border border-cyan-700/60 flex items-center gap-1.5">
-              <Inbox className="w-3.5 h-3.5 text-cyan-400" />
+            <span className="px-2.5 py-0.5 rounded-full text-xs font-mono font-bold bg-blue-900/60 text-blue-200 border border-blue-700/60 flex items-center gap-1.5">
+              <Inbox className="w-3.5 h-3.5 text-blue-300" />
               Governance & Oversight
             </span>
-            <span className="text-xs text-slate-400 font-mono">
+            <span className="text-xs text-slate-300 font-mono">
               Deterministic Change Control
             </span>
           </div>
@@ -206,7 +206,7 @@ export const RequestsManagerView: React.FC = () => {
         </div>
 
         {/* Filter Pills */}
-        <div className="flex items-center gap-1.5 bg-[#080e1c] p-1.5 rounded-2xl border border-[#1e3258]">
+        <div className="flex items-center gap-1.5 bg-slate-900/60 p-1.5 rounded-2xl border border-blue-800/40">
           {[
             { id: "ALL", label: "All Requests", count: requests.length },
             { id: "PENDING_REVIEW", label: "Pending", count: pendingCount },
@@ -218,8 +218,8 @@ export const RequestsManagerView: React.FC = () => {
               onClick={() => setFilterStatus(tab.id)}
               className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
                 filterStatus === tab.id
-                  ? "bg-gradient-to-r from-blue-700 to-emerald-600 text-white shadow-md shadow-emerald-950"
-                  : "text-slate-400 hover:text-white"
+                  ? "bg-blue-600 text-white shadow-sm"
+                  : "text-slate-300 hover:text-white"
               }`}
             >
               <span>{tab.label}</span>
@@ -259,18 +259,18 @@ export const RequestsManagerView: React.FC = () => {
         {selectedRequest && (
           <div className="space-y-5 text-xs">
             {/* Meta Strip */}
-            <div className="p-3.5 bg-[#080e1c] rounded-xl border border-[#1e3258] grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
+            <div className="p-3.5 bg-slate-50 rounded-xl border border-slate-200 grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
               <div>
                 <span className="text-[10px] uppercase font-mono text-slate-500 block">Requester</span>
-                <span className="font-bold text-white capitalize">{selectedRequest.requester_role}</span>
+                <span className="font-bold text-slate-800 capitalize">{selectedRequest.requester_role}</span>
               </div>
               <div>
                 <span className="text-[10px] uppercase font-mono text-slate-500 block">Target Entity</span>
-                <span className="font-mono font-bold text-cyan-400">{selectedRequest.target_id}</span>
+                <span className="font-mono font-bold text-blue-700">{selectedRequest.target_id}</span>
               </div>
               <div>
                 <span className="text-[10px] uppercase font-mono text-slate-500 block">Type</span>
-                <span className="font-mono text-slate-300">{selectedRequest.request_type}</span>
+                <span className="font-mono text-slate-700">{selectedRequest.request_type}</span>
               </div>
               <div>
                 <span className="text-[10px] uppercase font-mono text-slate-500 block">Current Status</span>
@@ -279,14 +279,14 @@ export const RequestsManagerView: React.FC = () => {
             </div>
 
             {/* Justification note */}
-            <div className="p-3 bg-[#0c1830] rounded-xl border border-blue-900/40 text-slate-200">
-              <span className="font-bold text-cyan-300 block mb-1">Reason / Justification:</span>
-              <p className="text-slate-300 leading-relaxed">{selectedRequest.reason}</p>
+            <div className="p-3.5 bg-blue-50/70 rounded-xl border border-blue-200 text-blue-950">
+              <span className="font-bold text-blue-900 block mb-1">Reason / Justification:</span>
+              <p className="text-blue-900/90 leading-relaxed">{selectedRequest.reason}</p>
             </div>
 
             {/* Diff View Comparison */}
             <div>
-              <h4 className="text-xs font-mono font-bold uppercase text-slate-400 mb-2">
+              <h4 className="text-xs font-mono font-bold uppercase text-slate-700 mb-2">
                 Field-By-Field Diff Comparison:
               </h4>
               <DiffView
@@ -304,9 +304,9 @@ export const RequestsManagerView: React.FC = () => {
 
             {/* Officer Review Form (if pending) */}
             {selectedRequest.status === "PENDING_REVIEW" ? (
-              <div className="space-y-3 pt-3 border-t border-[#1e3258]">
+              <div className="space-y-3 pt-3 border-t border-slate-200">
                 <div>
-                  <label className="block text-slate-300 font-bold uppercase mb-1">
+                  <label className="block text-slate-700 font-bold uppercase text-[11px] mb-1">
                     Officer Decision Notes
                   </label>
                   <textarea
@@ -314,7 +314,7 @@ export const RequestsManagerView: React.FC = () => {
                     value={reviewNotes}
                     onChange={(e) => setReviewNotes(e.target.value)}
                     placeholder="Enter approval conditions or rejection grounds..."
-                    className="w-full px-3 py-2 bg-[#080e1c] border border-[#1e3258] rounded-xl text-white text-xs"
+                    className="w-full px-3 py-2 bg-white border border-slate-300 rounded-xl text-slate-900 text-xs focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 focus:outline-none"
                   />
                 </div>
 
@@ -324,9 +324,9 @@ export const RequestsManagerView: React.FC = () => {
                     id="autoApply"
                     checked={autoApply}
                     onChange={(e) => setAutoApply(e.target.checked)}
-                    className="rounded text-emerald-500 focus:ring-emerald-500"
+                    className="rounded text-blue-600 focus:ring-blue-500 border-slate-300 cursor-pointer"
                   />
-                  <label htmlFor="autoApply" className="text-slate-300 select-none cursor-pointer">
+                  <label htmlFor="autoApply" className="text-slate-700 font-medium select-none cursor-pointer">
                     Automatically update student database record upon approval
                   </label>
                 </div>
@@ -360,10 +360,10 @@ export const RequestsManagerView: React.FC = () => {
                 </div>
               </div>
             ) : (
-              <div className="p-3 bg-[#080e1c] rounded-xl border border-[#1e3258] text-slate-400 text-xs">
+              <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 text-slate-600 text-xs">
                 This request was already reviewed ({selectedRequest.status}).
                 {selectedRequest.review_notes && (
-                  <div className="mt-1 text-slate-200">Notes: {selectedRequest.review_notes}</div>
+                  <div className="mt-1 text-slate-800 font-medium">Notes: {selectedRequest.review_notes}</div>
                 )}
               </div>
             )}

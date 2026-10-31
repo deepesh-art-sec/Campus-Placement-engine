@@ -1,5 +1,5 @@
 // Service Worker for Institutional Offline-First Application Shell
-const CACHE_NAME = "placement-engine-cache-v8";
+const CACHE_NAME = "placement-engine-cache-v10";
 const PRECACHE_URLS = [
   "/",
   "/index.html",

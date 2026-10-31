@@ -136,8 +136,17 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
 
 app = FastAPI(
     title="Institutional Placement Eligibility & Scheduling Engine",
-    description="Offline collegiate placement eligibility evaluation, live offer policy enforcement, clash-free scheduling, and audit replay system.",
+    description="Offline collegiate placement eligibility evaluation, live offer policy enforcement, clash-free scheduling, and audit replay system. Made by Deepesh-art-sec.",
     version="1.0.0",
+    contact={
+        "name": "Deepesh-art-sec",
+        "url": "https://github.com/deepesh-art-sec",
+        "email": "deepeshrathore128@gmail.com",
+    },
+    license_info={
+        "name": "MIT (Attribution: Made by Deepesh-art-sec)",
+        "url": "https://github.com/deepesh-art-sec/Campus-Placement-engine/blob/main/LICENSE",
+    },
     lifespan=lifespan,
 )
 
@@ -163,6 +172,10 @@ async def security_headers_middleware(request: Request, call_next: Callable[...,
         )
 
     response: Response = await call_next(request)
+    response.headers["X-Author"] = "Made by Deepesh-art-sec"
+    response.headers["X-Watermark"] = "Made by Deepesh-art-sec"
+    response.headers["X-Repository"] = "https://github.com/deepesh-art-sec/Campus-Placement-engine"
+    response.headers["X-Powered-By"] = "Placement Engine by Deepesh-art-sec"
     response.headers["X-Content-Type-Options"] = "nosniff"
     response.headers["X-Frame-Options"] = "DENY"
     response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
@@ -231,8 +244,14 @@ app.include_router(company_routes.router)
 
 @app.get("/api/health")
 def health_check() -> dict[str, str]:
-    """Lightweight LAN ping check."""
-    return {"status": "healthy", "service": "PlacementEngine"}
+    """Lightweight LAN ping check with author provenance watermark."""
+    return {
+        "status": "healthy",
+        "service": "PlacementEngine",
+        "watermark": "Made by Deepesh-art-sec",
+        "author": "Deepesh-art-sec",
+        "repository": "https://github.com/deepesh-art-sec/Campus-Placement-engine",
+    }
 
 
 @app.get("/api/lan-info")

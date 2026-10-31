@@ -1,25 +1,46 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
+  Search,
+  Bell,
+  ChevronDown,
   LogOut,
   HelpCircle,
-  Cpu,
   Inbox,
+  User,
+  Zap,
+  Check,
+  ShieldAlert,
 } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
 import { api } from "../../api/client";
+import { useCorporateTheme, THEME_OPTIONS, CyberTheme } from "../../context/ThemeContext";
 
 interface HeaderProps {
   onOpenTour?: () => void;
   onNavigateToAudit?: () => void;
   onOpenMessageBox?: () => void;
+  onOpenAlerts?: () => void;
+  onSearchChange?: (query: string) => void;
 }
 
-export const Header: React.FC<HeaderProps> = ({ onOpenTour, onOpenMessageBox }) => {
+export const Header: React.FC<HeaderProps> = ({
+  onOpenTour,
+  onOpenMessageBox,
+  onOpenAlerts,
+  onSearchChange,
+}) => {
   const { user, logout } = useAuth();
+  const { theme, setTheme } = useCorporateTheme();
   const [pendingCount, setPendingCount] = useState<number>(0);
+  const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [themeDropdownOpen, setThemeDropdownOpen] = useState(false);
+  const [searchValue, setSearchValue] = useState("");
+  
+  const dropdownRef = useRef<HTMLDivElement>(null);
+  const themeDropdownRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (user?.role === "officer") {
+    if (user?.role === "officer" || user?.role === "coordinator") {
       let active = true;
       const checkPending = () => {
         api.get<{ total_pending: number }>("/api/officer/inbox/summary")
@@ -32,7 +53,7 @@ export const Header: React.FC<HeaderProps> = ({ onOpenTour, onOpenMessageBox }) 
       };
 
       checkPending();
-      const timer = setInterval(checkPending, 15000); // 15s refresh
+      const timer = setInterval(checkPending, 15000);
       return () => {
         active = false;
         clearInterval(timer);
@@ -40,84 +61,233 @@ export const Header: React.FC<HeaderProps> = ({ onOpenTour, onOpenMessageBox }) 
     }
   }, [user]);
 
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setDropdownOpen(false);
+      }
+      if (themeDropdownRef.current && !themeDropdownRef.current.contains(event.target as Node)) {
+        setThemeDropdownOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchValue(e.target.value);
+    if (onSearchChange) onSearchChange(e.target.value);
+  };
+
+  const currentTheme = THEME_OPTIONS.find((t) => t.id === theme) || THEME_OPTIONS[0];
+
+  const displayRole = user?.role
+    ? user.role === "coordinator"
+      ? "Coordinator"
+      : user.role === "officer"
+      ? "Placement Officer"
+      : user.role === "student"
+      ? "Student"
+      : "Recruiter"
+    : "Coordinator";
+
   return (
-    <header className="bg-[#080e1c]/95 backdrop-blur-md border-b border-[#1b2b4d] sticky top-0 z-30 shadow-md no-print transition-all shrink-0">
-      {/* Main Header Bar */}
-      <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 h-14 sm:h-16 flex items-center justify-between gap-2 overflow-hidden">
-        <div className="flex items-center gap-2 sm:gap-3.5 min-w-0">
-          <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl sm:rounded-2xl bg-gradient-to-tr from-blue-700 via-teal-600 to-emerald-500 flex items-center justify-center text-white font-black text-sm sm:text-lg shadow-md shadow-emerald-500/20 ring-2 ring-emerald-500/20 shrink-0">
-            PE
-          </div>
-          <div className="min-w-0">
-            <div className="flex items-center gap-1.5 sm:gap-2">
-              <span className="font-black text-white text-sm sm:text-base tracking-tight whitespace-nowrap">
-                Placement Engine
-              </span>
-              <span className="text-[9px] sm:text-[10px] font-black tracking-wider px-1.5 sm:px-2 py-0.5 bg-blue-950/80 text-blue-300 border border-blue-800/60 rounded-full hidden sm:inline-block">
-                ENTERPRISE
-              </span>
-              <span className="text-[10px] font-bold px-2 py-0.5 bg-emerald-950/80 text-emerald-300 border border-emerald-800/60 rounded-full hidden md:inline-flex items-center gap-1">
-                <Cpu className="w-3 h-3 text-emerald-400" />
-                CP-SAT Verified
-              </span>
-            </div>
-            <p className="text-xs text-slate-400 font-medium hidden md:block truncate">
-              Institutional Placement Eligibility, Policy & Clash-Free Scheduling Engine
-            </p>
-          </div>
+    <header className="corporate-header sticky top-0 z-30 shadow-[0_4px_20px_rgba(0,0,0,0.6)] no-print shrink-0">
+      <div className="w-full px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-4">
+        {/* Left: Cyber Search Input */}
+        <div className="relative w-72 sm:w-80 md:w-96 max-w-md">
+          <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-cyan-400 opacity-70 pointer-events-none" />
+          <input
+            type="text"
+            value={searchValue}
+            onChange={handleSearch}
+            placeholder="Search companies, students, or drives..."
+            className="w-full pl-9 pr-4 py-2 text-xs font-medium focus:outline-none focus:ring-2 shadow-xs placeholder-slate-500"
+          />
         </div>
 
-        <div className="flex items-center gap-1.5 sm:gap-3 shrink-0">
-          {/* Message Box Button for Placement Officer */}
-          {onOpenMessageBox && user?.role === "officer" && (
+        {/* Right: Cyber Theme Switcher, Notifications & User Profile */}
+        <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+          {/* Cyber Theme Dropdown */}
+          <div className="relative" ref={themeDropdownRef}>
             <button
               type="button"
-              onClick={onOpenMessageBox}
-              className="flex items-center gap-1.5 text-xs font-bold text-slate-200 hover:text-emerald-300 bg-[#111d38] hover:bg-[#162447] px-2.5 sm:px-3 py-1.5 rounded-xl transition-all border border-[#1b2b4d] hover:border-emerald-500/40 cursor-pointer shadow-xs"
-              title="Open Officer Message Box & Approval Hub"
+              onClick={() => setThemeDropdownOpen(!themeDropdownOpen)}
+              className="flex items-center gap-2 px-2.5 sm:px-3 py-1.5 rounded-xl border border-[#16264C] hover:border-cyan-400/80 bg-[#0A1122] hover:bg-[#101C38] text-xs font-semibold cursor-pointer shadow-xs transition-all text-slate-200"
+              title="Change Cyber Dark Color Combination"
             >
-              <Inbox className="w-4 h-4 text-emerald-400" />
-              <span className="hidden sm:inline">Message Box</span>
-              {pendingCount > 0 && (
-                <span className="px-1.5 py-0.2 bg-amber-500 text-black text-[10px] font-black rounded-full animate-pulse shadow-xs">
-                  {pendingCount}
-                </span>
-              )}
-            </button>
-          )}
-
-          {onOpenTour && user?.role === "officer" && (
-            <button
-              type="button"
-              onClick={onOpenTour}
-              className="flex items-center gap-1.5 text-xs font-bold text-slate-200 hover:text-emerald-300 bg-[#111d38] hover:bg-[#162447] px-2.5 sm:px-3 py-1.5 rounded-xl transition-all border border-[#1b2b4d] hover:border-emerald-500/40 cursor-pointer shadow-xs"
-              title="Open guided walkthrough tour"
-            >
-              <HelpCircle className="w-4 h-4 text-emerald-400" />
-              <span className="hidden md:inline">Officer Guide</span>
-            </button>
-          )}
-
-          {user && (
-            <div className="flex items-center gap-2 sm:gap-3 pl-2 sm:pl-3 border-l border-[#1b2b4d]">
-              <div className="text-right hidden sm:block">
-                <span className="text-xs font-bold text-slate-200 block capitalize">
-                  {user.username}
-                </span>
-                <span className="text-[10px] font-bold text-emerald-300 bg-emerald-950/80 border border-emerald-800/60 px-1.5 py-0.2 rounded uppercase tracking-wider">
-                  {user.role.replace("_", " ")}
-                </span>
+              <Zap className="w-3.5 h-3.5 text-cyan-400" />
+              <div className="flex items-center gap-1 hidden sm:flex">
+                {currentTheme.previewColors.map((color, idx) => (
+                  <span
+                    key={idx}
+                    className="w-2.5 h-2.5 rounded-full ring-1 ring-white/10 shrink-0"
+                    style={{ backgroundColor: color }}
+                  />
+                ))}
               </div>
+              <span className="text-[11px] font-bold text-white hidden md:inline truncate max-w-[110px]">
+                {currentTheme.name}
+              </span>
+              <ChevronDown className="w-3 h-3 text-slate-400" />
+            </button>
 
+            {/* Dropdown Menu for 4 Cyber Combinations */}
+            {themeDropdownOpen && (
+              <div className="absolute right-0 mt-2 w-72 corporate-card shadow-2xl p-2 z-50 animate-in fade-in slide-in-from-top-2 duration-150">
+                <div className="px-3 py-2 border-b border-[#16264C]">
+                  <span className="text-[10px] font-black uppercase tracking-wider text-cyan-400 block">
+                    Cyber Dark Palette
+                  </span>
+                  <p className="text-xs font-extrabold text-white mt-0.5">
+                    4 High-Tech Color Combinations
+                  </p>
+                </div>
+
+                <div className="py-1 space-y-1">
+                  {THEME_OPTIONS.map((opt) => {
+                    const isSelected = theme === opt.id;
+                    return (
+                      <button
+                        key={opt.id}
+                        type="button"
+                        onClick={() => {
+                          setTheme(opt.id);
+                          setThemeDropdownOpen(false);
+                        }}
+                        className={`w-full text-left p-2.5 rounded-xl flex items-center justify-between transition-all cursor-pointer ${
+                          isSelected
+                            ? "bg-cyan-950/60 border border-cyan-500/80 text-white font-bold shadow-[0_0_15px_rgba(0,240,255,0.2)]"
+                            : "hover:bg-[#101C38] border border-transparent text-slate-300"
+                        }`}
+                      >
+                        <div className="space-y-1 min-w-0 pr-2">
+                          <div className="flex items-center gap-1.5">
+                            <span className="text-xs font-bold leading-tight truncate text-white">
+                              {opt.name}
+                            </span>
+                            <span className="text-[9px] px-1.5 py-0.2 rounded-full font-bold uppercase tracking-wider bg-cyan-950 text-cyan-300 border border-cyan-700/60">
+                              Cyber
+                            </span>
+                          </div>
+                          <span className="text-[10px] text-slate-400 block truncate leading-none">
+                            {opt.tagline}
+                          </span>
+                        </div>
+
+                        <div className="flex items-center gap-2 shrink-0">
+                          {/* 4 Color Dots */}
+                          <div className="flex items-center -space-x-1">
+                            {opt.previewColors.map((col, cIdx) => (
+                              <span
+                                key={cIdx}
+                                className="w-3.5 h-3.5 rounded-full ring-2 ring-[#0B1326] shrink-0 shadow-2xs"
+                                style={{ backgroundColor: col }}
+                              />
+                            ))}
+                          </div>
+                          {isSelected && (
+                            <Check className="w-4 h-4 text-cyan-400 shrink-0 ml-1" />
+                          )}
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Notifications Bell with Red Alert Dot */}
+          <button
+            type="button"
+            onClick={() => onOpenAlerts ? onOpenAlerts() : onOpenMessageBox ? onOpenMessageBox() : null}
+            className="relative p-2 rounded-xl border border-[#16264C] hover:border-cyan-400/60 bg-[#0A1122] hover:bg-[#101C38] transition-all cursor-pointer text-slate-300 hover:text-white"
+            title="Notifications & Alerts"
+          >
+            <Bell className="w-4.5 h-4.5" />
+            <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-rose-500 rounded-full ring-2 ring-[#080E1C] shadow-[0_0_8px_#F43F5E]" />
+          </button>
+
+          {/* User Profile with Dropdown */}
+          {user && (
+            <div className="relative" ref={dropdownRef}>
               <button
                 type="button"
-                onClick={logout}
-                className="p-1.5 sm:p-2 text-slate-400 hover:text-rose-400 hover:bg-rose-950/40 rounded-xl transition-all cursor-pointer border border-transparent hover:border-rose-900/40 shrink-0"
-                title="Sign out of local session"
-                aria-label="Sign out"
+                onClick={() => setDropdownOpen(!dropdownOpen)}
+                className="flex items-center gap-2 pl-1.5 pr-2 py-1.5 rounded-xl hover:bg-[#101C38] transition-all cursor-pointer border border-[#16264C] hover:border-cyan-400/60 bg-[#0A1122]"
               >
-                <LogOut className="w-4 h-4" />
+                <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-blue-600 to-cyan-500 text-white flex items-center justify-center text-xs font-black shadow-sm ring-2 ring-cyan-500/30">
+                  <User className="w-4 h-4 text-white" />
+                </div>
+                <div className="text-left hidden sm:block">
+                  <span className="text-xs font-bold text-white block leading-tight">
+                    {displayRole}
+                  </span>
+                </div>
+                <ChevronDown className="w-3.5 h-3.5 text-slate-400" />
               </button>
+
+              {/* Profile Dropdown Menu */}
+              {dropdownOpen && (
+                <div className="absolute right-0 mt-2 w-56 corporate-card shadow-2xl py-2 z-50 animate-in fade-in slide-in-from-top-2 duration-150">
+                  <div className="px-4 py-2 border-b border-[#16264C]">
+                    <p className="text-xs font-bold text-white truncate">
+                      {user.username}
+                    </p>
+                    <p className="text-[11px] text-cyan-400 font-semibold capitalize">
+                      {user.role.replace("_", " ")}
+                    </p>
+                  </div>
+
+                  {onOpenMessageBox && user?.role === "officer" && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setDropdownOpen(false);
+                        onOpenMessageBox();
+                      }}
+                      className="w-full text-left px-4 py-2 text-xs font-medium text-slate-300 hover:bg-[#101C38] hover:text-white flex items-center gap-2 transition-colors cursor-pointer"
+                    >
+                      <Inbox className="w-4 h-4 text-cyan-400" />
+                      Message Box
+                      {pendingCount > 0 && (
+                        <span className="ml-auto px-1.5 py-0.2 bg-amber-500 text-white text-[9px] font-bold rounded-full">
+                          {pendingCount}
+                        </span>
+                      )}
+                    </button>
+                  )}
+
+                  {onOpenTour && user?.role !== "student" && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setDropdownOpen(false);
+                        onOpenTour();
+                      }}
+                      className="w-full text-left px-4 py-2 text-xs font-medium text-slate-300 hover:bg-[#101C38] hover:text-white flex items-center gap-2 transition-colors cursor-pointer"
+                    >
+                      <HelpCircle className="w-4 h-4 text-cyan-400" />
+                      Guided Tour
+                    </button>
+                  )}
+
+                  <div className="border-t border-[#16264C] my-1" />
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setDropdownOpen(false);
+                      logout();
+                    }}
+                    className="w-full text-left px-4 py-2 text-xs font-medium text-rose-400 hover:bg-rose-950/40 flex items-center gap-2 transition-colors cursor-pointer"
+                  >
+                    <LogOut className="w-4 h-4" />
+                    Sign out
+                  </button>
+                </div>
+              )}
             </div>
           )}
         </div>

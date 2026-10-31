@@ -1077,7 +1077,7 @@ export const DriveCreationReview: React.FC<DriveCreationReviewProps> = ({
         <div className="space-y-6">
           {/* 25 Real-Format Drive Announcements Sample Selector */}
           {samples.length > 0 && (
-            <div className="bg-gradient-to-r from-[#0d1527] to-[#121e38] border border-[#1b2b4d] rounded-2xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-slate-100 shadow-md">
+            <div className="bg-gradient-to-r from-[#0B1F44] to-[#132B5B] border border-blue-900/60 rounded-2xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-white shadow-xs">
               <div className="flex items-center gap-2.5">
                 <Sparkles className="w-4 h-4 text-emerald-400 shrink-0" />
                 <div>
@@ -1088,7 +1088,7 @@ export const DriveCreationReview: React.FC<DriveCreationReviewProps> = ({
               <select
                 onChange={(e) => e.target.value && handleSelectSample(e.target.value)}
                 defaultValue=""
-                className="px-3 py-1.5 bg-[#080e1c] border border-[#1e3258] rounded-xl text-xs font-semibold text-emerald-300 focus:outline-none cursor-pointer max-w-xs"
+                className="px-3 py-1.5 bg-white/10 border border-white/20 rounded-xl text-xs font-semibold text-white focus:outline-none cursor-pointer max-w-xs"
               >
                 <option value="" disabled>Choose Announcement (1 of 25)...</option>
                 {samples.map((s) => (

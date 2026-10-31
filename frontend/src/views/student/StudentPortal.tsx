@@ -38,22 +38,20 @@ import {
 } from "lucide-react";
 
 export type StudentTabId =
+  | "profile"
   | "status"
   | "schedule"
-  | "clashes"
   | "offers"
   | "policy"
-  | "profile"
   | "corrections"
   | "notifications"
-  | "print"
-  | "faq";
+  | "print";
 
 export const StudentPortal: React.FC = () => {
   const { user, studentLogin, logout } = useAuth();
 
   // Active Screen / Tab
-  const [activeTab, setActiveTab] = useState<StudentTabId>("status");
+  const [activeTab, setActiveTab] = useState<StudentTabId>("profile");
   const [selectedDriveDetail, setSelectedDriveDetail] = useState<any | null>(null);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(() => typeof window !== "undefined" && window.innerWidth < 1024);
 
@@ -140,6 +138,18 @@ export const StudentPortal: React.FC = () => {
       fetchAllData();
     }
   }, [user]);
+
+  // Listen for global tab navigation events (e.g. Alerts button in Header)
+  useEffect(() => {
+    const handleGlobalNav = (e: any) => {
+      if (e?.detail && ["profile", "status", "schedule", "offers", "policy", "corrections", "notifications", "print"].includes(e.detail)) {
+        setActiveTab(e.detail as StudentTabId);
+        setSelectedDriveDetail(null);
+      }
+    };
+    window.addEventListener("navigate-student-tab", handleGlobalNav);
+    return () => window.removeEventListener("navigate-student-tab", handleGlobalNav);
+  }, []);
 
   // Auth handler
   const handleStudentAuth = async (e: React.FormEvent) => {
@@ -435,9 +445,9 @@ export const StudentPortal: React.FC = () => {
   if (!user || user.role !== "student") {
     return (
       <div className="min-h-[85vh] flex items-center justify-center p-4">
-        <div className="w-full max-w-sm bg-[#0d1527] p-6 sm:p-8 rounded-3xl border border-[#1b2b4d] shadow-2xl space-y-6 text-slate-100">
+        <div className="w-full max-w-sm bg-white p-6 sm:p-8 rounded-3xl border border-slate-200 shadow-2xl space-y-6 text-slate-100">
           <div className="text-center space-y-2">
-            <div className="w-14 h-14 bg-[#111d38] border border-emerald-500/30 rounded-2xl flex items-center justify-center text-emerald-400 mx-auto shadow-inner">
+            <div className="w-14 h-14 bg-slate-100 border border-emerald-500/30 rounded-2xl flex items-center justify-center text-emerald-400 mx-auto shadow-inner">
               <GraduationCap className="w-8 h-8" />
             </div>
             <h1 className="text-xl font-black text-white tracking-tight">Student Placement Portal</h1>
@@ -463,7 +473,7 @@ export const StudentPortal: React.FC = () => {
                 required
                 value={rollNo}
                 onChange={(e) => setRollNo(e.target.value)}
-                className="w-full min-h-[44px] px-3.5 py-2.5 bg-[#080e1c] border border-[#1e3258] rounded-xl text-sm font-semibold text-white focus:bg-[#0d1527] focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                className="w-full min-h-[44px] px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-semibold text-white focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
                 placeholder="e.g. BT210001"
               />
             </div>
@@ -477,7 +487,7 @@ export const StudentPortal: React.FC = () => {
                 required
                 value={accessCode}
                 onChange={(e) => setAccessCode(e.target.value)}
-                className="w-full min-h-[44px] px-3.5 py-2.5 bg-[#080e1c] border border-[#1e3258] rounded-xl text-sm font-semibold text-white focus:bg-[#0d1527] focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                className="w-full min-h-[44px] px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-semibold text-white focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
                 placeholder="Code from placement officer"
               />
             </div>
@@ -491,7 +501,7 @@ export const StudentPortal: React.FC = () => {
             </button>
           </form>
 
-          <div className="p-3 bg-[#080e1c] rounded-2xl border border-[#1b2b4d] text-center space-y-1">
+          <div className="p-3 bg-slate-50 rounded-2xl border border-slate-200/80 text-center space-y-1">
             <div className="flex items-center justify-center gap-1.5 text-emerald-400 text-[11px] font-bold">
               <ShieldCheck className="w-3.5 h-3.5" />
               <span>Your data stays on the college computer</span>
@@ -508,25 +518,23 @@ export const StudentPortal: React.FC = () => {
   const navItems = [
     {
       num: "01",
+      id: "profile" as StudentTabId,
+      label: "My Profile",
+      icon: Users,
+    },
+    {
+      num: "02",
       id: "status" as StudentTabId,
       label: "My Status",
       icon: Briefcase,
       badge: drives.length > 0 ? String(drives.length) : undefined,
     },
     {
-      num: "02",
+      num: "03",
       id: "schedule" as StudentTabId,
       label: "Schedule",
       icon: Calendar,
       badge: schedule.length > 0 ? String(schedule.length) : undefined,
-    },
-    {
-      num: "03",
-      id: "clashes" as StudentTabId,
-      label: "Clashes",
-      icon: AlertTriangle,
-      badge: clashData?.has_clash ? "Clash" : undefined,
-      badgeVariant: "amber" as const,
     },
     {
       num: "04",
@@ -544,19 +552,13 @@ export const StudentPortal: React.FC = () => {
     },
     {
       num: "06",
-      id: "profile" as StudentTabId,
-      label: "My Profile",
-      icon: Users,
-    },
-    {
-      num: "07",
       id: "corrections" as StudentTabId,
-      label: "Fix Mistakes",
+      label: "Correction Request",
       icon: FileText,
       badge: correctionsList.length > 0 ? String(correctionsList.length) : undefined,
     },
     {
-      num: "08",
+      num: "07",
       id: "notifications" as StudentTabId,
       label: "Alerts",
       icon: Bell,
@@ -564,16 +566,10 @@ export const StudentPortal: React.FC = () => {
       badgeVariant: "rose" as const,
     },
     {
-      num: "09",
+      num: "08",
       id: "print" as StudentTabId,
       label: "Printable Sheet",
       icon: Printer,
-    },
-    {
-      num: "10",
-      id: "faq" as StudentTabId,
-      label: "Help / FAQ",
-      icon: HelpCircle,
     },
   ];
 
@@ -581,13 +577,13 @@ export const StudentPortal: React.FC = () => {
     <div className="flex-1 flex overflow-hidden w-full h-full min-h-0 min-w-0">
       {/* Left Vertical Navigation Sidebar (Identical to Coordinator and Officer) */}
       <aside
-        className={`bg-[#080e1c] border-r border-[#1b2b4d] shrink-0 flex flex-col h-full max-h-full overflow-hidden sticky top-0 transition-all duration-200 select-none z-20 ${
+        className={`bg-[#0B1F44] border-r border-[#152B58] shrink-0 flex flex-col h-full max-h-full overflow-hidden sticky top-0 transition-all duration-200 select-none z-20 ${
           isSidebarCollapsed ? "w-16" : "w-52 sm:w-64"
         }`}
         aria-label="Student Dashboard Left Navigation"
       >
         {/* Sidebar Header with Module Index and Collapse Toggle */}
-        <div className="p-3.5 border-b border-[#1b2b4d] flex items-center justify-between text-slate-300 shrink-0 sticky top-0 bg-[#080e1c] z-10">
+        <div className="p-3.5 border-b border-[#152B58] flex items-center justify-between text-slate-300 shrink-0 sticky top-0 bg-[#0B1F44] z-10">
           {!isSidebarCollapsed && (
             <div className="min-w-0">
               <div className="flex items-center gap-1.5">
@@ -604,7 +600,7 @@ export const StudentPortal: React.FC = () => {
           <button
             type="button"
             onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
-            className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-[#111d38] transition-colors cursor-pointer ml-auto"
+            className="p-1.5 rounded-lg text-slate-300 hover:text-white hover:bg-white/10 transition-colors cursor-pointer ml-auto"
             title={isSidebarCollapsed ? "Expand sidebar navigation" : "Collapse sidebar navigation"}
             aria-label={isSidebarCollapsed ? "Expand sidebar navigation" : "Collapse sidebar navigation"}
           >
@@ -630,7 +626,7 @@ export const StudentPortal: React.FC = () => {
                 className={`w-full min-h-[44px] flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold transition-all duration-150 cursor-pointer ${
                   isActive
                     ? "bg-gradient-to-r from-emerald-600 to-teal-600 text-white shadow-md shadow-emerald-950/40 ring-1 ring-emerald-400/40 font-bold"
-                    : "text-slate-300 hover:text-white hover:bg-[#111d38]/80"
+                    : "text-slate-300 hover:text-white hover:bg-white/10"
                 }`}
               >
                 <div className="flex items-center justify-center shrink-0">
@@ -642,11 +638,11 @@ export const StudentPortal: React.FC = () => {
                     {item.badge && (
                       <span
                         className={`text-[10px] px-1.5 py-0.2 rounded-md font-mono font-bold ${
-                          item.badgeVariant === "amber"
+                          (item.badgeVariant as any) === "amber"
                             ? "bg-amber-500/20 text-amber-300 border border-amber-500/30"
                             : item.badgeVariant === "rose"
                             ? "bg-rose-500/20 text-rose-300 border border-rose-500/30"
-                            : "bg-[#111d38] border border-[#1b2b4d] text-emerald-300"
+                            : "bg-slate-100 border border-slate-200 text-emerald-300"
                         }`}
                       >
                         {item.badge}
@@ -661,7 +657,7 @@ export const StudentPortal: React.FC = () => {
 
         {/* Sidebar Footer */}
         {!isSidebarCollapsed && (
-          <div className="p-3 border-t border-[#1b2b4d] bg-[#050a14]/95 text-[10px] text-slate-500 text-center font-mono shrink-0 sticky bottom-0 z-10">
+          <div className="p-3 border-t border-blue-900/40 bg-[#071530] text-[10px] text-slate-400 text-center font-mono shrink-0 sticky bottom-0 z-10">
             100% Offline • College Computer
           </div>
         )}
@@ -674,14 +670,14 @@ export const StudentPortal: React.FC = () => {
             {/* Back Button (>= 44px) */}
             <button
               onClick={() => setSelectedDriveDetail(null)}
-              className="min-h-[44px] px-4 py-2 bg-[#0d1527] hover:bg-[#111d38] text-slate-200 hover:text-white border border-[#1b2b4d] rounded-2xl text-xs font-bold flex items-center gap-2 transition-all cursor-pointer w-full"
+              className="min-h-[44px] px-4 py-2 bg-white hover:bg-slate-100 text-slate-200 hover:text-white border border-slate-200 rounded-2xl text-xs font-bold flex items-center gap-2 transition-all cursor-pointer w-full"
             >
               <ArrowLeft className="w-4 h-4 text-emerald-400" />
               <span>Back to All Drives</span>
             </button>
 
             {/* Company Card Header */}
-            <div className="bg-[#0d1527] p-5 rounded-3xl border border-[#1b2b4d] shadow-md space-y-3">
+            <div className="bg-white p-5 rounded-3xl border border-slate-200/90 shadow-xs space-y-3">
               <div className="flex items-center justify-between">
                 <h2 className="text-lg font-black text-white">{selectedDriveDetail.company_name}</h2>
                 <Badge
@@ -701,13 +697,13 @@ export const StudentPortal: React.FC = () => {
               </div>
 
               {/* Headline 3-Part Status Explanation */}
-              <div className="p-3.5 bg-[#080e1c] border border-[#1b2b4d] rounded-2xl text-xs font-medium text-slate-200 leading-relaxed">
+              <div className="p-3.5 bg-slate-50 border border-slate-200/80 rounded-2xl text-xs font-medium text-slate-200 leading-relaxed">
                 {selectedDriveDetail.headline_reason}
               </div>
             </div>
 
             {/* Application Action Card */}
-            <div className="bg-[#0d1527] p-5 rounded-3xl border border-[#1b2b4d] shadow-md flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <div className="bg-white p-5 rounded-3xl border border-slate-200/90 shadow-xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
               <div className="flex items-center gap-3.5">
                 <div
                   className={`p-3 rounded-2xl shrink-0 ${
@@ -756,7 +752,7 @@ export const StudentPortal: React.FC = () => {
                       type="button"
                       onClick={() => handleWithdrawDrive(selectedDriveDetail.drive_id, selectedDriveDetail.company_name)}
                       disabled={applyingDriveId === selectedDriveDetail.drive_id}
-                      className="px-3 py-2 bg-[#111d38] hover:bg-rose-950/70 text-slate-300 hover:text-rose-300 border border-[#1b2b4d] hover:border-rose-800/60 rounded-xl text-xs font-semibold cursor-pointer transition-colors"
+                      className="px-3 py-2 bg-slate-100 hover:bg-rose-950/70 text-slate-300 hover:text-rose-300 border border-slate-200 hover:border-rose-800/60 rounded-xl text-xs font-semibold cursor-pointer transition-colors"
                       title="Withdraw application"
                     >
                       Withdraw
@@ -790,8 +786,8 @@ export const StudentPortal: React.FC = () => {
             </div>
 
             {/* Section A: Company Rules (Side-by-Side Comparison) */}
-            <div className="bg-[#0d1527] p-5 rounded-3xl border border-[#1b2b4d] shadow-md space-y-3">
-              <div className="flex items-center justify-between pb-2 border-b border-[#1b2b4d]">
+            <div className="bg-white p-5 rounded-3xl border border-slate-200/90 shadow-xs space-y-3">
+              <div className="flex items-center justify-between pb-2 border-b border-slate-200">
                 <h3 className="text-xs font-bold uppercase tracking-wider text-slate-300">
                   1. Company Academic Rules
                 </h3>
@@ -802,7 +798,7 @@ export const StudentPortal: React.FC = () => {
                 {selectedDriveDetail.company_rules_checks?.map((rule: any, idx: number) => (
                   <div
                     key={idx}
-                    className="p-3 bg-[#080e1c] rounded-2xl border border-[#162447] flex items-center justify-between gap-3 text-xs"
+                    className="p-3 bg-slate-50 rounded-2xl border border-slate-200 flex items-center justify-between gap-3 text-xs"
                   >
                     <div className="space-y-0.5">
                       <span className="font-bold text-white block">{rule.rule_name}</span>
@@ -831,8 +827,8 @@ export const StudentPortal: React.FC = () => {
             </div>
 
             {/* Section B: College Offer Policy */}
-            <div className="bg-[#0d1527] p-5 rounded-3xl border border-[#1b2b4d] shadow-md space-y-3">
-              <div className="flex items-center justify-between pb-2 border-b border-[#1b2b4d]">
+            <div className="bg-white p-5 rounded-3xl border border-slate-200/90 shadow-xs space-y-3">
+              <div className="flex items-center justify-between pb-2 border-b border-slate-200">
                 <h3 className="text-xs font-bold uppercase tracking-wider text-slate-300">
                   2. College Offer Policy Rules
                 </h3>
@@ -845,7 +841,7 @@ export const StudentPortal: React.FC = () => {
                 {selectedDriveDetail.policy_rules_checks?.map((pol: any, idx: number) => (
                   <div
                     key={idx}
-                    className="p-3 bg-[#080e1c] rounded-2xl border border-[#162447] flex items-center justify-between gap-3 text-xs"
+                    className="p-3 bg-slate-50 rounded-2xl border border-slate-200 flex items-center justify-between gap-3 text-xs"
                   >
                     <div className="space-y-0.5">
                       <span className="font-bold text-white block">{pol.rule_name}</span>
@@ -894,7 +890,7 @@ export const StudentPortal: React.FC = () => {
                 setActiveTab("corrections");
                 setCorrProblem(`Discrepancy observed regarding eligibility criteria for ${comp}`);
               }}
-              className="min-h-[44px] w-full py-2.5 bg-[#111d38] hover:bg-[#162447] text-slate-300 hover:text-white border border-[#1b2b4d] rounded-2xl text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-2"
+              className="min-h-[44px] w-full py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-300 hover:text-white border border-slate-200 rounded-2xl text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-2"
             >
               <AlertCircle className="w-4 h-4 text-amber-400" />
               <span>Notice an error in your criteria? Submit a Correction</span>
@@ -903,7 +899,7 @@ export const StudentPortal: React.FC = () => {
         ) : (
           <div className="space-y-4 pb-20">
             {/* Offline Privacy Guarantee Banner */}
-            <div className="p-2.5 bg-[#0d1527] border border-emerald-500/30 rounded-2xl flex items-center justify-between text-xs text-emerald-300">
+            <div className="p-2.5 bg-white border border-emerald-500/30 rounded-2xl flex items-center justify-between text-xs text-emerald-300">
               <div className="flex items-center gap-2">
                 <ShieldCheck className="w-4 h-4 text-emerald-400 shrink-0" />
                 <span className="font-semibold text-[11px]">Your data stays on the college computer</span>
@@ -912,10 +908,10 @@ export const StudentPortal: React.FC = () => {
             </div>
 
             {/* Student Profile Snapshot Card */}
-            <div className="bg-[#0d1527] p-5 rounded-3xl border border-[#1b2b4d] shadow-md space-y-3">
+            <div className="bg-white p-5 rounded-3xl border border-slate-200/90 shadow-xs space-y-3">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div className="flex items-center gap-3">
-                  <div className="w-12 h-12 bg-[#111d38] text-emerald-400 border border-emerald-500/30 rounded-2xl flex items-center justify-center font-black text-lg shrink-0 shadow-inner">
+                  <div className="w-12 h-12 bg-slate-100 text-emerald-400 border border-emerald-500/30 rounded-2xl flex items-center justify-center font-black text-lg shrink-0 shadow-inner">
                     {studentInfo?.name ? studentInfo.name[0] : "S"}
                   </div>
                   <div>
@@ -939,7 +935,7 @@ export const StudentPortal: React.FC = () => {
                 <div className="flex items-center gap-1.5 no-print flex-wrap">
                   <button
                     onClick={() => setActiveTab("print")}
-                    className="min-h-[44px] px-3 py-2 bg-[#111d38] hover:bg-[#162447] text-slate-200 hover:text-white border border-[#1b2b4d] rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5"
+                    className="min-h-[44px] px-3 py-2 bg-white hover:bg-slate-50 text-slate-700 hover:text-slate-900 border border-slate-200 shadow-2xs rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5"
                     title="Print clean status sheet"
                   >
                     <Printer className="w-3.5 h-3.5 text-emerald-400" />
@@ -957,7 +953,7 @@ export const StudentPortal: React.FC = () => {
                   <a
                     href="/api/portal/status-sheet-csv"
                     download={`placement_status_${studentInfo?.roll_no || "candidate"}.csv`}
-                    className="min-h-[44px] px-3 py-2 bg-[#111d38] hover:bg-[#162447] text-emerald-300 border border-emerald-500/30 hover:border-emerald-500/60 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 shadow-sm"
+                    className="min-h-[44px] px-3 py-2 bg-slate-100 hover:bg-slate-200 text-emerald-300 border border-emerald-500/30 hover:border-emerald-500/60 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 shadow-sm"
                     title="Export personal placement status & schedule as CSV"
                   >
                     <Download className="w-3.5 h-3.5 text-emerald-400" />
@@ -965,7 +961,7 @@ export const StudentPortal: React.FC = () => {
                   </a>
                   <button
                     onClick={logout}
-                    className="min-h-[44px] px-3 py-2 bg-[#111d38] hover:bg-rose-950/60 text-slate-400 hover:text-rose-300 border border-[#1b2b4d] rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center justify-center"
+                    className="min-h-[44px] px-3 py-2 bg-slate-100 hover:bg-rose-950/60 text-slate-400 hover:text-rose-300 border border-slate-200 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center justify-center"
                     title="Sign out & clear cached session"
                   >
                     Logout
@@ -987,7 +983,7 @@ export const StudentPortal: React.FC = () => {
           )}
 
           {/* Filter & Sort Controls */}
-          <div className="bg-[#0d1527] p-3.5 rounded-2xl border border-[#1b2b4d] space-y-2.5">
+          <div className="bg-white p-3.5 rounded-2xl border border-slate-200 space-y-2.5">
             <div className="flex items-center justify-between text-xs font-bold text-slate-300">
               <span className="flex items-center gap-1.5">
                 <Filter className="w-3.5 h-3.5 text-emerald-400" /> Filter Drives:
@@ -1008,7 +1004,7 @@ export const StudentPortal: React.FC = () => {
                   className={`min-h-[44px] px-3 py-1.5 rounded-xl font-bold whitespace-nowrap cursor-pointer transition-all border ${
                     statusFilter === st
                       ? "bg-emerald-950 text-emerald-300 border-emerald-500"
-                      : "bg-[#080e1c] text-slate-400 border-[#1b2b4d] hover:text-white"
+                      : "bg-slate-100 text-slate-600 border-slate-200 hover:text-white"
                   }`}
                 >
                   {st === "all"
@@ -1030,7 +1026,7 @@ export const StudentPortal: React.FC = () => {
             </h2>
             <button
               onClick={handleDownloadDrivesCsv}
-              className="min-h-[36px] px-3 py-1.5 bg-[#0d1527] hover:bg-[#1b2b4d] text-emerald-300 text-xs font-bold rounded-xl border border-emerald-500/30 hover:border-emerald-500/60 flex items-center gap-1.5 transition-all cursor-pointer"
+              className="min-h-[36px] px-3 py-1.5 bg-white hover:bg-emerald-50 text-emerald-300 text-xs font-bold rounded-xl border border-emerald-500/30 hover:border-emerald-500/60 flex items-center gap-1.5 transition-all cursor-pointer"
               title="Download personal drives and verdicts as CSV"
             >
               <Download className="w-3.5 h-3.5 text-emerald-400" />
@@ -1040,7 +1036,7 @@ export const StudentPortal: React.FC = () => {
 
           {/* Drive Cards List */}
           {filteredDrives.length === 0 ? (
-            <div className="p-8 bg-[#0d1527] border border-[#1b2b4d] rounded-3xl text-center text-xs text-slate-400">
+            <div className="p-8 bg-white border border-slate-200/90 rounded-3xl text-center text-xs text-slate-400">
               No campus drives match this filter.
             </div>
           ) : (
@@ -1053,7 +1049,7 @@ export const StudentPortal: React.FC = () => {
                   <div
                     key={d.drive_id}
                     onClick={() => setSelectedDriveDetail(d)}
-                    className="bg-[#0d1527] border border-[#1b2b4d] hover:border-emerald-500/50 rounded-3xl p-4 shadow-sm transition-all space-y-3 cursor-pointer"
+                    className="bg-white border border-slate-200/90 hover:border-emerald-500/50 rounded-3xl p-4 shadow-sm transition-all space-y-3 cursor-pointer"
                   >
                     <div className="flex items-center justify-between">
                       <div>
@@ -1081,7 +1077,7 @@ export const StudentPortal: React.FC = () => {
                     </div>
 
                     {/* Single 3-Part Plain-English Line */}
-                    <div className="p-3 bg-[#080e1c] border border-[#1b2b4d] rounded-2xl text-xs font-medium text-slate-200 leading-relaxed">
+                    <div className="p-3 bg-slate-50 border border-slate-200/80 rounded-2xl text-xs font-medium text-slate-200 leading-relaxed">
                       {d.headline_reason}
                     </div>
 
@@ -1127,7 +1123,7 @@ export const StudentPortal: React.FC = () => {
           )}
 
           {/* Home Schedule Stream */}
-          <div className="pt-4 border-t border-[#1b2b4d] space-y-3">
+          <div className="pt-4 border-t border-[#152B58] space-y-3">
             <div className="flex items-center justify-between">
               <h2 className="text-sm font-bold text-white flex items-center gap-2">
                 <Calendar className="w-4 h-4 text-emerald-400" />
@@ -1143,7 +1139,7 @@ export const StudentPortal: React.FC = () => {
               </button>
               <button
                 onClick={handleDownloadScheduleCsv}
-                className="min-h-[44px] px-3.5 py-1.5 bg-[#111d38] hover:bg-[#1b2b4d] text-emerald-300 text-xs font-bold rounded-2xl border border-emerald-500/30 hover:border-emerald-500/60 flex items-center gap-1.5 transition-all cursor-pointer"
+                className="min-h-[44px] px-3.5 py-1.5 bg-slate-100 hover:bg-emerald-50 text-emerald-300 text-xs font-bold rounded-2xl border border-emerald-500/30 hover:border-emerald-500/60 flex items-center gap-1.5 transition-all cursor-pointer"
                 title="Download personal interview schedule as CSV"
               >
                 <Download className="w-3.5 h-3.5 text-emerald-400" />
@@ -1153,7 +1149,7 @@ export const StudentPortal: React.FC = () => {
             </div>
 
             {schedule.length === 0 ? (
-              <div className="p-6 bg-[#0d1527] border border-[#1b2b4d] rounded-2xl text-center text-xs text-slate-400">
+              <div className="p-6 bg-white border border-slate-200/90 rounded-2xl text-center text-xs text-slate-400">
                 No interview or test rounds scheduled yet.
               </div>
             ) : (
@@ -1161,7 +1157,7 @@ export const StudentPortal: React.FC = () => {
                 {schedule.slice(0, 3).map((slot) => (
                   <div
                     key={slot.slot_id}
-                    className="bg-[#0d1527] border border-[#1b2b4d] rounded-2xl p-4 shadow-sm space-y-2.5 text-xs"
+                    className="bg-white border border-slate-200/90 rounded-2xl p-4 shadow-sm space-y-2.5 text-xs"
                   >
                     <div className="flex items-center justify-between">
                       <div>
@@ -1200,7 +1196,7 @@ export const StudentPortal: React.FC = () => {
           </div>
 
           {schedule.length === 0 ? (
-            <div className="p-8 bg-[#0d1527] border border-[#1b2b4d] rounded-3xl text-center text-xs text-slate-400 space-y-1">
+            <div className="p-8 bg-white border border-slate-200/90 rounded-3xl text-center text-xs text-slate-400 space-y-1">
               <span className="font-bold text-slate-300 block">No rounds scheduled yet</span>
               <p className="text-[11px] text-slate-500">
                 When the placement officer allocates your test lab or interview cabin, it will appear here.
@@ -1211,10 +1207,10 @@ export const StudentPortal: React.FC = () => {
               {schedule.map((slot) => (
                 <div
                   key={slot.slot_id}
-                  className={`bg-[#0d1527] border rounded-3xl p-4 shadow-sm space-y-3 transition-all ${
+                  className={`bg-white border rounded-3xl p-4 shadow-sm space-y-3 transition-all ${
                     slot.is_next_upcoming
                       ? "border-emerald-500/80 ring-2 ring-emerald-500/20"
-                      : "border-[#1b2b4d]"
+                      : "border-slate-200"
                   }`}
                 >
                   <div className="flex items-center justify-between">
@@ -1237,7 +1233,7 @@ export const StudentPortal: React.FC = () => {
                   </div>
 
                   <div className="grid grid-cols-2 gap-2 text-xs">
-                    <div className="p-2.5 bg-[#080e1c] rounded-2xl border border-[#162447] space-y-0.5">
+                    <div className="p-2.5 bg-slate-50 rounded-2xl border border-slate-200 space-y-0.5">
                       <span className="text-[10px] text-slate-400 uppercase font-bold flex items-center gap-1">
                         <Clock className="w-3 h-3 text-blue-400" /> Slot Time
                       </span>
@@ -1246,7 +1242,7 @@ export const StudentPortal: React.FC = () => {
                       </span>
                     </div>
 
-                    <div className="p-2.5 bg-[#080e1c] rounded-2xl border border-[#162447] space-y-0.5">
+                    <div className="p-2.5 bg-slate-50 rounded-2xl border border-slate-200 space-y-0.5">
                       <span className="text-[10px] text-slate-400 uppercase font-bold flex items-center gap-1">
                         <MapPin className="w-3 h-3 text-emerald-400" /> Room / Venue
                       </span>
@@ -1256,7 +1252,7 @@ export const StudentPortal: React.FC = () => {
                     </div>
                   </div>
 
-                  <div className="text-[11px] text-slate-400 flex items-center justify-between pt-1 border-t border-[#1b2b4d]/50">
+                  <div className="text-[11px] text-slate-400 flex items-center justify-between pt-1 border-t border-[#152B58]/50">
                     <span>Interview Panel: <strong className="text-slate-300">{slot.panel_name}</strong></span>
                     <span className="text-emerald-400 font-mono font-bold">0 Clashes Verified</span>
                   </div>
@@ -1266,7 +1262,7 @@ export const StudentPortal: React.FC = () => {
           )}
 
           {/* Home Schedule Stream */}
-          <div className="pt-4 border-t border-[#1b2b4d] space-y-3">
+          <div className="pt-4 border-t border-[#152B58] space-y-3">
             <div className="flex items-center justify-between">
               <h2 className="text-sm font-bold text-white flex items-center gap-2">
                 <Calendar className="w-4 h-4 text-emerald-400" />
@@ -1282,7 +1278,7 @@ export const StudentPortal: React.FC = () => {
               </button>
               <button
                 onClick={handleDownloadScheduleCsv}
-                className="min-h-[44px] px-3.5 py-1.5 bg-[#111d38] hover:bg-[#1b2b4d] text-emerald-300 text-xs font-bold rounded-2xl border border-emerald-500/30 hover:border-emerald-500/60 flex items-center gap-1.5 transition-all cursor-pointer"
+                className="min-h-[44px] px-3.5 py-1.5 bg-slate-100 hover:bg-emerald-50 text-emerald-300 text-xs font-bold rounded-2xl border border-emerald-500/30 hover:border-emerald-500/60 flex items-center gap-1.5 transition-all cursor-pointer"
                 title="Download personal interview schedule as CSV"
               >
                 <Download className="w-3.5 h-3.5 text-emerald-400" />
@@ -1292,7 +1288,7 @@ export const StudentPortal: React.FC = () => {
             </div>
 
             {schedule.length === 0 ? (
-              <div className="p-6 bg-[#0d1527] border border-[#1b2b4d] rounded-2xl text-center text-xs text-slate-400">
+              <div className="p-6 bg-white border border-slate-200/90 rounded-2xl text-center text-xs text-slate-400">
                 No interview or test rounds scheduled yet.
               </div>
             ) : (
@@ -1300,7 +1296,7 @@ export const StudentPortal: React.FC = () => {
                 {schedule.slice(0, 3).map((slot) => (
                   <div
                     key={slot.slot_id}
-                    className="bg-[#0d1527] border border-[#1b2b4d] rounded-2xl p-4 shadow-sm space-y-2.5 text-xs"
+                    className="bg-white border border-slate-200/90 rounded-2xl p-4 shadow-sm space-y-2.5 text-xs"
                   >
                     <div className="flex items-center justify-between">
                       <div>
@@ -1321,84 +1317,10 @@ export const StudentPortal: React.FC = () => {
         </div>
       )}
 
-      {/* SCREEN 5: CLASH WARNINGS */}
-      {activeTab === "clashes" && (
-        <div className="space-y-4">
-          <div className="bg-[#0d1527] p-5 rounded-3xl border border-[#1b2b4d] shadow-md space-y-3">
-            <h2 className="text-sm font-bold text-white flex items-center gap-2">
-              <AlertTriangle className="w-4 h-4 text-amber-400" />
-              <span>Drive & Round Clash Management</span>
-            </h2>
-
-            {clashData?.has_clash ? (
-              <div className="p-3.5 bg-amber-950/70 border border-amber-800 text-amber-200 rounded-2xl text-xs space-y-1.5">
-                <span className="font-bold text-sm block">⚠️ Potential Schedule Conflict Detected</span>
-                <p className="leading-relaxed">
-                  {clashData.instruction || "If two drives overlap, please contact the placement officer immediately to resolve the schedule conflict."}
-                </p>
-              </div>
-            ) : (
-              <div className="p-3.5 bg-emerald-950/60 border border-emerald-800 text-emerald-200 rounded-2xl text-xs flex items-center gap-2">
-                <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
-                <span>0 Clashes Verified. You have no overlapping test or interview rounds.</span>
-              </div>
-            )}
-
-            {/* Clash Preference Recording Form */}
-            <form onSubmit={handleSubmitClashPreference} className="space-y-3 pt-2">
-              <span className="text-xs font-bold uppercase tracking-wider text-slate-300 block">
-                Record Your Company Preference for Officer
-              </span>
-
-              {clashFeedback && (
-                <div className="p-3 bg-emerald-950/80 border border-emerald-700 text-emerald-300 rounded-xl text-xs">
-                  {clashFeedback}
-                </div>
-              )}
-
-              <div>
-                <label className="block text-[11px] font-semibold text-slate-400 mb-1">
-                  Which company drive do you prioritize?
-                </label>
-                <input
-                  type="text"
-                  required
-                  value={clashPreferredCompany}
-                  onChange={(e) => setClashPreferredCompany(e.target.value)}
-                  className="w-full min-h-[44px] px-3.5 py-2 bg-[#080e1c] border border-[#1e3258] rounded-xl text-xs font-semibold text-white focus:outline-none focus:ring-1 focus:ring-emerald-500"
-                  placeholder="e.g. Google or Microsoft"
-                />
-              </div>
-
-              <div>
-                <label className="block text-[11px] font-semibold text-slate-400 mb-1">
-                  Supporting Note for Officer (Optional)
-                </label>
-                <textarea
-                  rows={2}
-                  value={clashNote}
-                  onChange={(e) => setClashNote(e.target.value)}
-                  className="w-full px-3.5 py-2 bg-[#080e1c] border border-[#1e3258] rounded-xl text-xs text-white focus:outline-none focus:ring-1 focus:ring-emerald-500"
-                  placeholder="e.g. Role aligns directly with my major project"
-                />
-              </div>
-
-              <button
-                type="submit"
-                disabled={clashSubmitting}
-                className="w-full min-h-[44px] py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-bold text-xs rounded-2xl transition-all cursor-pointer disabled:opacity-50"
-              >
-                {clashSubmitting ? "Submitting Preference..." : "Send Preference to Placement Officer"}
-              </button>
-            </form>
-          </div>
-        </div>
-      )}
-
       {/* SCREEN 6: MY OFFERS */}
       {activeTab === "offers" && (
         <div className="space-y-4">
-          <div className="bg-[#0d1527] p-5 rounded-3xl border border-[#1b2b4d] shadow-md space-y-3">
+          <div className="bg-white p-5 rounded-3xl border border-slate-200/90 shadow-xs space-y-3">
             <h2 className="text-sm font-bold text-white flex items-center gap-2">
               <Sparkles className="w-4 h-4 text-emerald-400" />
               <span>My Job Offers & Placement Status</span>
@@ -1411,7 +1333,7 @@ export const StudentPortal: React.FC = () => {
             )}
 
             {offersData?.offers?.length === 0 ? (
-              <div className="p-8 bg-[#080e1c] rounded-2xl text-center text-xs text-slate-400">
+              <div className="p-8 bg-slate-50 rounded-2xl text-center text-xs text-slate-500 border border-slate-200">
                 You currently have 0 job offers. You are eligible to participate in all campus drives where you meet academic criteria.
               </div>
             ) : (
@@ -1419,7 +1341,7 @@ export const StudentPortal: React.FC = () => {
                 {offersData?.offers?.map((off: any) => (
                   <div
                     key={off.id}
-                    className="p-3.5 bg-[#080e1c] rounded-2xl border border-[#1b2b4d] flex items-center justify-between text-xs"
+                    className="p-3.5 bg-slate-50 rounded-2xl border border-slate-200/80 flex items-center justify-between text-xs"
                   >
                     <div>
                       <span className="font-bold text-white text-sm block">{off.company}</span>
@@ -1447,8 +1369,8 @@ export const StudentPortal: React.FC = () => {
       {/* SCREEN 7: COLLEGE POLICY EXPLAINED */}
       {activeTab === "policy" && (
         <div className="space-y-4">
-          <div className="bg-[#0d1527] p-5 rounded-3xl border border-[#1b2b4d] shadow-md space-y-3">
-            <div className="flex items-center justify-between pb-2 border-b border-[#1b2b4d]">
+          <div className="bg-white p-5 rounded-3xl border border-slate-200/90 shadow-xs space-y-3">
+            <div className="flex items-center justify-between pb-2 border-b border-slate-200">
               <h2 className="text-sm font-bold text-white flex items-center gap-2">
                 <FileText className="w-4 h-4 text-indigo-400" />
                 <span>College Offer Policy Explained</span>
@@ -1467,7 +1389,7 @@ export const StudentPortal: React.FC = () => {
 
             <div className="space-y-2.5">
               {policyData?.worked_examples?.map((ex: any, idx: number) => (
-                <div key={idx} className="p-3.5 bg-[#080e1c] rounded-2xl border border-[#162447] space-y-1 text-xs">
+                <div key={idx} className="p-3.5 bg-slate-50 rounded-2xl border border-slate-200 space-y-1 text-xs">
                   <span className="font-bold text-indigo-300 block">{ex.title}</span>
                   <span className="text-slate-400 block font-semibold">{ex.scenario}</span>
                   <p className="text-slate-300 leading-relaxed font-medium">{ex.explanation}</p>
@@ -1478,41 +1400,77 @@ export const StudentPortal: React.FC = () => {
         </div>
       )}
 
-      {/* SCREEN 8: MY PROFILE (Read-Only) */}
+      {/* SCREEN 1: MY PROFILE (Shifted to Top in Suite) */}
       {activeTab === "profile" && (
         <div className="space-y-4">
-          <div className="bg-[#0d1527] p-5 rounded-3xl border border-[#1b2b4d] shadow-md space-y-3">
-            <div className="flex items-center justify-between pb-2 border-b border-[#1b2b4d]">
-              <h2 className="text-sm font-bold text-white flex items-center gap-2">
-                <UserCheck className="w-4 h-4 text-emerald-400" />
-                <span>Verified Academic Profile</span>
-              </h2>
-              <span className="text-[11px] text-slate-400">Read-Only</span>
+          <div className="corporate-card bg-[#0B1326] p-5 rounded-3xl border border-[#16264C] shadow-lg space-y-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-3 border-b border-[#16264C] gap-3">
+              <div>
+                <h2 className="text-base font-extrabold text-white flex items-center gap-2">
+                  <UserCheck className="w-5 h-5 text-cyan-400" />
+                  <span>Verified Academic Profile</span>
+                </h2>
+                <p className="text-xs text-slate-400 mt-0.5">
+                  Official institutional records for {studentInfo?.name || "Student"} • Synced with College Examination Database
+                </p>
+              </div>
+
+              {/* Quick Action Buttons */}
+              <div className="flex items-center gap-2 shrink-0 flex-wrap">
+                <button
+                  type="button"
+                  onClick={() => setIsChangePasswordOpen(true)}
+                  className="px-3.5 py-2 bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-500 hover:to-cyan-500 text-white rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 shadow-md shadow-cyan-500/20"
+                  title="Reset Portal Login Password"
+                >
+                  <KeyRound className="w-3.5 h-3.5" />
+                  <span>Reset Password</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setActiveTab("corrections")}
+                  className="px-3 py-2 bg-[#0A1122] hover:bg-[#101C38] text-amber-300 hover:text-amber-200 border border-amber-500/40 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5"
+                  title="Submit request to correct marks or details"
+                >
+                  <FileText className="w-3.5 h-3.5 text-amber-400" />
+                  <span>Correction Request</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => window.print()}
+                  className="px-3 py-2 bg-[#0A1122] hover:bg-[#101C38] text-slate-300 hover:text-white border border-[#16264C] rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5"
+                  title="Print official candidate dossier"
+                >
+                  <Printer className="w-3.5 h-3.5 text-cyan-400" />
+                  <span>Print Profile</span>
+                </button>
+              </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-2 text-xs">
-              <div className="p-3 bg-[#080e1c] rounded-2xl border border-[#162447]">
-                <span className="text-[10px] text-slate-400 uppercase font-bold block">Full Name</span>
-                <span className="font-bold text-white block mt-0.5">{studentInfo?.name || "Student"}</span>
+            {/* Academic Data Grid */}
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5 text-xs">
+              <div className="p-3 bg-[#0A1122] rounded-2xl border border-[#16264C]">
+                <span className="text-[10px] text-slate-400 uppercase font-bold tracking-wider block">Full Name</span>
+                <span className="font-extrabold text-white block mt-0.5 truncate">{studentInfo?.name || "Student"}</span>
               </div>
-              <div className="p-3 bg-[#080e1c] rounded-2xl border border-[#162447]">
-                <span className="text-[10px] text-slate-400 uppercase font-bold block">Roll Number</span>
-                <span className="font-mono font-bold text-emerald-400 block mt-0.5">{studentInfo?.roll_no || user.username}</span>
+              <div className="p-3 bg-[#0A1122] rounded-2xl border border-[#16264C]">
+                <span className="text-[10px] text-slate-400 uppercase font-bold tracking-wider block">Roll Number</span>
+                <span className="font-mono font-black text-cyan-400 block mt-0.5">{studentInfo?.roll_no || user.username}</span>
               </div>
-              <div className="p-3 bg-[#080e1c] rounded-2xl border border-[#162447]">
-                <span className="text-[10px] text-slate-400 uppercase font-bold block">Branch</span>
-                <span className="font-bold text-slate-200 block mt-0.5">{studentInfo?.branch || "Engineering"}</span>
+              <div className="p-3 bg-[#0A1122] rounded-2xl border border-[#16264C]">
+                <span className="text-[10px] text-slate-400 uppercase font-bold tracking-wider block">Branch</span>
+                <span className="font-bold text-slate-200 block mt-0.5 truncate">{studentInfo?.branch || "Engineering"}</span>
               </div>
-              <div className="p-3 bg-[#080e1c] rounded-2xl border border-[#162447]">
-                <span className="text-[10px] text-slate-400 uppercase font-bold block">Cumulative CGPA</span>
-                <span className="font-mono font-black text-emerald-400 block mt-0.5">{studentInfo?.cgpa?.toFixed(2) || "8.50"}</span>
+              <div className="p-3 bg-[#0A1122] rounded-2xl border border-[#16264C]">
+                <span className="text-[10px] text-slate-400 uppercase font-bold tracking-wider block">Cumulative CGPA</span>
+                <span className="font-mono font-black text-emerald-400 block mt-0.5 text-sm">{studentInfo?.cgpa?.toFixed(2) || "8.50"}</span>
               </div>
-              <div className="p-3 bg-[#080e1c] rounded-2xl border border-[#162447]">
-                <span className="text-[10px] text-slate-400 uppercase font-bold block">10th Percentage</span>
+              <div className="p-3 bg-[#0A1122] rounded-2xl border border-[#16264C]">
+                <span className="text-[10px] text-slate-400 uppercase font-bold tracking-wider block">10th Percentage</span>
                 <span className="font-bold text-slate-200 block mt-0.5">{studentInfo?.tenth_percentage?.toFixed(1) || "85.0"}%</span>
               </div>
-              <div className="p-3 bg-[#080e1c] rounded-2xl border border-[#162447]">
-                <span className="text-[10px] text-slate-400 uppercase font-bold block">12th Percentage</span>
+              <div className="p-3 bg-[#0A1122] rounded-2xl border border-[#16264C]">
+                <span className="text-[10px] text-slate-400 uppercase font-bold tracking-wider block">12th Percentage</span>
                 <span className="font-bold text-slate-200 block mt-0.5">
                   {studentInfo?.twelfth_percentage ? `${studentInfo.twelfth_percentage.toFixed(1)}%` : "N/A (Diploma)"}
                 </span>
@@ -1520,52 +1478,94 @@ export const StudentPortal: React.FC = () => {
             </div>
 
             {/* Semester-wise SGPA Breakdown */}
-            <span className="text-xs font-bold uppercase tracking-wider text-slate-300 block pt-1">
-              Semester-wise SGPA Marks
-            </span>
-            <div className="grid grid-cols-4 gap-1.5 text-center text-xs">
-              {studentInfo?.semester_records?.map((rec: any) => (
-                <div key={rec.semester} className="p-2 bg-[#080e1c] rounded-xl border border-[#162447]">
-                  <span className="text-[10px] text-slate-400 uppercase font-bold block">Sem {rec.semester}</span>
-                  <span className="font-mono font-bold text-emerald-400 block mt-0.5">{rec.sgpa.toFixed(2)}</span>
-                </div>
-              ))}
+            <div className="pt-1">
+              <span className="text-xs font-bold uppercase tracking-wider text-slate-300 block mb-2">
+                Semester-wise SGPA Marks
+              </span>
+              <div className="grid grid-cols-4 sm:grid-cols-8 gap-1.5 text-center text-xs">
+                {studentInfo?.semester_records?.map((rec: any) => (
+                  <div key={rec.semester} className="p-2 bg-[#0A1122] rounded-xl border border-[#16264C]">
+                    <span className="text-[10px] text-slate-400 uppercase font-bold block">Sem {rec.semester}</span>
+                    <span className="font-mono font-bold text-cyan-400 block mt-0.5">{rec.sgpa.toFixed(2)}</span>
+                  </div>
+                ))}
+              </div>
             </div>
 
             {/* Backlogs & Gap Years */}
             <div className="grid grid-cols-2 gap-2 text-xs pt-1">
-              <div className="p-3 bg-[#080e1c] rounded-2xl border border-[#162447]">
-                <span className="text-[10px] text-slate-400 uppercase font-bold block">Active Backlogs</span>
-                <span className="font-bold text-rose-400 block mt-0.5">{studentInfo?.active_backlogs_count || 0} active</span>
+              <div className="p-3 bg-[#0A1122] rounded-2xl border border-[#16264C]">
+                <span className="text-[10px] text-slate-400 uppercase font-bold tracking-wider block">Active Backlogs</span>
+                <span className="font-bold text-emerald-400 block mt-0.5">
+                  {studentInfo?.active_backlogs_count || 0} active (Cleared)
+                </span>
               </div>
-              <div className="p-3 bg-[#080e1c] rounded-2xl border border-[#162447]">
-                <span className="text-[10px] text-slate-400 uppercase font-bold block">Education Gap Years</span>
+              <div className="p-3 bg-[#0A1122] rounded-2xl border border-[#16264C]">
+                <span className="text-[10px] text-slate-400 uppercase font-bold tracking-wider block">Education Gap Years</span>
                 <span className="font-bold text-slate-200 block mt-0.5">{studentInfo?.gap_years_count || 0} years</span>
               </div>
             </div>
 
-            <button
-              onClick={() => setActiveTab("corrections")}
-              className="min-h-[44px] w-full py-2.5 bg-[#111d38] hover:bg-[#162447] text-amber-300 hover:text-amber-200 border border-amber-500/30 rounded-2xl text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-2 mt-2"
-            >
-              <AlertCircle className="w-4 h-4 text-amber-400" />
-              <span>Found a mistake in your marks? Submit a Correction</span>
-            </button>
+            {/* Security & Reset Password Dedicated Card */}
+            <div className="p-4 bg-[#070D1A] border border-[#16264C] rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-3 mt-3">
+              <div className="space-y-0.5">
+                <div className="flex items-center gap-2">
+                  <KeyRound className="w-4 h-4 text-cyan-400" />
+                  <span className="font-extrabold text-xs text-white">Portal Password & Credentials</span>
+                </div>
+                <p className="text-[11px] text-slate-400">
+                  Manage your candidate access code or reset your login password for secure portal sign-in.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsChangePasswordOpen(true)}
+                className="px-4 py-2 bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-500 hover:to-cyan-500 text-white rounded-xl text-xs font-bold shadow-md shadow-cyan-500/20 transition-all cursor-pointer flex items-center justify-center gap-2 shrink-0"
+              >
+                <KeyRound className="w-3.5 h-3.5" />
+                <span>Reset Password</span>
+              </button>
+            </div>
+
+            {/* Correction Request Dedicated Card */}
+            <div className="p-4 bg-[#070D1A] border border-[#16264C] rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div className="space-y-0.5">
+                <div className="flex items-center gap-2">
+                  <AlertCircle className="w-4 h-4 text-amber-400" />
+                  <span className="font-extrabold text-xs text-white">Notice an Inaccuracy in Your Records?</span>
+                </div>
+                <p className="text-[11px] text-slate-400">
+                  If your marks, CGPA, backlogs, or contact info differ from your official mark sheet, submit an official correction request.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setActiveTab("corrections")}
+                className="px-4 py-2 bg-amber-500/15 hover:bg-amber-500/25 text-amber-300 border border-amber-500/40 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-2 shrink-0"
+              >
+                <FileText className="w-3.5 h-3.5 text-amber-400" />
+                <span>Correction Request</span>
+              </button>
+            </div>
           </div>
         </div>
       )}
 
-      {/* SCREEN 9: "SOMETHING LOOKS WRONG" (Data Correction Request) */}
+      {/* SCREEN 6: DATA CORRECTION REQUEST */}
       {activeTab === "corrections" && (
         <div className="space-y-4">
-          <div className="bg-[#0d1527] p-5 rounded-3xl border border-[#1b2b4d] shadow-md space-y-3">
-            <h2 className="text-sm font-bold text-white flex items-center gap-2">
-              <AlertCircle className="w-4 h-4 text-amber-400" />
-              <span>Report a Mistake in Your Data</span>
-            </h2>
-            <p className="text-xs text-slate-400 leading-relaxed">
-              If your CGPA, marks, or backlogs differ from your official mark sheet, submit an official correction request to the placement officer.
-            </p>
+          <div className="corporate-card bg-[#0B1326] p-5 rounded-3xl border border-[#16264C] shadow-lg space-y-4">
+            <div className="flex items-center justify-between pb-3 border-b border-[#16264C]">
+              <div>
+                <h2 className="text-base font-extrabold text-white flex items-center gap-2">
+                  <FileText className="w-5 h-5 text-amber-400" />
+                  <span>Data Correction Request</span>
+                </h2>
+                <p className="text-xs text-slate-400 mt-0.5">
+                  Submit an official correction request for academic records, CGPA, backlogs, marks, or personal details directly to the Placement Officer.
+                </p>
+              </div>
+            </div>
 
             {corrFeedback && (
               <div className="p-3 bg-emerald-950/80 border border-emerald-700 text-emerald-300 rounded-2xl text-xs">
@@ -1581,7 +1581,7 @@ export const StudentPortal: React.FC = () => {
                 <select
                   value={corrField}
                   onChange={(e) => setCorrField(e.target.value)}
-                  className="w-full min-h-[44px] px-3.5 py-2.5 bg-[#080e1c] border border-[#1e3258] rounded-xl text-xs font-semibold text-white focus:outline-none focus:ring-1 focus:ring-emerald-500 cursor-pointer"
+                  className="w-full min-h-[44px] px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-white focus:outline-none focus:ring-1 focus:ring-emerald-500 cursor-pointer"
                 >
                   <option value="CGPA">CGPA Grade</option>
                   <option value="Active Backlogs">Active Backlogs (Mark as Cleared)</option>
@@ -1602,7 +1602,7 @@ export const StudentPortal: React.FC = () => {
                   rows={3}
                   value={corrProblem}
                   onChange={(e) => setCorrProblem(e.target.value)}
-                  className="w-full px-3.5 py-2.5 bg-[#080e1c] border border-[#1e3258] rounded-xl text-xs text-white focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                  className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-white focus:outline-none focus:ring-1 focus:ring-emerald-500"
                   placeholder="e.g. My Sem 6 re-evaluation was approved, raising CGPA from 7.56 to 7.82"
                 />
               </div>
@@ -1615,7 +1615,7 @@ export const StudentPortal: React.FC = () => {
                   type="text"
                   value={corrNote}
                   onChange={(e) => setCorrNote(e.target.value)}
-                  className="w-full min-h-[44px] px-3.5 py-2 bg-[#080e1c] border border-[#1e3258] rounded-xl text-xs text-white focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                  className="w-full min-h-[44px] px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-white focus:outline-none focus:ring-1 focus:ring-emerald-500"
                   placeholder="e.g. Physical grade card signed by Exam Controller"
                 />
               </div>
@@ -1637,7 +1637,7 @@ export const StudentPortal: React.FC = () => {
             </h3>
 
             {correctionsList.length === 0 ? (
-              <div className="p-6 bg-[#0d1527] border border-[#1b2b4d] rounded-2xl text-center text-xs text-slate-400">
+              <div className="p-6 bg-white border border-slate-200/90 rounded-2xl text-center text-xs text-slate-400">
                 You have not submitted any data correction requests.
               </div>
             ) : (
@@ -1645,7 +1645,7 @@ export const StudentPortal: React.FC = () => {
                 {correctionsList.map((req) => (
                   <div
                     key={req.id}
-                    className="p-3.5 bg-[#0d1527] border border-[#1b2b4d] rounded-2xl space-y-1.5 text-xs"
+                    className="p-3.5 bg-white border border-slate-200/90 rounded-2xl space-y-1.5 text-xs"
                   >
                     <div className="flex items-center justify-between">
                       <span className="font-bold text-white">{req.field}</span>
@@ -1666,7 +1666,7 @@ export const StudentPortal: React.FC = () => {
                     <p className="text-slate-300 leading-relaxed">{req.problem}</p>
 
                     {req.officer_response && (
-                      <div className="p-2 bg-[#080e1c] rounded-xl border border-[#162447] text-[11px] text-emerald-300">
+                      <div className="p-2 bg-slate-50 rounded-xl border border-slate-200 text-[11px] text-emerald-800 font-bold">
                         Officer note: {req.officer_response}
                       </div>
                     )}
@@ -1696,7 +1696,7 @@ export const StudentPortal: React.FC = () => {
             {notifications.map((n) => (
               <div
                 key={n.id}
-                className="p-3.5 bg-[#0d1527] border border-[#1b2b4d] rounded-2xl space-y-1 text-xs"
+                className="p-3.5 bg-white border border-slate-200/90 rounded-2xl space-y-1 text-xs"
               >
                 <div className="flex items-center justify-between">
                   <span className="font-bold text-white">{n.title}</span>
@@ -1712,7 +1712,7 @@ export const StudentPortal: React.FC = () => {
       {/* SCREEN 11: PRINTABLE STATUS SHEET */}
       {activeTab === "print" && (
         <div className="space-y-4">
-          <div className="bg-[#0d1527] p-5 rounded-3xl border border-[#1b2b4d] shadow-md space-y-3 no-print">
+          <div className="bg-white p-5 rounded-3xl border border-slate-200/90 shadow-xs space-y-3 no-print">
             <h2 className="text-sm font-bold text-white flex items-center gap-2">
               <Printer className="w-4 h-4 text-emerald-400" />
               <span>Printable Status Sheet</span>
@@ -1724,7 +1724,7 @@ export const StudentPortal: React.FC = () => {
             <div className="flex items-center gap-2.5 pt-1">
               <button
                 onClick={() => window.print()}
-                className="min-h-[44px] flex-1 py-2.5 bg-[#111d38] hover:bg-[#162447] text-white border border-[#1b2b4d] rounded-2xl text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-2"
+                className="min-h-[44px] flex-1 py-2.5 bg-slate-100 hover:bg-slate-200 text-white border border-slate-200 rounded-2xl text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-2"
               >
                 <Printer className="w-4 h-4 text-emerald-400" />
                 <span>Print Clean Sheet</span>
@@ -1743,7 +1743,7 @@ export const StudentPortal: React.FC = () => {
               <a
                 href="/api/portal/status-sheet-csv"
                 download={`placement_status_${studentInfo?.roll_no || "candidate"}.csv`}
-                className="min-h-[44px] flex-1 py-2.5 bg-[#111d38] hover:bg-[#162447] text-emerald-300 rounded-2xl text-xs font-bold transition-all flex items-center justify-center gap-2 border border-emerald-500/30 hover:border-emerald-500/60"
+                className="min-h-[44px] flex-1 py-2.5 bg-slate-100 hover:bg-slate-200 text-emerald-300 rounded-2xl text-xs font-bold transition-all flex items-center justify-center gap-2 border border-emerald-500/30 hover:border-emerald-500/60"
                 title="Download personal status and eligibility records as CSV"
               >
                 <Download className="w-4 h-4 text-emerald-400" />
@@ -1813,76 +1813,23 @@ export const StudentPortal: React.FC = () => {
           </div>
         </div>
       )}
-
-      {/* SCREEN 12: HELP / FAQ */}
-      {activeTab === "faq" && (
-        <div className="space-y-4">
-          <div className="bg-[#0d1527] p-5 rounded-3xl border border-[#1b2b4d] shadow-md space-y-3">
-            <h2 className="text-sm font-bold text-white flex items-center gap-2">
-              <HelpCircle className="w-4 h-4 text-emerald-400" />
-              <span>Placement Portal Help & FAQ</span>
-            </h2>
-
-            <div className="space-y-3 text-xs">
-              <div className="p-3.5 bg-[#080e1c] rounded-2xl border border-[#162447] space-y-1">
-                <span className="font-bold text-emerald-300 block">
-                  1. What is the difference between active backlogs and history of backlogs?
-                </span>
-                <p className="text-slate-300 leading-relaxed font-medium">
-                  An active backlog is a subject you have not yet passed. A history backlog is a subject you previously failed but have now cleared. Many companies accept candidates with history backlogs as long as they currently have zero active backlogs.
-                </p>
-              </div>
-
-              <div className="p-3.5 bg-[#080e1c] rounded-2xl border border-[#162447] space-y-1">
-                <span className="font-bold text-emerald-300 block">
-                  2. What is a Dream Company?
-                </span>
-                <p className="text-slate-300 leading-relaxed font-medium">
-                  Under college placement rules, a Dream company offers a salary of 10.0 LPA or above. Even if you already hold one regular job offer, you are permitted to sit for Dream company drives to upgrade your placement.
-                </p>
-              </div>
-
-              <div className="p-3.5 bg-[#080e1c] rounded-2xl border border-[#162447] space-y-1">
-                <span className="font-bold text-emerald-300 block">
-                  3. Why is my CGPA shown this way?
-                </span>
-                <p className="text-slate-300 leading-relaxed font-medium">
-                  Your CGPA is calculated from your semester mark sheets recorded in the institutional database. If your latest grade revision or re-evaluation result has not yet been updated, use "Fix Mistakes" to notify the placement officer.
-                </p>
-              </div>
-
-              <div className="p-3.5 bg-[#080e1c] rounded-2xl border border-[#162447] space-y-1">
-                <span className="font-bold text-emerald-300 block">
-                  4. Who do I contact if I have a schedule clash?
-                </span>
-                <p className="text-slate-300 leading-relaxed font-medium">
-                  Contact the Training and Placement Cell in Room 204 or submit your preference in the "Clashes" tab. The placement officer will review and adjust slot timings.
-                </p>
-              </div>
-            </div>
-
-            <button
-              onClick={() => setIsChangePasswordOpen(true)}
-              className="min-h-[44px] w-full py-2.5 bg-[#111d38] hover:bg-[#162447] text-slate-200 hover:text-white border border-[#1b2b4d] rounded-2xl text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-2 mt-2"
-            >
-              <KeyRound className="w-4 h-4 text-blue-400" />
-              <span>Change Portal Login Password</span>
-            </button>
-          </div>
-        </div>
-      )}
           </div>
         )}
       </main>
 
-      {/* Change Password Modal */}
+      {/* Reset Password Modal (Cyber Dark Theme) */}
       {isChangePasswordOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-xs">
-          <div className="bg-[#0d1527] rounded-3xl max-w-sm w-full p-6 shadow-2xl border border-[#1b2b4d] space-y-4 text-slate-100">
-            <div className="flex items-center justify-between pb-2 border-b border-[#1b2b4d]">
-              <div className="flex items-center gap-2">
-                <KeyRound className="w-4 h-4 text-blue-400" />
-                <h3 className="text-sm font-bold text-white">Change Portal Password</h3>
+          <div className="corporate-card bg-[#0B1326] rounded-3xl max-w-md w-full p-6 shadow-2xl border border-[#16264C] space-y-4 text-white">
+            <div className="flex items-center justify-between pb-3 border-b border-[#16264C]">
+              <div className="flex items-center gap-2.5">
+                <div className="w-9 h-9 rounded-xl bg-cyan-950/80 border border-cyan-500/40 text-cyan-400 flex items-center justify-center">
+                  <KeyRound className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-extrabold text-white">Reset Portal Password</h3>
+                  <p className="text-[11px] text-slate-400">Update your student suite login credentials</p>
+                </div>
               </div>
               <button
                 type="button"
@@ -1891,7 +1838,7 @@ export const StudentPortal: React.FC = () => {
                   setPasswordError(null);
                   setPasswordSuccess(null);
                 }}
-                className="p-1.5 text-slate-400 hover:text-white rounded-lg hover:bg-[#111d38] cursor-pointer"
+                className="p-1.5 text-slate-400 hover:text-white rounded-lg hover:bg-[#101C38] cursor-pointer"
               >
                 <X className="w-4 h-4" />
               </button>
@@ -1920,7 +1867,7 @@ export const StudentPortal: React.FC = () => {
                     value={currentPassword}
                     onChange={(e) => setCurrentPassword(e.target.value)}
                     placeholder="Enter current password"
-                    className="w-full min-h-[44px] pl-3 pr-10 py-2 bg-[#080e1c] border border-[#1b2b4d] rounded-xl text-xs text-white focus:outline-none focus:ring-1 focus:ring-blue-500"
+                    className="w-full min-h-[44px] pl-3 pr-10 py-2 bg-[#0A1122] border border-[#1A2E56] rounded-xl text-xs text-white placeholder-slate-500 focus:outline-none focus:border-cyan-400 focus:ring-1 focus:ring-cyan-500/30"
                   />
                   <button
                     type="button"
@@ -1944,7 +1891,7 @@ export const StudentPortal: React.FC = () => {
                     value={newPassword}
                     onChange={(e) => setNewPassword(e.target.value)}
                     placeholder="Minimum 4 characters"
-                    className="w-full min-h-[44px] pl-3 pr-10 py-2 bg-[#080e1c] border border-[#1b2b4d] rounded-xl text-xs text-white focus:outline-none focus:ring-1 focus:ring-blue-500"
+                    className="w-full min-h-[44px] pl-3 pr-10 py-2 bg-[#0A1122] border border-[#1A2E56] rounded-xl text-xs text-white placeholder-slate-500 focus:outline-none focus:border-cyan-400 focus:ring-1 focus:ring-cyan-500/30"
                   />
                   <button
                     type="button"
@@ -1966,7 +1913,7 @@ export const StudentPortal: React.FC = () => {
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
                   placeholder="Re-type new password"
-                  className="w-full min-h-[44px] px-3 py-2 bg-[#080e1c] border border-[#1b2b4d] rounded-xl text-xs text-white focus:outline-none focus:ring-1 focus:ring-blue-500"
+                  className="w-full min-h-[44px] px-3 py-2 bg-[#0A1122] border border-[#1A2E56] rounded-xl text-xs text-white placeholder-slate-500 focus:outline-none focus:border-cyan-400 focus:ring-1 focus:ring-cyan-500/30"
                 />
               </div>
 
@@ -1974,14 +1921,14 @@ export const StudentPortal: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => setIsChangePasswordOpen(false)}
-                  className="min-h-[44px] px-4 py-2 text-xs font-bold text-slate-400 hover:text-white bg-[#111d38] rounded-xl cursor-pointer"
+                  className="min-h-[44px] px-4 py-2 text-xs font-bold text-slate-300 hover:text-white bg-[#0A1122] hover:bg-[#101C38] border border-[#16264C] rounded-xl cursor-pointer transition-all"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={passwordLoading}
-                  className="min-h-[44px] px-5 py-2 bg-gradient-to-r from-blue-600 to-emerald-600 text-white font-bold text-xs rounded-xl shadow-md cursor-pointer disabled:opacity-50"
+                  className="min-h-[44px] px-5 py-2 bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-500 hover:to-cyan-500 text-white font-bold text-xs rounded-xl shadow-lg shadow-cyan-500/25 cursor-pointer disabled:opacity-50 transition-all"
                 >
                   {passwordLoading ? "Saving..." : "Save Password"}
                 </button>

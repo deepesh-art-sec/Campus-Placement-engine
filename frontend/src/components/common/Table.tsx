@@ -58,39 +58,41 @@ export function Table<T extends Record<string, any>>({
     if (!searchTerm.trim()) return data;
     const term = searchTerm.toLowerCase();
     return data.filter((item) =>
-      Object.values(item).some((val) =>
-        val !== null && val !== undefined && String(val).toLowerCase().includes(term)
-      )
+      columns.some((col) => {
+        const val = item[col.key];
+        if (val === null || val === undefined) return false;
+        return String(val).toLowerCase().includes(term);
+      })
     );
-  }, [data, searchTerm]);
+  }, [data, columns, searchTerm]);
 
   // 2. Sorting
   const sortedData = useMemo(() => {
     if (!sortKey) return filteredData;
     return [...filteredData].sort((a, b) => {
-      const valA = a[sortKey];
-      const valB = b[sortKey];
-      if (valA === valB) return 0;
-      if (valA === null || valA === undefined) return 1;
-      if (valB === null || valB === undefined) return -1;
-      if (typeof valA === "number" && typeof valB === "number") {
-        return sortOrder === "asc" ? valA - valB : valB - valA;
+      const aVal = a[sortKey];
+      const bVal = b[sortKey];
+      if (aVal === bVal) return 0;
+      if (aVal === null || aVal === undefined) return 1;
+      if (bVal === null || bVal === undefined) return -1;
+      if (typeof aVal === "number" && typeof bVal === "number") {
+        return sortOrder === "asc" ? aVal - bVal : bVal - aVal;
       }
-      return sortOrder === "asc"
-        ? String(valA).localeCompare(String(valB))
-        : String(valB).localeCompare(String(valA));
+      const strA = String(aVal).toLowerCase();
+      const strB = String(bVal).toLowerCase();
+      return sortOrder === "asc" ? strA.localeCompare(strB) : strB.localeCompare(strA);
     });
   }, [filteredData, sortKey, sortOrder]);
 
   // 3. Pagination
-  const totalPages = Math.max(1, Math.ceil(sortedData.length / pageSize));
+  const totalPages = Math.ceil(sortedData.length / pageSize) || 1;
   const paginatedData = useMemo(() => {
     const start = (currentPage - 1) * pageSize;
     return sortedData.slice(start, start + pageSize);
   }, [sortedData, currentPage, pageSize]);
 
   const handleSort = (key: string, sortable?: boolean) => {
-    if (!sortable) return;
+    if (sortable === false) return;
     if (sortKey === key) {
       if (sortOrder === "asc") setSortOrder("desc");
       else {
@@ -106,15 +108,16 @@ export function Table<T extends Record<string, any>>({
   const handleExportCSV = () => {
     const activeCols = columns.filter((c) => visibleColumns[c.key]);
     const headers = activeCols.map((c) => `"${c.header.replace(/"/g, '""')}"`).join(",");
-    const rows = sortedData.map((item) =>
+    const rows = filteredData.map((item) =>
       activeCols
         .map((c) => {
           const val = item[c.key];
-          return `"${val !== undefined && val !== null ? String(val).replace(/"/g, '""') : ""}"`;
+          if (val === null || val === undefined) return '""';
+          return `"${String(val).replace(/"/g, '""')}"`;
         })
         .join(",")
     );
-    const csvContent = [headers, ...rows].join("\r\n");
+    const csvContent = [headers, ...rows].join("\n");
     const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
@@ -128,9 +131,9 @@ export function Table<T extends Record<string, any>>({
   const activeColumns = columns.filter((c) => visibleColumns[c.key]);
 
   return (
-    <div className="bg-[#0d1527] border border-[#1e3258] rounded-2xl shadow-md overflow-hidden text-slate-100 space-y-4 p-4 sm:p-5">
+    <div className="corporate-card overflow-hidden text-slate-100 space-y-4 p-4 sm:p-5">
       {/* Top Controls Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-2 border-b border-[#1b2b4d]">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-2 border-b border-[var(--border-card)]">
         <div>
           {title && <h3 className="text-base font-black text-white tracking-tight">{title}</h3>}
           <p className="text-xs text-slate-400">
@@ -141,7 +144,7 @@ export function Table<T extends Record<string, any>>({
         <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap">
           {/* Search Bar */}
           <div className="relative flex-1 sm:w-64">
-            <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+            <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-cyan-400 pointer-events-none" />
             <input
               type="text"
               value={searchTerm}
@@ -150,7 +153,7 @@ export function Table<T extends Record<string, any>>({
                 setCurrentPage(1);
               }}
               placeholder={searchPlaceholder}
-              className="w-full pl-9 pr-3 py-1.5 bg-[#080e1c] border border-[#1e3258] rounded-xl text-xs text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500 transition-all"
+              className="w-full pl-9 pr-3 py-1.5 bg-[var(--bg-input)] border border-[var(--border-input)] rounded-xl text-xs text-white placeholder-slate-500 focus:outline-none focus:border-cyan-400 transition-all"
             />
           </div>
 
@@ -159,21 +162,21 @@ export function Table<T extends Record<string, any>>({
             <button
               type="button"
               onClick={() => setShowColMenu(!showColMenu)}
-              className="p-2 bg-[#080e1c] hover:bg-[#111d38] border border-[#1e3258] rounded-xl text-slate-300 hover:text-white transition-colors cursor-pointer"
+              className="p-2 bg-[var(--bg-input)] hover:bg-[var(--bg-card-hover)] border border-[var(--border-card)] rounded-xl text-slate-300 hover:text-white transition-colors cursor-pointer"
               title="Toggle Columns"
             >
               <SlidersHorizontal className="w-4 h-4" />
             </button>
 
             {showColMenu && (
-              <div className="absolute right-0 mt-1 w-48 bg-[#0d1527] border border-[#1e3258] rounded-xl shadow-xl p-2 z-30 space-y-1">
+              <div className="absolute right-0 mt-1 w-48 bg-[var(--bg-card)] border border-[var(--border-card)] rounded-xl shadow-2xl p-2 z-30 space-y-1">
                 <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block px-2 py-1">
                   Visible Columns
                 </span>
                 {columns.map((col) => (
                   <label
                     key={col.key}
-                    className="flex items-center gap-2 px-2 py-1.5 hover:bg-[#111d38] rounded-lg text-xs text-slate-200 cursor-pointer"
+                    className="flex items-center gap-2 px-2 py-1.5 hover:bg-[var(--bg-card-hover)] rounded-lg text-xs text-slate-200 cursor-pointer"
                   >
                     <input
                       type="checkbox"
@@ -181,7 +184,7 @@ export function Table<T extends Record<string, any>>({
                       onChange={(e) =>
                         setVisibleColumns({ ...visibleColumns, [col.key]: e.target.checked })
                       }
-                      className="accent-emerald-500 rounded"
+                      className="accent-cyan-400 rounded"
                     />
                     <span className="truncate">{col.header}</span>
                   </label>
@@ -195,7 +198,7 @@ export function Table<T extends Record<string, any>>({
             <button
               type="button"
               onClick={handleExportCSV}
-              className="flex items-center gap-1.5 px-3 py-1.5 bg-[#111d38] hover:bg-[#17264a] border border-[#1e3258] hover:border-emerald-500/50 rounded-xl text-xs font-bold text-slate-200 hover:text-white transition-all cursor-pointer shadow-xs"
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-[var(--bg-input)] hover:bg-[var(--bg-card-hover)] border border-[var(--border-card)] hover:border-cyan-400 rounded-xl text-xs font-semibold text-slate-200 hover:text-white shadow-xs transition-all cursor-pointer"
               title="Export as CSV"
             >
               <Download className="w-3.5 h-3.5 text-cyan-400" />
@@ -206,10 +209,10 @@ export function Table<T extends Record<string, any>>({
       </div>
 
       {/* Table Container */}
-      <div className="overflow-x-auto rounded-xl border border-[#1b2b4d]">
+      <div className="overflow-x-auto rounded-xl border border-[var(--border-table)]">
         <table className="w-full text-left border-collapse text-xs">
           <thead>
-            <tr className="bg-[#080e1c] border-b border-[#1b2b4d] text-slate-400 font-bold uppercase tracking-wider">
+            <tr className="bg-[var(--bg-table-header)] border-b border-[var(--border-table)] text-slate-300 font-bold uppercase tracking-wider">
               {activeColumns.map((col) => (
                 <th
                   key={col.key}
@@ -234,12 +237,12 @@ export function Table<T extends Record<string, any>>({
                       <span className="text-slate-500">
                         {sortKey === col.key ? (
                           sortOrder === "asc" ? (
-                            <ChevronUp className="w-3.5 h-3.5 text-emerald-400" />
+                            <ChevronUp className="w-3.5 h-3.5 text-cyan-400" />
                           ) : (
-                            <ChevronDown className="w-3.5 h-3.5 text-emerald-400" />
+                            <ChevronDown className="w-3.5 h-3.5 text-cyan-400" />
                           )
                         ) : (
-                          <ChevronsUpDown className="w-3 h-3 text-slate-600" />
+                          <ChevronsUpDown className="w-3 h-3 text-slate-500" />
                         )}
                       </span>
                     )}
@@ -248,10 +251,10 @@ export function Table<T extends Record<string, any>>({
               ))}
             </tr>
           </thead>
-          <tbody className="divide-y divide-[#1b2b4d]">
+          <tbody className="divide-y divide-[var(--border-table)]">
             {paginatedData.length === 0 ? (
               <tr>
-                <td colSpan={activeColumns.length} className="px-4 py-8 text-center text-slate-500">
+                <td colSpan={activeColumns.length} className="px-4 py-8 text-center text-slate-400">
                   {emptyMessage}
                 </td>
               </tr>
@@ -260,7 +263,7 @@ export function Table<T extends Record<string, any>>({
                 <tr
                   key={keyExtractor(item, idx)}
                   onClick={() => onRowClick && onRowClick(item)}
-                  className={`hover:bg-[#111e38] transition-colors ${
+                  className={`bg-[var(--bg-table-row)] hover:bg-[var(--bg-table-row-hover)] transition-colors ${
                     onRowClick ? "cursor-pointer" : ""
                   }`}
                 >
@@ -297,18 +300,18 @@ export function Table<T extends Record<string, any>>({
             type="button"
             disabled={currentPage <= 1}
             onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-            className="p-1.5 bg-[#080e1c] hover:bg-[#111d38] border border-[#1e3258] rounded-lg disabled:opacity-30 disabled:cursor-not-allowed text-slate-300 hover:text-white cursor-pointer transition-colors"
+            className="p-1.5 bg-[var(--bg-input)] hover:bg-[var(--bg-card-hover)] border border-[var(--border-card)] shadow-xs rounded-lg disabled:opacity-30 disabled:cursor-not-allowed text-slate-300 hover:text-white cursor-pointer transition-colors"
           >
             <ChevronLeft className="w-4 h-4" />
           </button>
-          <span className="px-2 font-mono text-slate-300">
+          <span className="px-2 font-mono text-cyan-400 font-bold">
             {currentPage} / {totalPages}
           </span>
           <button
             type="button"
             disabled={currentPage >= totalPages}
             onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
-            className="p-1.5 bg-[#080e1c] hover:bg-[#111d38] border border-[#1e3258] rounded-lg disabled:opacity-30 disabled:cursor-not-allowed text-slate-300 hover:text-white cursor-pointer transition-colors"
+            className="p-1.5 bg-[var(--bg-input)] hover:bg-[var(--bg-card-hover)] border border-[var(--border-card)] shadow-xs rounded-lg disabled:opacity-30 disabled:cursor-not-allowed text-slate-300 hover:text-white cursor-pointer transition-colors"
           >
             <ChevronRight className="w-4 h-4" />
           </button>

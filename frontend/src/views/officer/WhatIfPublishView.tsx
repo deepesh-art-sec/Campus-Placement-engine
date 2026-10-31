@@ -250,7 +250,7 @@ export const WhatIfPublishView: React.FC<WhatIfPublishViewProps> = ({ initialDri
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-black text-white tracking-tight">What-If Simulation & Publish</h1>
+          <h1 className="text-2xl font-black text-slate-900 tracking-tight">What-If Simulation & Publish</h1>
           <p className="text-sm text-slate-400 mt-1">
             Test requirement changes in-memory. Compute exact candidate deltas and causal collisions before committing.
           </p>
@@ -263,7 +263,7 @@ export const WhatIfPublishView: React.FC<WhatIfPublishViewProps> = ({ initialDri
               setSelectedDriveId(e.target.value);
               setImpactReport(null);
             }}
-            className="px-3.5 py-2 bg-[#0d1527] border border-[#1e3258] rounded-xl text-xs font-bold text-emerald-400 shadow-md focus:outline-none cursor-pointer"
+            className="px-3.5 py-2 bg-white border border-slate-200 rounded-xl text-xs font-bold text-blue-700 shadow-2xs focus:outline-none cursor-pointer"
           >
             {drives.map((d) => (
               <option key={d.id} value={d.id}>
@@ -276,7 +276,7 @@ export const WhatIfPublishView: React.FC<WhatIfPublishViewProps> = ({ initialDri
             <button
               type="button"
               onClick={handleRollback}
-              className="flex items-center gap-1.5 px-3 py-2 bg-[#101b33] hover:bg-[#162547] text-slate-300 text-xs font-bold rounded-xl border border-[#1e3258] transition-colors cursor-pointer"
+              className="flex items-center gap-1.5 px-3 py-2 bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold rounded-xl border border-slate-200 shadow-2xs transition-colors cursor-pointer"
               title="Roll back to previous version"
             >
               <RotateCcw className="w-3.5 h-3.5" />
@@ -287,7 +287,7 @@ export const WhatIfPublishView: React.FC<WhatIfPublishViewProps> = ({ initialDri
           <button
             type="button"
             onClick={() => setIsPublishModalOpen(true)}
-            className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-600 to-emerald-600 hover:from-blue-500 hover:to-emerald-500 text-white text-xs font-bold rounded-xl shadow-md shadow-emerald-950/30 transition-all cursor-pointer"
+            className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-600 to-emerald-600 hover:from-blue-500 hover:to-emerald-500 text-slate-900 text-xs font-bold rounded-xl shadow-md shadow-emerald-950/30 transition-all cursor-pointer"
           >
             <Send className="w-3.5 h-3.5" />
             <span>Publish Drive</span>
@@ -299,9 +299,9 @@ export const WhatIfPublishView: React.FC<WhatIfPublishViewProps> = ({ initialDri
       {publishSuccess && <AlertBanner type="success" message={publishSuccess} onClose={() => setPublishSuccess(null)} />}
 
       {/* Simulation Controls Panel */}
-      <div className="bg-[#0d1527] p-6 rounded-2xl border border-[#1e3258] shadow-xl space-y-5">
-        <div className="flex items-center justify-between pb-3 border-b border-[#1b2b4d]">
-          <h2 className="text-sm font-bold text-white flex items-center gap-2">
+      <div className="bg-white p-6 rounded-2xl border border-slate-200/90 shadow-xs space-y-5 text-slate-800">
+        <div className="flex items-center justify-between pb-3 border-b border-slate-200">
+          <h2 className="text-sm font-bold text-slate-900 flex items-center gap-2">
             <Sparkles className="w-4 h-4 text-emerald-400" />
             <span>Propose What-If Policy or Cut-off Adjustment</span>
           </h2>
@@ -322,7 +322,7 @@ export const WhatIfPublishView: React.FC<WhatIfPublishViewProps> = ({ initialDri
                 setChangeType(e.target.value as any);
                 setImpactReport(null);
               }}
-              className="w-full px-3.5 py-2.5 bg-[#080e1c] border border-emerald-500/60 rounded-xl text-xs font-semibold text-emerald-300 focus:outline-none focus:ring-2 focus:ring-emerald-500 cursor-pointer shadow-inner"
+              className="w-full px-3.5 py-2.5 bg-slate-50 border border-blue-400 rounded-xl text-xs font-semibold text-blue-800 focus:outline-none focus:ring-2 focus:ring-emerald-500 cursor-pointer shadow-inner"
             >
               <option value="cgpa_cutoff">Lower / Raise CGPA Cut-off</option>
               <option value="backlog_rule">Modify Backlog Standing Rule</option>
@@ -339,7 +339,7 @@ export const WhatIfPublishView: React.FC<WhatIfPublishViewProps> = ({ initialDri
             <label className="text-xs font-bold text-slate-300 uppercase tracking-wider block mb-1.5">
               Current Baseline Cut-off
             </label>
-            <div className="w-full px-3.5 py-2.5 bg-[#080e1c] border border-[#1e3258] rounded-xl text-xs font-mono font-semibold text-slate-300 flex items-center">
+            <div className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-mono font-semibold text-slate-700 flex items-center">
               {changeType === "cgpa_cutoff" && (
                 <span>CGPA &ge; {currentDrive?.requirements?.min_cgpa ?? 8.0}</span>
               )}
@@ -380,7 +380,7 @@ export const WhatIfPublishView: React.FC<WhatIfPublishViewProps> = ({ initialDri
                 max="10"
                 value={proposedCgpa}
                 onChange={(e) => setProposedCgpa(parseFloat(e.target.value) || 0)}
-                className="w-full px-3.5 py-2.5 bg-[#080e1c] border border-[#1e3258] rounded-xl text-xs font-mono font-bold text-emerald-400 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-mono font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-500"
               />
             )}
 
@@ -388,7 +388,7 @@ export const WhatIfPublishView: React.FC<WhatIfPublishViewProps> = ({ initialDri
               <select
                 value={proposedBacklogs}
                 onChange={(e) => setProposedBacklogs(parseInt(e.target.value, 10))}
-                className="w-full px-3.5 py-2.5 bg-[#080e1c] border border-[#1e3258] rounded-xl text-xs font-bold text-emerald-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 cursor-pointer"
+                className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-500 cursor-pointer"
               >
                 <option value={0}>0 (Strict - Zero Standing Backlogs)</option>
                 <option value={1}>1 (Allow Max 1 Active Backlog)</option>
@@ -401,7 +401,7 @@ export const WhatIfPublishView: React.FC<WhatIfPublishViewProps> = ({ initialDri
               <select
                 value={selectedBranch}
                 onChange={(e) => setSelectedBranch(e.target.value)}
-                className="w-full px-3.5 py-2.5 bg-[#080e1c] border border-[#1e3258] rounded-xl text-xs font-bold text-emerald-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 cursor-pointer"
+                className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-500 cursor-pointer"
               >
                 {CANONICAL_BRANCH_LIST.map((b) => (
                   <option key={b.code} value={b.code}>
@@ -415,7 +415,7 @@ export const WhatIfPublishView: React.FC<WhatIfPublishViewProps> = ({ initialDri
               <select
                 value={selectedBranch}
                 onChange={(e) => setSelectedBranch(e.target.value)}
-                className="w-full px-3.5 py-2.5 bg-[#080e1c] border border-[#1e3258] rounded-xl text-xs font-bold text-rose-400 focus:outline-none focus:ring-2 focus:ring-rose-500 cursor-pointer"
+                className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-rose-700 focus:outline-none focus:ring-2 focus:ring-rose-500 cursor-pointer"
               >
                 {currentBranches.map((b) => (
                   <option key={b} value={b}>
@@ -430,7 +430,7 @@ export const WhatIfPublishView: React.FC<WhatIfPublishViewProps> = ({ initialDri
                 type="date"
                 value={proposedDate}
                 onChange={(e) => setProposedDate(e.target.value)}
-                className="w-full px-3.5 py-2.5 bg-[#080e1c] border border-[#1e3258] rounded-xl text-xs font-mono font-bold text-emerald-400 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-mono font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-500"
               />
             )}
 
@@ -439,7 +439,7 @@ export const WhatIfPublishView: React.FC<WhatIfPublishViewProps> = ({ initialDri
                 <select
                   value={targetQualification}
                   onChange={(e) => setTargetQualification(e.target.value as any)}
-                  className="w-24 px-2.5 py-2.5 bg-[#080e1c] border border-[#1e3258] rounded-xl text-xs font-bold text-slate-300"
+                  className="w-24 px-2.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-700"
                 >
                   <option value="10th">10th</option>
                   <option value="12th">12th</option>
@@ -451,7 +451,7 @@ export const WhatIfPublishView: React.FC<WhatIfPublishViewProps> = ({ initialDri
                   max="100"
                   value={proposedPercentage}
                   onChange={(e) => setProposedPercentage(parseFloat(e.target.value) || 0)}
-                  className="flex-1 px-3.5 py-2.5 bg-[#080e1c] border border-[#1e3258] rounded-xl text-xs font-mono font-bold text-emerald-400 focus:outline-none"
+                  className="flex-1 px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-mono font-bold text-slate-900 focus:outline-none"
                 />
               </div>
             )}
@@ -460,7 +460,7 @@ export const WhatIfPublishView: React.FC<WhatIfPublishViewProps> = ({ initialDri
               <select
                 value={proposedGapYears}
                 onChange={(e) => setProposedGapYears(parseInt(e.target.value, 10))}
-                className="w-full px-3.5 py-2.5 bg-[#080e1c] border border-[#1e3258] rounded-xl text-xs font-bold text-emerald-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 cursor-pointer"
+                className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-500 cursor-pointer"
               >
                 <option value={0}>0 (Strict - Zero Education Gaps)</option>
                 <option value={1}>1 Year Gap Allowed</option>
@@ -471,7 +471,7 @@ export const WhatIfPublishView: React.FC<WhatIfPublishViewProps> = ({ initialDri
           </div>
         </div>
 
-        <div className="flex items-center justify-between pt-2 border-t border-[#1b2b4d]">
+        <div className="flex items-center justify-between pt-2 border-t border-slate-200">
           <div className="text-[11px] text-slate-400 flex items-center gap-1.5">
             <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
             <span>Zero database side-effects: runs purely in-memory across the 1,800 student cohort.</span>
@@ -481,7 +481,7 @@ export const WhatIfPublishView: React.FC<WhatIfPublishViewProps> = ({ initialDri
             type="button"
             onClick={handleRunSimulation}
             disabled={simulating}
-            className="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-blue-600 via-indigo-600 to-emerald-600 hover:from-blue-500 hover:to-emerald-500 text-white text-xs font-bold rounded-xl shadow-lg shadow-emerald-950/40 transition-all cursor-pointer disabled:opacity-50"
+            className="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-blue-600 via-indigo-600 to-emerald-600 hover:from-blue-500 hover:to-emerald-500 text-slate-900 text-xs font-bold rounded-xl shadow-lg shadow-emerald-950/40 transition-all cursor-pointer disabled:opacity-50"
           >
             <Sparkles className="w-4 h-4 text-emerald-300" />
             <span>{simulating ? "Simulating In-Memory..." : "Simulate What-If Impact"}</span>
@@ -491,13 +491,13 @@ export const WhatIfPublishView: React.FC<WhatIfPublishViewProps> = ({ initialDri
 
       {/* What-If Impact Report Card */}
       {impactReport && (
-        <div className="bg-[#0d1527] p-6 rounded-2xl border border-[#1e3258] shadow-2xl space-y-6">
+        <div className="bg-white p-6 rounded-2xl border border-slate-200/90 shadow-xs space-y-6 text-slate-800">
           {/* Data-Driven Computed Headline */}
           <div className="p-5 bg-gradient-to-r from-blue-950/60 to-emerald-950/60 border border-emerald-500/30 rounded-2xl shadow-inner">
             <span className="text-[10px] font-bold tracking-wider uppercase text-emerald-400 block mb-1">
               Computed Impact Headline
             </span>
-            <p className="text-base font-extrabold text-white leading-relaxed">
+            <p className="text-base font-extrabold text-slate-900 leading-relaxed">
               "{impactReport.headline}"
             </p>
           </div>
@@ -526,7 +526,7 @@ export const WhatIfPublishView: React.FC<WhatIfPublishViewProps> = ({ initialDri
 
           {/* Sample Students Added Preview */}
           {impactReport.students_added && impactReport.students_added.length > 0 && (
-            <div className="p-4 bg-[#080e1c] border border-[#1b2b4d] rounded-xl space-y-2.5">
+            <div className="p-4 bg-slate-50 border border-slate-200 rounded-xl space-y-2.5">
               <div className="flex items-center justify-between text-xs font-bold text-slate-300">
                 <span className="flex items-center gap-1.5 text-emerald-400">
                   <CheckCircle className="w-3.5 h-3.5" />
@@ -536,10 +536,10 @@ export const WhatIfPublishView: React.FC<WhatIfPublishViewProps> = ({ initialDri
               </div>
               <div className="space-y-1.5">
                 {impactReport.students_added.slice(0, 5).map((stu) => (
-                  <div key={stu.student_id} className="flex items-center justify-between text-xs p-2 bg-[#0d1527] rounded-lg border border-[#1b2b4d]">
+                  <div key={stu.student_id} className="flex items-center justify-between text-xs p-2 bg-white rounded-lg border border-slate-200">
                     <div className="flex items-center gap-2">
                       <span className="font-mono text-emerald-400 font-bold">{stu.student_roll_no}</span>
-                      <span className="font-semibold text-white">{stu.student_name}</span>
+                      <span className="font-semibold text-slate-900">{stu.student_name}</span>
                       <span className="px-1.5 py-0.5 rounded text-[10px] bg-slate-800 text-slate-300 font-mono">{stu.branch}</span>
                     </div>
                     <div className="text-right">
@@ -553,7 +553,7 @@ export const WhatIfPublishView: React.FC<WhatIfPublishViewProps> = ({ initialDri
 
           {/* Second-Order Policy Effects */}
           {impactReport.second_order_policy_effects && impactReport.second_order_policy_effects.length > 0 && (
-            <div className="p-4 bg-[#080e1c] border border-[#1b2b4d] rounded-xl space-y-2">
+            <div className="p-4 bg-slate-50 border border-slate-200 rounded-xl space-y-2">
               <h4 className="text-xs font-bold text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
                 <TrendingUp className="w-4 h-4 text-indigo-400" />
                 <span>Second-Order Offer Policy Ripple Effects</span>
@@ -567,9 +567,9 @@ export const WhatIfPublishView: React.FC<WhatIfPublishViewProps> = ({ initialDri
           )}
 
           {/* Dedicated Action Bar: Apply & Publish What-If Directly */}
-          <div className="p-5 bg-gradient-to-r from-emerald-950/80 via-[#0d1527] to-blue-950/80 border-2 border-emerald-500/50 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-xl">
+          <div className="p-5 bg-gradient-to-r from-blue-50 to-slate-50 border border-blue-200 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-xl">
             <div className="space-y-1">
-              <div className="text-xs font-bold text-white flex items-center gap-1.5">
+              <div className="text-xs font-bold text-slate-900 flex items-center gap-1.5">
                 <Send className="w-4 h-4 text-emerald-400" />
                 <span>Commit & Publish This Simulated Adjustment</span>
               </div>
@@ -582,7 +582,7 @@ export const WhatIfPublishView: React.FC<WhatIfPublishViewProps> = ({ initialDri
               type="button"
               onClick={handleApplyWhatIf}
               disabled={applying}
-              className="flex items-center justify-center gap-2 px-6 py-3 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold text-xs rounded-xl shadow-lg shadow-emerald-950/50 transition-all cursor-pointer disabled:opacity-50 shrink-0"
+              className="flex items-center justify-center gap-2 px-6 py-3 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-slate-900 font-bold text-xs rounded-xl shadow-lg shadow-emerald-950/50 transition-all cursor-pointer disabled:opacity-50 shrink-0"
             >
               <Check className="w-4 h-4" />
               <span>{applying ? "Applying & Publishing..." : `Apply & Publish (v${(currentDrive?.version || 1) + 1})`}</span>
@@ -602,7 +602,7 @@ export const WhatIfPublishView: React.FC<WhatIfPublishViewProps> = ({ initialDri
             <button
               type="button"
               onClick={() => setIsPublishModalOpen(false)}
-              className="px-4 py-2 text-xs font-semibold text-slate-400 hover:text-white rounded-xl cursor-pointer"
+              className="px-4 py-2 text-xs font-semibold text-slate-400 hover:text-slate-900 rounded-xl cursor-pointer"
             >
               Cancel
             </button>
@@ -610,7 +610,7 @@ export const WhatIfPublishView: React.FC<WhatIfPublishViewProps> = ({ initialDri
               type="button"
               onClick={handlePublish}
               disabled={publishing}
-              className="px-5 py-2.5 bg-gradient-to-r from-blue-600 to-emerald-600 hover:from-blue-500 hover:to-emerald-500 text-white text-xs font-bold rounded-xl shadow-md transition-all disabled:opacity-50 flex items-center gap-2 cursor-pointer"
+              className="px-5 py-2.5 bg-gradient-to-r from-blue-600 to-emerald-600 hover:from-blue-500 hover:to-emerald-500 text-slate-900 text-xs font-bold rounded-xl shadow-md transition-all disabled:opacity-50 flex items-center gap-2 cursor-pointer"
             >
               <Send className="w-3.5 h-3.5" />
               <span>{publishing ? "Committing..." : `Confirm & Publish v${(currentDrive?.version || 1) + 1}`}</span>
@@ -624,8 +624,8 @@ export const WhatIfPublishView: React.FC<WhatIfPublishViewProps> = ({ initialDri
             All registered candidates will immediately see their official eligibility status and timetable.
           </p>
 
-          <div className="p-3.5 bg-[#080e1c] border border-[#1b2b4d] rounded-xl space-y-2">
-            <h4 className="text-xs font-bold text-white uppercase tracking-wider">
+          <div className="p-3.5 bg-slate-50 border border-slate-200 rounded-xl space-y-2">
+            <h4 className="text-xs font-bold text-slate-900 uppercase tracking-wider">
               Pre-Flight Safeguard Checks
             </h4>
             <div className="space-y-1.5 text-xs">
@@ -652,7 +652,7 @@ export const WhatIfPublishView: React.FC<WhatIfPublishViewProps> = ({ initialDri
               type="text"
               value={publishReason}
               onChange={(e) => setPublishReason(e.target.value)}
-              className="w-full px-3.5 py-2.5 bg-[#080e1c] border border-[#1e3258] rounded-xl text-xs font-medium text-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
+              className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-500"
             />
           </div>
         </div>

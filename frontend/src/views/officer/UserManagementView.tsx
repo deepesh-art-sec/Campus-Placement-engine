@@ -191,8 +191,8 @@ export const UserManagementView: React.FC = () => {
           onClick={() => handleToggleUser(item)}
           className={`p-1.5 rounded-lg border text-xs font-mono font-bold cursor-pointer transition-all ${
             item.is_active
-              ? "bg-[#111d38] text-rose-300 hover:bg-rose-950/40 border-[#1e3258]"
-              : "bg-[#111d38] text-emerald-300 hover:bg-emerald-950/40 border-[#1e3258]"
+              ? "bg-white text-rose-700 hover:bg-rose-50 border-rose-200"
+              : "bg-white text-emerald-700 hover:bg-emerald-50 border-emerald-200"
           }`}
           title={item.is_active ? "Deactivate User" : "Activate User"}
         >
@@ -206,14 +206,14 @@ export const UserManagementView: React.FC = () => {
     <div className="space-y-6 pb-16">
       {/* Toast Notification */}
       {notification && (
-        <div className="fixed bottom-6 right-6 z-50 bg-[#0d1527] border border-emerald-500/50 text-emerald-300 px-4 py-3 rounded-2xl shadow-2xl flex items-center gap-2 text-xs font-bold animate-in fade-in slide-in-from-bottom-2">
+        <div className="fixed bottom-6 right-6 z-50 bg-white border border-emerald-400 text-emerald-800 px-4 py-3 rounded-2xl shadow-2xl flex items-center gap-2 text-xs font-bold animate-in fade-in slide-in-from-bottom-2">
           <CheckCircle2 className="w-4 h-4 text-emerald-400" />
           <span>{notification}</span>
         </div>
       )}
 
       {/* Header */}
-      <div className="bg-[#0d1527] p-6 rounded-3xl border border-[#1e3258] shadow-xl flex flex-wrap items-center justify-between gap-4">
+      <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-xs flex flex-wrap items-center justify-between gap-4">
         <div>
           <div className="flex items-center gap-2 mb-1.5">
             <span className="px-2.5 py-0.5 rounded-full text-xs font-mono font-bold bg-purple-950 text-purple-300 border border-purple-700/60 flex items-center gap-1.5">
@@ -258,7 +258,7 @@ export const UserManagementView: React.FC = () => {
       </div>
 
       {/* Role Filter Tabs */}
-      <div className="flex items-center gap-1.5 bg-[#080e1c] p-1.5 rounded-2xl border border-[#1e3258] overflow-x-auto no-scrollbar">
+      <div className="flex items-center gap-1.5 bg-slate-100 p-1.5 rounded-2xl border border-slate-200 overflow-x-auto no-scrollbar">
         {[
           { id: "ALL", label: "All Accounts" },
           { id: "officer", label: "Officers" },
@@ -314,7 +314,7 @@ export const UserManagementView: React.FC = () => {
               value={newUsername}
               onChange={(e) => setNewUsername(e.target.value)}
               placeholder="e.g. coordinator_cse or recruiter_amazon"
-              className="w-full px-3 py-2 bg-[#080e1c] border border-[#1e3258] rounded-xl text-white font-mono"
+              className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 font-mono"
             />
           </div>
 
@@ -328,7 +328,7 @@ export const UserManagementView: React.FC = () => {
               value={newEmail}
               onChange={(e) => setNewEmail(e.target.value)}
               placeholder="e.g. user@college.edu"
-              className="w-full px-3 py-2 bg-[#080e1c] border border-[#1e3258] rounded-xl text-white"
+              className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-slate-900"
             />
           </div>
 
@@ -340,7 +340,7 @@ export const UserManagementView: React.FC = () => {
               <select
                 value={newRole}
                 onChange={(e) => setNewRole(e.target.value)}
-                className="w-full px-3 py-2 bg-[#080e1c] border border-[#1e3258] rounded-xl text-white font-mono"
+                className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 font-mono"
               >
                 <option value="coordinator">Coordinator (Attendance & Verification)</option>
                 <option value="recruiter_readonly">Recruiter (Assigned Company Read-Only)</option>
@@ -357,7 +357,7 @@ export const UserManagementView: React.FC = () => {
                 value={newPassword}
                 onChange={(e) => setNewPassword(e.target.value)}
                 placeholder="Default: admin123"
-                className="w-full px-3 py-2 bg-[#080e1c] border border-[#1e3258] rounded-xl text-white font-mono"
+                className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 font-mono"
               />
             </div>
           </div>
@@ -373,7 +373,7 @@ export const UserManagementView: React.FC = () => {
                 value={newCompanyId}
                 onChange={(e) => setNewCompanyId(e.target.value)}
                 placeholder="e.g. comp_techcorp or Global Tech"
-                className="w-full px-3 py-2 bg-[#080e1c] border border-[#1e3258] rounded-xl text-white font-mono"
+                className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 font-mono"
               />
             </div>
           )}
@@ -414,7 +414,7 @@ export const UserManagementView: React.FC = () => {
               value={studentRoll}
               onChange={(e) => setStudentRoll(e.target.value)}
               placeholder="e.g. BT210001 or PIPE_001"
-              className="w-full px-3 py-2 bg-[#080e1c] border border-[#1e3258] rounded-xl text-white font-mono"
+              className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 font-mono"
             />
           </div>
 
@@ -423,7 +423,7 @@ export const UserManagementView: React.FC = () => {
               <span className="text-[11px] font-bold uppercase text-emerald-400 block font-mono">
                 Generated Passcode (Active 24 Hours):
               </span>
-              <div className="flex items-center justify-between bg-[#080e1c] p-3 rounded-xl border border-emerald-800/60">
+              <div className="flex items-center justify-between bg-slate-50 p-3 rounded-xl border border-slate-200">
                 <span className="font-mono text-lg font-black text-white tracking-widest">
                   {issuedCode}
                 </span>
@@ -434,7 +434,7 @@ export const UserManagementView: React.FC = () => {
                     setCopied(true);
                     setTimeout(() => setCopied(false), 2000);
                   }}
-                  className="flex items-center gap-1 px-2.5 py-1 rounded bg-[#111d38] text-emerald-300 text-xs font-mono font-bold cursor-pointer"
+                  className="flex items-center gap-1 px-2.5 py-1 rounded bg-emerald-50 text-emerald-800 text-xs font-mono font-bold border border-emerald-200 cursor-pointer"
                 >
                   {copied ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
                   <span>{copied ? "Copied" : "Copy"}</span>

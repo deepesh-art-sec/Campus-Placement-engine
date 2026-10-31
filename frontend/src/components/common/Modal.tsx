@@ -47,33 +47,35 @@ export const Modal: React.FC<ModalProps> = ({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#040810]/80 backdrop-blur-md animate-in fade-in duration-200"
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm animate-in fade-in duration-200"
       onClick={onClose}
       role="dialog"
       aria-modal="true"
       aria-labelledby="modal-title"
     >
       <div
-        className={`bg-[#0d1527] w-full ${maxWidthStyles[maxWidth]} rounded-3xl shadow-2xl border border-[#1b2b4d] overflow-hidden flex flex-col max-h-[90vh] text-slate-100`}
+        className={`corporate-card w-full ${maxWidthStyles[maxWidth]} rounded-3xl shadow-2xl border border-[var(--border-card)] overflow-hidden flex flex-col max-h-[90vh] text-slate-100`}
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex items-center justify-between px-6 py-4 border-b border-[#1b2b4d]">
-          <h2 id="modal-title" className="text-lg font-bold text-white">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-[var(--border-card)] bg-[var(--bg-card)]">
+          <h2 id="modal-title" className="text-base sm:text-lg font-black text-white tracking-tight">
             {title}
           </h2>
           <button
             onClick={onClose}
-            className="p-1 rounded-lg text-slate-400 hover:text-white hover:bg-[#111d38] transition-colors cursor-pointer"
+            className="p-1 rounded-lg text-slate-400 hover:text-white hover:bg-[var(--bg-card-hover)] transition-colors cursor-pointer"
             aria-label="Close modal"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
-        <div className="p-6 overflow-y-auto flex-1">{children}</div>
+        <div className="p-6 overflow-y-auto flex-1 space-y-4 custom-scrollbar bg-[var(--bg-card)]">
+          {children}
+        </div>
 
         {footer && (
-          <div className="px-6 py-4 bg-[#080e1c] border-t border-[#1b2b4d] flex items-center justify-end gap-3">
+          <div className="px-6 py-4 bg-[var(--bg-input)] border-t border-[var(--border-card)] flex items-center justify-end gap-3 shrink-0">
             {footer}
           </div>
         )}

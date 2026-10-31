@@ -412,6 +412,32 @@ def update_student(
             "reason": req.reason or "Officer administrative modification",
         },
     )
+
+    try:
+        from backend.app.storage.mongodb import MongoSyncService
+        MongoSyncService.sync_document(
+            collection_name="students",
+            doc_id=student.id,
+            data={
+                "id": student.id,
+                "roll_no": student.roll_no,
+                "name": student.name,
+                "email": student.email,
+                "branch": student.branch,
+                "program": student.program,
+                "cgpa": student.cgpa,
+                "tenth_percentage": student.tenth_percentage,
+                "twelfth_percentage": student.twelfth_percentage,
+                "diploma_percentage": student.diploma_percentage,
+                "date_of_birth": student.date_of_birth.isoformat() if student.date_of_birth else None,
+                "gender": student.gender,
+                "category": student.category,
+                "version": student.version,
+            },
+        )
+    except Exception:
+        pass
+
     return {
         "id": student_id,
         "message": f"Student details for {student.name} ({student.roll_no}) successfully updated.",

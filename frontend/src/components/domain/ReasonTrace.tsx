@@ -59,9 +59,9 @@ export const ReasonTrace: React.FC<ReasonTraceProps> = ({
   };
 
   return (
-    <div className={`bg-[#0d1527] border border-[#1e3258] rounded-2xl overflow-hidden shadow-xl ${className}`}>
+    <div className={`bg-white border border-slate-200/90 rounded-2xl overflow-hidden shadow-xs text-slate-800 ${className}`}>
       {/* Header bar */}
-      <div className="p-4 bg-[#080e1c] border-b border-[#1e3258] flex flex-wrap items-center justify-between gap-3">
+      <div className="p-4 bg-slate-50 border-b border-slate-200 flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-3">
           <div
             className={`w-9 h-9 rounded-xl flex items-center justify-center font-bold text-sm ${
@@ -80,16 +80,16 @@ export const ReasonTrace: React.FC<ReasonTraceProps> = ({
               <span
                 className={`text-[10px] font-mono px-2 py-0.5 rounded-full font-bold ${
                   isEligible
-                    ? "bg-emerald-950 text-emerald-300 border border-emerald-700/50"
-                    : "bg-rose-950 text-rose-300 border border-rose-700/50"
+                    ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
+                    : "bg-rose-50 text-rose-700 border border-rose-200"
                 }`}
               >
                 {isEligible ? "ALL CRITERIA PASSED" : `${totalCount - passedCount} FAILED`}
               </span>
             </div>
-            <h4 className="text-sm font-bold text-white">
+            <h4 className="text-sm font-bold text-slate-900">
               {studentName ? `${studentName} ` : ""}
-              {rollNumber && <span className="text-cyan-400 font-mono">({rollNumber})</span>}
+              {rollNumber && <span className="text-blue-600 font-mono">({rollNumber})</span>}
               {driveName && <span className="text-slate-400"> for {driveName}</span>}
             </h4>
           </div>
@@ -99,7 +99,7 @@ export const ReasonTrace: React.FC<ReasonTraceProps> = ({
           <button
             type="button"
             onClick={handleCopyTrace}
-            className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-[#111d38] hover:bg-[#192b52] text-slate-300 hover:text-white text-xs font-semibold border border-[#1e3258] transition-all cursor-pointer"
+            className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-white hover:bg-slate-100 text-slate-700 hover:text-slate-900 shadow-2xs text-xs font-semibold border border-slate-200 transition-all cursor-pointer"
             title="Copy plain-text audit trace"
           >
             {copied ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
@@ -108,7 +108,7 @@ export const ReasonTrace: React.FC<ReasonTraceProps> = ({
           <button
             type="button"
             onClick={() => setExpanded(!expanded)}
-            className="p-1.5 rounded-lg bg-[#111d38] hover:bg-[#192b52] text-slate-400 hover:text-white border border-[#1e3258] transition-all cursor-pointer"
+            className="p-1.5 rounded-lg bg-white hover:bg-slate-100 text-slate-600 hover:text-slate-900 shadow-2xs border border-slate-200 transition-all cursor-pointer"
             aria-label={expanded ? "Collapse trace" : "Expand trace"}
           >
             {expanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
@@ -118,7 +118,7 @@ export const ReasonTrace: React.FC<ReasonTraceProps> = ({
 
       {/* Summary message */}
       {overallReason && (
-        <div className="px-4 py-2.5 bg-[#0a1224] border-b border-[#1e3258]/60 text-xs text-slate-300 flex items-center gap-2">
+        <div className="px-4 py-2.5 bg-slate-50/80 border-b border-slate-200 text-xs text-slate-700 flex items-center gap-2">
           <span className="font-semibold text-slate-400">Verdict:</span>
           <span>{overallReason}</span>
         </div>
@@ -126,7 +126,7 @@ export const ReasonTrace: React.FC<ReasonTraceProps> = ({
 
       {/* Expanded list of rules */}
       {expanded && (
-        <div className="divide-y divide-[#1e3258]/60 max-h-96 overflow-y-auto">
+        <div className="divide-y divide-slate-100 max-h-96 overflow-y-auto">
           {criteria.map((c, idx) => {
             const threshText = Array.isArray(c.threshold) ? c.threshold.join(", ") : String(c.threshold);
             const actualText = c.actualValue !== null && c.actualValue !== undefined ? String(c.actualValue) : "Not recorded";
@@ -135,7 +135,7 @@ export const ReasonTrace: React.FC<ReasonTraceProps> = ({
               <div
                 key={idx}
                 className={`p-3.5 flex items-start justify-between gap-3 transition-colors ${
-                  c.passed ? "hover:bg-[#0c1830]/50" : "bg-rose-950/10 hover:bg-rose-950/20"
+                  c.passed ? "hover:bg-slate-50" : "bg-rose-50/50 hover:bg-rose-50"
                 }`}
               >
                 <div className="flex items-start gap-3">
@@ -148,16 +148,16 @@ export const ReasonTrace: React.FC<ReasonTraceProps> = ({
                   </div>
                   <div>
                     <div className="flex items-center gap-2">
-                      <span className="text-xs font-bold text-white">{c.ruleName}</span>
+                      <span className="text-xs font-bold text-slate-900">{c.ruleName}</span>
                       {c.isPolicy && (
-                        <span className="text-[10px] uppercase font-mono px-1.5 py-0.2 bg-blue-950 text-blue-300 border border-blue-800/60 rounded">
+                        <span className="text-[10px] uppercase font-mono px-1.5 py-0.2 bg-blue-50 text-blue-700 border border-blue-200 rounded">
                           Placement Policy
                         </span>
                       )}
                     </div>
                     <div className="mt-1 flex flex-wrap items-center gap-2 text-xs font-mono">
                       <span className="text-slate-400">Required:</span>
-                      <span className="text-slate-200 bg-[#080e1c] px-2 py-0.5 rounded border border-[#1e3258]">
+                      <span className="text-slate-700 bg-slate-100 px-2 py-0.5 rounded border border-slate-200">
                         {c.operator} {threshText}
                       </span>
                       <span className="text-slate-500">|</span>
@@ -165,8 +165,8 @@ export const ReasonTrace: React.FC<ReasonTraceProps> = ({
                       <span
                         className={`px-2 py-0.5 rounded border ${
                           c.passed
-                            ? "text-emerald-300 bg-emerald-950/40 border-emerald-800/40"
-                            : "text-rose-300 bg-rose-950/40 border-rose-800/40"
+                            ? "text-emerald-700 bg-emerald-50 border-emerald-200 font-bold"
+                            : "text-rose-700 bg-rose-50 border-rose-200 font-bold"
                         }`}
                       >
                         {actualText}
@@ -182,8 +182,8 @@ export const ReasonTrace: React.FC<ReasonTraceProps> = ({
                   <span
                     className={`text-[10px] font-mono font-bold px-2 py-1 rounded-md border ${
                       c.passed
-                        ? "bg-emerald-950/50 text-emerald-300 border-emerald-700/60"
-                        : "bg-rose-950/50 text-rose-300 border-rose-700/60"
+                        ? "bg-emerald-50 text-emerald-700 border-emerald-200 font-bold"
+                        : "bg-rose-50 text-rose-700 border-rose-200 font-bold"
                     }`}
                   >
                     {c.passed ? "PASS" : "FAIL"}
@@ -196,14 +196,14 @@ export const ReasonTrace: React.FC<ReasonTraceProps> = ({
       )}
 
       {/* Progress Footer */}
-      <div className="p-3 bg-[#080e1c] border-t border-[#1e3258] flex items-center justify-between text-xs text-slate-400">
+      <div className="p-3 bg-slate-50 border-t border-slate-200 flex items-center justify-between text-xs text-slate-400">
         <div className="flex items-center gap-2">
           <span>Passing Criteria:</span>
-          <span className="font-mono font-bold text-slate-200">
+          <span className="font-mono font-bold text-slate-800">
             {passedCount} / {totalCount}
           </span>
         </div>
-        <div className="w-32 bg-[#111d38] h-2 rounded-full overflow-hidden border border-[#1e3258]">
+        <div className="w-32 bg-slate-200 h-2 rounded-full overflow-hidden border border-slate-200">
           <div
             className={`h-full transition-all duration-300 ${
               isEligible ? "bg-emerald-500" : "bg-rose-500"

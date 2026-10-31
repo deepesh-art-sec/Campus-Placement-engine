@@ -1,0 +1,107 @@
+{
+  "timestamp": "2026-10-31T00:02:34.841046",
+  "total_students_tested": 25000,
+  "phases": {
+    "phase_1_cohort_generation": {
+      "status": "PASS",
+      "duration_seconds": 0.549,
+      "students_generated": 25000,
+      "rate_per_sec": 45542.9,
+      "memory_delta_mb": 68.1
+    },
+    "phase_2_single_drive_eligibility": {
+      "status": "PASS",
+      "duration_seconds": 2.1008,
+      "total_evaluated": 25000,
+      "throughput_students_per_sec": 11900.3,
+      "latency_per_student_ms": 0.084,
+      "eligible_count": 3193,
+      "ineligible_count": 21807
+    },
+    "phase_3_multi_drive_matrix": {
+      "status": "PASS",
+      "duration_seconds": 7.1042,
+      "total_drives": 5,
+      "total_decisions": 125000,
+      "throughput_decisions_per_sec": 17595.3,
+      "latency_per_decision_ms": 0.0568
+    },
+    "phase_4_policy_enforcement": {
+      "status": "PASS",
+      "duration_seconds": 0.1357,
+      "total_checks": 25000,
+      "throughput_checks_per_sec": 184169.0,
+      "allowed_count": 23748,
+      "blocked_count": 1252,
+      "dispute_comparisons_verified": true
+    },
+    "phase_5_scheduling_solver": {
+      "status": "PASS",
+      "solver_status": "feasible_heuristic",
+      "duration_seconds": 6.263,
+      "shortlisted_input": 1000,
+      "allocated_slots": 1000,
+      "placed_candidates": 1000
+    },
+    "phase_6_clash_verification": {
+      "status": "PASS",
+      "is_valid": true,
+      "duration_seconds": 0.0025,
+      "student_clashes": 0,
+      "room_clashes": 0,
+      "panel_clashes": 0,
+      "buffer_violations": 0,
+      "capacity_violations": 0
+    },
+    "phase_7_cross_drive_clashes": {
+      "status": "PASS",
+      "duration_ms": 0.5,
+      "conflicts_identified": 150,
+      "options_generated_per_candidate": 3
+    },
+    "phase_8_nlp_extraction": {
+      "status": "PASS",
+      "duration_seconds": 0.139,
+      "total_documents_extracted": 150,
+      "throughput_docs_per_sec": 1079.5,
+      "sample_extracted_company": "CAMPUS",
+      "sample_extracted_ctc_lpa": 28.5
+    },
+    "phase_9_in_memory_orm": {
+      "status": "PASS",
+      "bulk_insert_seconds": 0.802,
+      "insert_throughput_rows_per_sec": 31179.7,
+      "point_lookup_avg_ms": 0.1215,
+      "aggregation_query_ms": 8.49
+    },
+    "phase_10_corporate_export": {
+      "status": "PASS",
+      "csv_duration_seconds": 0.059,
+      "csv_throughput_rows_per_sec": 426067.9,
+      "csv_size_mb": 1.8,
+      "xlsx_duration_seconds": 0.146,
+      "xlsx_sample_rows": 2500,
+      "xlsx_size_kb": 109.7
+    }
+  },
+  "integrity_verified": true,
+  "system_info": {
+    "python_version": "3.13.7",
+    "os": "win32",
+    "cpu_cores": 16,
+    "ram_total_gb": 15.69,
+    "ram_available_gb": 8.1
+  },
+  "database_safeguard": {
+    "db_filename": "placement_engine.db",
+    "initial_sha256": "0fb83f4ea0b325834f80c0da08ad719b7b463e0cc23b82e01c510126ad7b33c3",
+    "final_sha256": "0fb83f4ea0b325834f80c0da08ad719b7b463e0cc23b82e01c510126ad7b33c3",
+    "sha256_match": true,
+    "initial_bytes": 13500416,
+    "final_bytes": 13500416,
+    "bytes_match": true,
+    "timestamp_match": true,
+    "verdict": "100% ZERO-MUTATION GUARANTEED"
+  },
+  "peak_memory_mb": 1807.8
+}

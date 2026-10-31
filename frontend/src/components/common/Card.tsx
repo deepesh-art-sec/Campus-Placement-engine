@@ -15,7 +15,7 @@ export const CardHeader: React.FC<CardHeaderProps> = ({
   className = "",
   children,
 }) => (
-  <div className={`p-4 sm:p-5 border-b border-[#1b2b4d] flex items-center justify-between gap-3 ${className}`}>
+  <div className={`p-4 sm:p-5 border-b border-[var(--border-card)] flex items-center justify-between gap-3 ${className}`}>
     <div>
       {typeof title === "string" ? (
         <h3 className="text-base font-black text-white tracking-tight">{title}</h3>
@@ -38,7 +38,7 @@ export const CardFooter: React.FC<{ className?: string; children?: React.ReactNo
   className = "",
   children,
 }) => (
-  <div className={`p-3 sm:p-4 bg-[#080e1c] border-t border-[#1b2b4d] text-xs text-slate-400 ${className}`}>
+  <div className={`p-3 sm:p-4 bg-[var(--bg-input)] border-t border-[var(--border-card)] text-xs text-slate-400 ${className}`}>
     {children}
   </div>
 );
@@ -63,18 +63,18 @@ export const Card: React.FC<CardProps> = ({
 }) => {
   const glowClasses = {
     none: "",
-    emerald: "ring-1 ring-emerald-500/30 shadow-lg shadow-emerald-950/30",
-    cyan: "ring-1 ring-cyan-500/30 shadow-lg shadow-cyan-950/30",
-    blue: "ring-1 ring-blue-500/30 shadow-lg shadow-blue-950/30",
+    emerald: "ring-1 ring-emerald-500/40 shadow-lg shadow-emerald-950/50",
+    cyan: "ring-1 ring-cyan-500/40 shadow-lg shadow-cyan-950/50",
+    blue: "ring-1 ring-blue-500/40 shadow-lg shadow-blue-950/50",
   }[glow];
 
   return (
     <div
-      className={`bg-[#0d1527] border border-[#1e3258] rounded-2xl shadow-md text-slate-100 overflow-hidden ${glowClasses} ${className}`}
+      className={`corporate-card overflow-hidden text-slate-100 ${glowClasses} ${className}`}
       {...props}
     >
       {(title || action) && (
-        <div className="p-4 sm:p-5 border-b border-[#1b2b4d] flex items-center justify-between gap-3">
+        <div className="p-4 sm:p-5 border-b border-[var(--border-card)] flex items-center justify-between gap-3">
           <div>
             {typeof title === "string" ? (
               <h3 className="text-base font-black text-white tracking-tight">{title}</h3>
@@ -90,7 +90,7 @@ export const Card: React.FC<CardProps> = ({
       {children}
 
       {footer && (
-        <div className="p-3 sm:p-4 bg-[#080e1c] border-t border-[#1b2b4d] text-xs text-slate-400">
+        <div className="p-3 sm:p-4 bg-[var(--bg-input)] border-t border-[var(--border-card)] text-xs text-slate-400">
           {footer}
         </div>
       )}

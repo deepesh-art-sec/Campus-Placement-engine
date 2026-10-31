@@ -514,7 +514,7 @@ table td {
   background-color: #0B1326 !important;
   background: #0B1326 !important;
   opacity: 1 !important;
-  z-index: 40 !important;
+  z-index: 50 !important;
   min-width: 240px !important;
   max-width: 240px !important;
   width: 240px !important;
@@ -522,6 +522,10 @@ table td {
   border-right: 2px solid var(--border-card, #16264C) !important;
   white-space: nowrap !important;
   padding: 0 !important;
+  isolation: isolate !important;
+  transform: translate3d(0, 0, 0) !important;
+  -webkit-transform: translate3d(0, 0, 0) !important;
+  background-clip: padding-box !important;
 }
 
 .schedule-sticky-col {
@@ -530,13 +534,17 @@ table td {
   background-color: #0B1326 !important;
   background: #0B1326 !important;
   opacity: 1 !important;
-  z-index: 30 !important;
+  z-index: 45 !important;
   min-width: 240px !important;
   max-width: 240px !important;
   width: 240px !important;
   box-shadow: 6px 0 16px -2px rgba(0, 0, 0, 0.95) !important;
   border-right: 2px solid var(--border-card, #16264C) !important;
   padding: 0 !important;
+  isolation: isolate !important;
+  transform: translate3d(0, 0, 0) !important;
+  -webkit-transform: translate3d(0, 0, 0) !important;
+  background-clip: padding-box !important;
 }
 
 .schedule-time-header {

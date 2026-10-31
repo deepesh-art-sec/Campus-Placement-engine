@@ -12,6 +12,8 @@ version = "1.0.0"
 description = "College Placement Eligibility, Audit & Clash-Free Scheduling Engine"
 readme = "README.md"
 requires-python = ">=3.11"
+authors = [{ name = "Deepesh-art-sec", email = "deepeshrathore128@gmail.com" }]
+maintainers = [{ name = "Deepesh-art-sec" }]
 dependencies = [
     "fastapi>=0.110.0",
     "uvicorn[standard]>=0.28.0",
@@ -29,6 +31,8 @@ dependencies = [
     "pillow>=10.0.0",
     "python-multipart>=0.0.9",
     "reportlab>=4.1.0",
+    "pymongo>=4.6.0",
+    "dnspython>=2.6.0",
 ]
 
 [project.optional-dependencies]

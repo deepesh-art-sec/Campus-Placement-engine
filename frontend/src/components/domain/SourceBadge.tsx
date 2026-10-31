@@ -27,38 +27,38 @@ export const SourceBadge: React.FC<SourceBadgeProps> = ({
       case "erp":
         return {
           label: "College ERP",
-          icon: <Database className="w-3 h-3 text-cyan-400" />,
-          color: "bg-cyan-950/70 text-cyan-300 border-cyan-800/60",
+          icon: <Database className="w-3 h-3 text-sky-600" />,
+          color: "bg-sky-50 text-sky-700 border-sky-200",
         };
       case "csv_import":
         return {
           label: "CSV Upload",
-          icon: <UploadCloud className="w-3 h-3 text-emerald-400" />,
-          color: "bg-emerald-950/70 text-emerald-300 border-emerald-800/60",
+          icon: <UploadCloud className="w-3 h-3 text-emerald-600" />,
+          color: "bg-emerald-50 text-emerald-700 border-emerald-200",
         };
       case "coordinator_verified":
         return {
           label: "Coordinator Verified",
-          icon: <UserCheck className="w-3 h-3 text-teal-400" />,
-          color: "bg-teal-950/70 text-teal-300 border-teal-800/60",
+          icon: <UserCheck className="w-3 h-3 text-teal-600" />,
+          color: "bg-teal-50 text-teal-700 border-teal-200",
         };
       case "officer_override":
         return {
           label: "Officer Override",
-          icon: <ShieldAlert className="w-3 h-3 text-amber-400" />,
-          color: "bg-amber-950/70 text-amber-300 border-amber-800/60",
+          icon: <ShieldAlert className="w-3 h-3 text-amber-600" />,
+          color: "bg-amber-50 text-amber-700 border-amber-200",
         };
       case "self_reported":
         return {
           label: "Student Submission",
-          icon: <UserCheck className="w-3 h-3 text-indigo-400" />,
-          color: "bg-indigo-950/70 text-indigo-300 border-indigo-800/60",
+          icon: <UserCheck className="w-3 h-3 text-indigo-600" />,
+          color: "bg-indigo-50 text-indigo-700 border-indigo-200",
         };
       default:
         return {
           label: norm.replace(/_/g, " "),
-          icon: <Cpu className="w-3 h-3 text-slate-400" />,
-          color: "bg-slate-900 text-slate-300 border-slate-700/60",
+          icon: <Cpu className="w-3 h-3 text-blue-600" />,
+          color: "bg-blue-50 text-blue-700 border-blue-200",
         };
     }
   };

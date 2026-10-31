@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { AuthProvider, useAuth } from "./context/AuthContext";
+import { ThemeProvider } from "./context/ThemeContext";
 import { Header } from "./components/layout/Header";
 import { Navigation, NavTabId } from "./components/layout/Navigation";
 import { CoordinatorNavigation, CoordinatorTabId } from "./components/layout/CoordinatorNavigation";
@@ -10,14 +11,12 @@ import { DrivesDashboard } from "./views/officer/DrivesDashboard";
 import { DriveCreationReview } from "./views/officer/DriveCreationReview";
 import { AnnouncementsLibraryView } from "./views/officer/AnnouncementsLibraryView";
 import { StudentRegistryView } from "./views/officer/StudentRegistryView";
-import { RuleEditorView } from "./views/officer/RuleEditorView";
 import { PolicyEditorView } from "./views/officer/PolicyEditorView";
 import { PolicySimulatorView } from "./views/officer/PolicySimulatorView";
 import { EligibilityTableView } from "./views/officer/EligibilityTableView";
 import { ScheduleBoardView } from "./views/officer/ScheduleBoardView";
 import { WhatIfPublishView } from "./views/officer/WhatIfPublishView";
 import { ResultEntryView } from "./views/officer/ResultEntryView";
-import { DisputeComparisonView } from "./views/officer/DisputeComparisonView";
 import { CompanyExportView } from "./views/officer/CompanyExportView";
 import { OfficerMessageBoxView } from "./views/officer/OfficerMessageBoxView";
 import { UsersRolesView } from "./views/officer/UsersRolesView";
@@ -43,7 +42,8 @@ import { CoordinatorNotificationsView } from "./views/coordinator/CoordinatorNot
 import { StudentPortal } from "./views/student/StudentPortal";
 import { RecruiterPortal } from "./views/recruiter/RecruiterPortal";
 import { AlertBanner } from "./components/common/AlertBanner";
-import { CheckCircle2 } from "lucide-react";
+import { Watermark } from "./components/common/Watermark";
+import { CheckCircle2, ShieldCheck, Building2, Sparkles } from "lucide-react";
 
 const MainContent: React.FC = () => {
   const { user, login, studentLogin, error, clearError } = useAuth();
@@ -72,7 +72,8 @@ const MainContent: React.FC = () => {
   };
 
   const handleCoordTabSelect = (tab: string, driveId?: string) => {
-    setCoordTab(tab as CoordinatorTabId);
+    const normalized = (tab === "on_the_day" || tab === "attendance") ? "ontheday" : (tab as CoordinatorTabId);
+    setCoordTab(normalized);
     if (driveId) setCoordDriveId(driveId);
   };
 
@@ -110,57 +111,68 @@ const MainContent: React.FC = () => {
     }
   };
 
-  // If not logged in, render role-specific login portal
+  // If not logged in, render cyber recruitment SaaS login portal
   if (!user) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-[#040810] via-[#070e1c] to-[#0a162d] flex flex-col justify-between text-slate-100 selection:bg-emerald-500 selection:text-white relative overflow-hidden">
-        {/* Ambient Glow */}
-        <div className="absolute top-[-10%] left-[-10%] w-[500px] h-[500px] bg-emerald-500/10 rounded-full blur-3xl pointer-events-none" />
-        <div className="absolute bottom-[-10%] right-[-10%] w-[600px] h-[600px] bg-blue-600/10 rounded-full blur-3xl pointer-events-none" />
+      <div className="min-h-screen bg-[#060B16] flex flex-col justify-between text-slate-100 selection:bg-cyan-500 selection:text-black relative overflow-hidden font-sans">
+        {/* Subtle Cyber Neon Lighting Motif */}
+        <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-cyan-500/10 rounded-full blur-3xl pointer-events-none" />
+        <div className="absolute bottom-0 left-0 w-[500px] h-[500px] bg-blue-600/10 rounded-full blur-3xl pointer-events-none" />
 
-        {/* Top Status Bar */}
-        <div className="bg-[#040810]/90 backdrop-blur-md px-4 py-2 text-xs font-medium text-center border-b border-[#1b2b4d] flex items-center justify-center gap-3">
-          <span className="flex items-center gap-1.5 text-emerald-400 font-mono text-[11px] font-bold">
-            <CheckCircle2 className="w-3.5 h-3.5" />
-            CAMPUS PLACEMENT ENGINE
-          </span>
-          <span className="text-slate-600 hidden sm:inline">•</span>
-          <span className="text-slate-400 text-[11px] hidden sm:inline">
-            Deterministic Eligibility & Constraint Scheduling
-          </span>
+        {/* Top Institutional Header */}
+        <div className="bg-[#080E1C]/90 backdrop-blur-md px-4 py-2.5 text-xs font-medium text-center border-b border-[#142242] flex items-center justify-between max-w-7xl mx-auto w-full">
+          <div className="flex items-center gap-2">
+            <div className="w-6 h-6 rounded-lg bg-gradient-to-tr from-blue-600 to-cyan-500 flex items-center justify-center text-white font-black text-xs shadow-md shadow-cyan-500/30">
+              PE
+            </div>
+            <span className="font-bold tracking-tight text-white text-xs">
+              Placement Engine <span className="text-cyan-400 font-normal">| Cyber Recruitment Platform</span>
+            </span>
+          </div>
+          <div className="flex items-center gap-3">
+            <span className="hidden sm:inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-300 bg-emerald-950/80 border border-emerald-700/60 px-2 py-0.5 rounded-full">
+              <CheckCircle2 className="w-3 h-3 text-emerald-400" />
+              100% Deterministic Engine
+            </span>
+            <span className="text-[11px] text-slate-400 hidden md:inline">
+              ISO / DPDP Institutional Compliant
+            </span>
+          </div>
         </div>
 
-        {/* Main Card Container */}
-        <div className="flex-1 flex items-center justify-center p-4 sm:p-6 my-auto">
-          <div className="w-full max-w-md bg-[#0d1527]/95 backdrop-blur-xl rounded-3xl p-8 sm:p-10 shadow-2xl border border-[#1b2b4d] text-slate-100 space-y-6">
+        {/* Main Login Card Container */}
+        <div className="flex-1 flex items-center justify-center p-4 sm:p-6 my-auto z-10">
+          <div className="w-full max-w-md corporate-card rounded-3xl p-8 sm:p-10 shadow-2xl border border-[var(--border-card)] text-white space-y-6">
             {/* Header Branding */}
             <div className="text-center space-y-2">
-              <div className="w-14 h-14 rounded-2xl bg-gradient-to-tr from-blue-700 via-teal-600 to-emerald-500 flex items-center justify-center text-white font-black text-2xl mx-auto shadow-xl shadow-emerald-500/20 ring-4 ring-emerald-500/20">PE</div>
-              <h2 className="text-2xl sm:text-3xl font-black text-white tracking-tight">
+              <div className="w-14 h-14 rounded-2xl bg-gradient-to-tr from-blue-600 to-cyan-500 text-white flex items-center justify-center font-black text-2xl mx-auto shadow-lg shadow-cyan-500/30 ring-4 ring-cyan-500/20">
+                PE
+              </div>
+              <h2 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
                 Placement Engine
               </h2>
               <div className="flex items-center justify-center gap-2">
-                <span className="text-[11px] font-bold uppercase tracking-wider px-2.5 py-0.5 bg-blue-950/80 text-blue-300 rounded-full border border-blue-800/60">
-                  Eligibility & Scheduling Engine
+                <span className="text-[10px] font-bold uppercase tracking-wider px-2.5 py-0.5 bg-blue-950/80 text-cyan-300 rounded-full border border-cyan-500/40">
+                  Cyber SaaS Suite
                 </span>
-                <span className="text-[11px] font-bold px-2.5 py-0.5 bg-emerald-950/80 text-emerald-300 rounded-full border border-emerald-800/60 flex items-center gap-1">
-                  <CheckCircle2 className="w-3 h-3 text-emerald-400" />
+                <span className="text-[10px] font-bold px-2.5 py-0.5 bg-emerald-950/80 text-emerald-300 rounded-full border border-emerald-700/60 flex items-center gap-1">
+                  <ShieldCheck className="w-3 h-3 text-emerald-400" />
                   0 Clashes Verified
                 </span>
               </div>
               <p className="text-xs text-slate-400 pt-1">
-                One student, three drives, one Tuesday. Complete deterministic eligibility & constraint scheduling.
+                Unified institutional placement, deterministic eligibility evaluation & conflict-free scheduling.
               </p>
             </div>
 
             {/* Role Switcher Tabs */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5 bg-[#080e1c] p-1.5 rounded-2xl border border-[#1b2b4d]">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-1 bg-[#0A1122] p-1.5 rounded-2xl border border-[#16264C]">
               <button
                 type="button"
                 onClick={() => handleRoleSwitch("officer")}
                 className={`py-2 text-[11px] font-bold rounded-xl transition-all cursor-pointer ${
                   authRole === "officer"
-                    ? "bg-gradient-to-r from-blue-700 to-emerald-600 text-white shadow-sm shadow-emerald-900/40"
+                    ? "bg-gradient-to-r from-blue-600 to-cyan-600 text-white shadow-md shadow-cyan-500/20"
                     : "text-slate-400 hover:text-white"
                 }`}
               >
@@ -171,7 +183,7 @@ const MainContent: React.FC = () => {
                 onClick={() => handleRoleSwitch("coordinator")}
                 className={`py-2 text-[11px] font-bold rounded-xl transition-all cursor-pointer ${
                   authRole === "coordinator"
-                    ? "bg-gradient-to-r from-indigo-700 to-purple-600 text-white shadow-sm shadow-purple-900/40"
+                    ? "bg-gradient-to-r from-blue-600 to-cyan-600 text-white shadow-md shadow-cyan-500/20"
                     : "text-slate-400 hover:text-white"
                 }`}
               >
@@ -182,7 +194,7 @@ const MainContent: React.FC = () => {
                 onClick={() => handleRoleSwitch("student")}
                 className={`py-2 text-[11px] font-bold rounded-xl transition-all cursor-pointer ${
                   authRole === "student"
-                    ? "bg-gradient-to-r from-blue-700 to-emerald-600 text-white shadow-sm shadow-emerald-900/40"
+                    ? "bg-gradient-to-r from-blue-600 to-cyan-600 text-white shadow-md shadow-cyan-500/20"
                     : "text-slate-400 hover:text-white"
                 }`}
               >
@@ -193,7 +205,7 @@ const MainContent: React.FC = () => {
                 onClick={() => handleRoleSwitch("recruiter")}
                 className={`py-2 text-[11px] font-bold rounded-xl transition-all cursor-pointer ${
                   authRole === "recruiter"
-                    ? "bg-gradient-to-r from-blue-700 to-emerald-600 text-white shadow-sm shadow-emerald-900/40"
+                    ? "bg-gradient-to-r from-blue-600 to-cyan-600 text-white shadow-md shadow-cyan-500/20"
                     : "text-slate-400 hover:text-white"
                 }`}
               >
@@ -207,7 +219,7 @@ const MainContent: React.FC = () => {
               {authRole === "student" ? (
                 <>
                   <div>
-                    <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1">
+                    <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1.5">
                       Roll Number
                     </label>
                     <input
@@ -215,20 +227,20 @@ const MainContent: React.FC = () => {
                       required
                       value={studentRoll}
                       onChange={(e) => setStudentRoll(e.target.value)}
-                      className="w-full px-4 py-2.5 bg-[#080e1c] border border-[#1e3258] rounded-xl text-sm font-semibold text-white focus:bg-[#0d1527] focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-all"
+                      className="w-full px-4 py-2.5 bg-[#0A1122] border border-[#1A2E56] rounded-xl text-sm font-semibold text-white focus:outline-none focus:border-cyan-400 focus:ring-2 focus:ring-cyan-500/20 transition-all placeholder-slate-500"
                       placeholder="e.g. BT210001"
                     />
                   </div>
                   <div>
-                    <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1">
-                      Access Code / Password
+                    <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1.5">
+                      Access Code / PIN
                     </label>
                     <input
                       type="password"
                       required
                       value={studentCode}
                       onChange={(e) => setStudentCode(e.target.value)}
-                      className="w-full px-4 py-2.5 bg-[#080e1c] border border-[#1e3258] rounded-xl text-sm font-semibold text-white focus:bg-[#0d1527] focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-all"
+                      className="w-full px-4 py-2.5 bg-[#0A1122] border border-[#1A2E56] rounded-xl text-sm font-semibold text-white focus:outline-none focus:border-cyan-400 focus:ring-2 focus:ring-cyan-500/20 transition-all placeholder-slate-500"
                       placeholder="Default: 123456"
                     />
                   </div>
@@ -236,20 +248,20 @@ const MainContent: React.FC = () => {
               ) : (
                 <>
                   <div>
-                    <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1">
-                      Username
+                    <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1.5">
+                      Username / Email
                     </label>
                     <input
                       type="text"
                       required
                       value={username}
                       onChange={(e) => setUsername(e.target.value)}
-                      className="w-full px-4 py-2.5 bg-[#080e1c] border border-[#1e3258] rounded-xl text-sm font-semibold text-white focus:bg-[#0d1527] focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all"
+                      className="w-full px-4 py-2.5 bg-[#0A1122] border border-[#1A2E56] rounded-xl text-sm font-semibold text-white focus:outline-none focus:border-cyan-400 focus:ring-2 focus:ring-cyan-500/20 transition-all placeholder-slate-500"
                       placeholder={`e.g. ${authRole}`}
                     />
                   </div>
                   <div>
-                    <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1">
+                    <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1.5">
                       Password
                     </label>
                     <input
@@ -257,7 +269,7 @@ const MainContent: React.FC = () => {
                       required
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
-                      className="w-full px-4 py-2.5 bg-[#080e1c] border border-[#1e3258] rounded-xl text-sm font-semibold text-white focus:bg-[#0d1527] focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all"
+                      className="w-full px-4 py-2.5 bg-[#0A1122] border border-[#1A2E56] rounded-xl text-sm font-semibold text-white focus:outline-none focus:border-cyan-400 focus:ring-2 focus:ring-cyan-500/20 transition-all placeholder-slate-500"
                     />
                   </div>
                 </>
@@ -266,7 +278,7 @@ const MainContent: React.FC = () => {
               <button
                 type="submit"
                 disabled={authLoading}
-                className="w-full py-3 bg-gradient-to-r from-blue-600 via-teal-600 to-emerald-600 hover:from-blue-500 hover:via-teal-500 hover:to-emerald-500 text-white font-bold text-sm rounded-xl shadow-lg shadow-emerald-900/30 border border-emerald-400/30 transition-all cursor-pointer disabled:opacity-50"
+                className="w-full py-3 bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-500 hover:to-cyan-500 active:from-blue-700 active:to-cyan-700 text-white font-bold text-sm rounded-xl shadow-lg shadow-cyan-500/25 transition-all cursor-pointer disabled:opacity-50"
               >
                 {authLoading ? "Authenticating..." : `Sign in as ${authRole}`}
               </button>
@@ -274,9 +286,20 @@ const MainContent: React.FC = () => {
           </div>
         </div>
 
-        {/* Footer */}
-        <div className="p-4 text-center text-xs text-slate-500 border-t border-[#1b2b4d] bg-[#040810]/80 backdrop-blur-md">
-          Institutional Campus Placement Engine • High-Performance Deterministic Scheduling
+        {/* Footer with Author Watermark */}
+        <div className="p-4 text-center text-xs text-slate-400 border-t border-[#142242] bg-[#080E1C]/80 backdrop-blur-md flex flex-col sm:flex-row items-center justify-center gap-2">
+          <span>Institutional Campus Placement Engine • Cyber Recruitment Platform</span>
+          <span className="hidden sm:inline text-slate-600">•</span>
+          <a
+            href="https://github.com/deepesh-art-sec"
+            target="_blank"
+            rel="noopener noreferrer"
+            title="Repository Author"
+            className="text-cyan-400 hover:text-cyan-300 font-mono font-bold inline-flex items-center gap-1.5 transition-colors"
+          >
+            <ShieldCheck className="w-3.5 h-3.5" />
+            Made by Deepesh-art-sec
+          </a>
         </div>
       </div>
     );
@@ -285,8 +308,18 @@ const MainContent: React.FC = () => {
   // 1. Candidate Portal
   if (user.role === "student") {
     return (
-      <div className="h-screen h-[100dvh] max-h-screen overflow-hidden bg-[#060b14] text-slate-100 flex flex-col">
-        <Header onNavigateToAudit={() => {}} />
+      <div className="h-screen h-[100dvh] max-h-screen overflow-hidden corporate-canvas flex flex-col font-sans">
+        <Header
+          onNavigateToAudit={() => {
+            window.dispatchEvent(new CustomEvent("navigate-student-tab", { detail: "notifications" }));
+          }}
+          onOpenAlerts={() => {
+            window.dispatchEvent(new CustomEvent("navigate-student-tab", { detail: "notifications" }));
+          }}
+          onOpenMessageBox={() => {
+            window.dispatchEvent(new CustomEvent("navigate-student-tab", { detail: "notifications" }));
+          }}
+        />
         <div className="flex-1 flex overflow-hidden min-h-0 min-w-0 w-full relative">
           <StudentPortal />
         </div>
@@ -297,7 +330,7 @@ const MainContent: React.FC = () => {
   // 2. Recruiter Portal
   if (user.role === "recruiter_readonly" || user.role === "recruiter") {
     return (
-      <div className="h-screen h-[100dvh] max-h-screen overflow-hidden bg-[#060b14] text-slate-100 flex flex-col">
+      <div className="h-screen h-[100dvh] max-h-screen overflow-hidden corporate-canvas flex flex-col font-sans">
         <Header onNavigateToAudit={() => {}} />
         <div className="flex-1 flex overflow-hidden min-h-0 min-w-0 w-full relative">
           <RecruiterPortal />
@@ -309,17 +342,19 @@ const MainContent: React.FC = () => {
   // 3. Coordinator Dashboard (Modules 1 - 12)
   if (user.role === "coordinator") {
     return (
-      <div className="h-screen h-[100dvh] max-h-screen overflow-hidden bg-[#060b14] text-slate-100 flex flex-col">
-        <Header
-          onOpenTour={() => setIsTourOpen(true)}
-          onNavigateToAudit={() => setCoordTab("notifications")}
+      <div className="h-screen h-[100dvh] max-h-screen overflow-hidden corporate-canvas flex flex-row font-sans">
+        <CoordinatorNavigation
+          activeTab={coordTab}
+          onSelectTab={setCoordTab}
         />
-        <div className="flex-1 flex overflow-hidden min-h-0 min-w-0 w-full relative">
-          <CoordinatorNavigation
-            activeTab={coordTab}
-            onSelectTab={setCoordTab}
+        <div className="flex-1 flex flex-col min-w-0 h-full overflow-hidden">
+          <Header
+            onOpenTour={() => setIsTourOpen(true)}
+            onNavigateToAudit={() => setCoordTab("notifications")}
+            onOpenAlerts={() => setCoordTab("notifications")}
+            onOpenMessageBox={() => setCoordTab("notifications")}
           />
-          <main className="flex-1 min-w-0 p-2.5 sm:p-4 md:p-6 lg:p-8 overflow-y-auto max-w-full">
+          <main className="flex-1 min-w-0 p-4 sm:p-6 lg:p-7 overflow-y-auto max-w-full corporate-canvas">
             {coordTab === "overview" && (
               <CoordinatorOverviewView onNavigateTab={handleCoordTabSelect} />
             )}
@@ -334,7 +369,7 @@ const MainContent: React.FC = () => {
             {coordTab === "clashes" && <CoordinatorClashesView />}
             {coordTab === "results" && <CoordinatorResultEntryView />}
             {coordTab === "communication" && <CoordinatorCommunicationView />}
-            {coordTab === "ontheday" && (
+            {(coordTab === "ontheday" || (coordTab as string) === "attendance") && (
               <CoordinatorOnTheDayView initialDriveId={coordDriveId} />
             )}
             {coordTab === "requests" && <CoordinatorRequestsView />}
@@ -358,21 +393,26 @@ const MainContent: React.FC = () => {
 
   // 4. Officer Workspace (Full Executive Authority)
   return (
-    <div className="h-screen h-[100dvh] max-h-screen overflow-hidden bg-[#060b14] text-slate-100 flex flex-col">
-      <Header
-        onOpenTour={() => setIsTourOpen(true)}
-        onNavigateToAudit={() => setActiveTab("offline_audit")}
-        onOpenMessageBox={() => setActiveTab("message_box")}
+    <div className="h-screen h-[100dvh] max-h-screen overflow-hidden corporate-canvas flex flex-row font-sans">
+      <Navigation
+        activeTab={activeTab}
+        onSelectTab={handleTabSelect}
+        userRole={user.role}
       />
-      <div className="flex-1 flex overflow-hidden min-h-0 min-w-0 w-full relative">
-        <Navigation
-          activeTab={activeTab}
-          onSelectTab={handleTabSelect}
-          userRole={user.role}
+
+      <div className="flex-1 flex flex-col min-w-0 h-full overflow-hidden">
+        <Header
+          onOpenTour={() => setIsTourOpen(true)}
+          onNavigateToAudit={() => setActiveTab("offline_audit")}
+          onOpenAlerts={() => setActiveTab("message_box")}
+          onOpenMessageBox={() => setActiveTab("message_box")}
         />
 
-        <main className="flex-1 min-w-0 p-2.5 sm:p-4 md:p-6 lg:p-8 overflow-y-auto max-w-full">
+        <main className="flex-1 min-w-0 p-4 sm:p-6 lg:p-7 overflow-y-auto max-w-full corporate-canvas">
           {activeTab === "message_box" && <OfficerMessageBoxView />}
+          {activeTab === "attendance" && (
+            <CoordinatorOnTheDayView initialDriveId={activeDriveId} />
+          )}
           {activeTab === "drives" && (
             <DrivesDashboard onNavigateTab={handleTabSelect} />
           )}
@@ -395,7 +435,6 @@ const MainContent: React.FC = () => {
             />
           )}
           {activeTab === "students" && <StudentRegistryView />}
-          {activeTab === "rule_editor" && <RuleEditorView />}
           {activeTab === "policies" && <PolicyEditorView />}
           {activeTab === "policy_simulator" && <PolicySimulatorView />}
           {activeTab === "eligibility" && (
@@ -408,7 +447,6 @@ const MainContent: React.FC = () => {
             <WhatIfPublishView initialDriveId={activeDriveId} />
           )}
           {activeTab === "results" && <ResultEntryView />}
-          {activeTab === "dispute" && <DisputeComparisonView />}
           {activeTab === "export" && <CompanyExportView />}
           {activeTab === "users_roles" && <UsersRolesView />}
           {activeTab === "audit_backup" && <AuditBackupSettingsView />}
@@ -428,9 +466,12 @@ const MainContent: React.FC = () => {
 
 export const App: React.FC = () => {
   return (
-    <AuthProvider>
-      <MainContent />
-    </AuthProvider>
+    <ThemeProvider>
+      <AuthProvider>
+        <MainContent />
+        <Watermark />
+      </AuthProvider>
+    </ThemeProvider>
   );
 };
 

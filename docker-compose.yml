@@ -1,0 +1,40 @@
+version: '3.8'
+
+services:
+  # MongoDB Document Database for Collegiate Placement Platform
+  mongodb:
+    image: mongo:7.0
+    container_name: placement_mongodb
+    restart: unless-stopped
+    ports:
+      - "27017:27017"
+    environment:
+      - MONGO_INITDB_DATABASE=placement_engine
+    volumes:
+      - mongo_data:/data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.runCommand('ping').ok"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Optional Web-Based MongoDB GUI Admin Panel (Access at http://localhost:8081)
+  mongo-express:
+    image: mongo-express:1.0.2
+    container_name: placement_mongo_express
+    restart: unless-stopped
+    ports:
+      - "8081:8081"
+    environment:
+      - ME_CONFIG_MONGODB_SERVER=mongodb
+      - ME_CONFIG_MONGODB_PORT=27017
+      - ME_CONFIG_MONGODB_ENABLE_ADMIN=true
+      - ME_CONFIG_BASICAUTH_USERNAME=admin
+      - ME_CONFIG_BASICAUTH_PASSWORD=placement_admin
+    depends_on:
+      mongodb:
+        condition: service_healthy
+
+volumes:
+  mongo_data:
+    driver: local

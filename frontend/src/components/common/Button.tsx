@@ -24,27 +24,27 @@ export const Button: React.FC<ButtonProps> = ({
   ...props
 }) => {
   const baseClasses =
-    "inline-flex items-center justify-center font-bold transition-all rounded-xl cursor-pointer select-none focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-[#060b14] disabled:opacity-50 disabled:cursor-not-allowed disabled:pointer-events-none";
+    "inline-flex items-center justify-center font-semibold transition-all rounded-xl cursor-pointer select-none focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-[#060B16] disabled:opacity-50 disabled:cursor-not-allowed disabled:pointer-events-none";
 
   const sizeClasses = {
     sm: "px-3 py-1.5 text-xs min-h-[36px] sm:min-h-[32px] gap-1.5",
-    md: "px-4 py-2 text-xs sm:text-sm min-h-[44px] gap-2", // Mobile touch target >= 44px
+    md: "px-4 py-2 text-xs sm:text-sm min-h-[44px] gap-2",
     lg: "px-6 py-3 text-sm sm:text-base min-h-[48px] gap-2.5",
   }[size];
 
   const variantClasses = {
     primary:
-      "bg-gradient-to-r from-blue-700 via-teal-600 to-emerald-600 hover:from-blue-600 hover:via-teal-500 hover:to-emerald-500 text-white border border-emerald-400/30 shadow-md shadow-emerald-950/40 focus:ring-emerald-500",
+      "bg-[#2563EB] hover:bg-[#1D4ED8] active:bg-[#1E40AF] text-white shadow-md shadow-blue-600/30 focus:ring-cyan-400",
     secondary:
-      "bg-[#111d38] hover:bg-[#17264a] text-slate-100 border border-[#1e3258] hover:border-emerald-500/50 shadow-sm focus:ring-blue-500",
+      "bg-[var(--bg-input)] hover:bg-[var(--bg-card-hover)] text-slate-200 hover:text-white border border-[var(--border-card)] hover:border-cyan-400/60 shadow-xs focus:ring-cyan-400",
     emerald:
-      "bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white border border-emerald-400/40 shadow-md shadow-emerald-950/40 focus:ring-emerald-400",
+      "bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white shadow-md shadow-emerald-600/30 focus:ring-emerald-500",
     danger:
-      "bg-gradient-to-r from-rose-700 to-red-600 hover:from-rose-600 hover:to-red-500 text-white border border-rose-400/30 shadow-md shadow-rose-950/40 focus:ring-rose-500",
+      "bg-rose-600 hover:bg-rose-700 active:bg-rose-800 text-white shadow-md shadow-rose-600/30 focus:ring-rose-500",
     outline:
-      "bg-transparent hover:bg-[#111d38] text-slate-300 hover:text-white border border-[#1e3258] hover:border-slate-500 focus:ring-slate-400",
+      "bg-transparent hover:bg-white/5 text-slate-200 hover:text-white border border-[var(--border-card)] hover:border-cyan-400 focus:ring-cyan-400",
     ghost:
-      "bg-transparent hover:bg-[#111d38]/80 text-slate-400 hover:text-white border border-transparent focus:ring-slate-500",
+      "bg-transparent hover:bg-white/10 text-slate-300 hover:text-white border border-transparent focus:ring-slate-400",
   }[variant];
 
   return (
@@ -59,7 +59,9 @@ export const Button: React.FC<ButtonProps> = ({
         icon && iconPosition === "left" && <span className="shrink-0">{icon}</span>
       )}
       <span>{children}</span>
-      {!loading && icon && iconPosition === "right" && <span className="shrink-0">{icon}</span>}
+      {!loading && icon && iconPosition === "right" && (
+        <span className="shrink-0">{icon}</span>
+      )}
     </button>
   );
 };

@@ -1,5 +1,8 @@
 # Institutional Campus Placement Eligibility & Scheduling Engine
 
+[![Author: Deepesh-art-sec](https://img.shields.io/badge/Author-Deepesh--art--sec-00F0FF?style=for-the-badge&logo=github&logoColor=white)](https://github.com/deepesh-art-sec)
+[![Watermark: Made by Deepesh-art-sec](https://img.shields.io/badge/Watermark-Made%20by%20Deepesh--art--sec-7928CA?style=for-the-badge&logo=shield&logoColor=white)](https://github.com/deepesh-art-sec)
+[![License: MIT Attribution](https://img.shields.io/badge/License-MIT%20Attribution-blue?style=for-the-badge&logo=opensourceinitiative&logoColor=white)](LICENSE)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.115+-009688.svg?style=flat-square&logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com)
 [![React 18](https://img.shields.io/badge/React-18.3-61DAFB.svg?style=flat-square&logo=react&logoColor=black)](https://reactjs.org/)
 [![Vite 6](https://img.shields.io/badge/Vite-6.0-646CFF.svg?style=flat-square&logo=vite&logoColor=white)](https://vitejs.dev/)
@@ -10,6 +13,12 @@
 [![Hugging Face Space](https://img.shields.io/badge/🤗_Hugging_Face-Live_Demo-blue.svg?style=flat-square)](https://huggingface.co/spaces/deeep-sec/campus-placement-engine-demo)
 [![Tests Passing](https://img.shields.io/badge/Tests-149_Passing-10B981.svg?style=flat-square)](#verification--testing)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg?style=flat-square)](LICENSE)
+
+> [!IMPORTANT]
+> ### 🛡️ Author Provenance & Watermark: Made by Deepesh-art-sec
+> **Architecture, discrete constraint solvers, AST rule evaluators, NLP extraction pipelines, and complete application design are engineered and authored by [Deepesh-art-sec](https://github.com/deepesh-art-sec).**
+> 
+> *The author watermark `Made by Deepesh-art-sec` is permanently anchored across all application layouts, UI watermarks, API response headers (`X-Author`, `X-Watermark`), database schemas, and documentation. Removal or obscuration of this watermark in any public deployment, fork, or derivative distribution is strictly prohibited under the attribution license.*
 
 An institutional-grade campus recruitment operations and scheduling engine designed for collegiate Training & Placement Cells (TPO) and enterprise recruitment. Coordinates recruitment drives, thousands of student academic profiles, institutional multi-offer policies, and conflict-free interview scheduling. **Deployable anywhere**: publicly on cloud platforms (Hugging Face Spaces, Docker containers, cloud VMs) as well as private institutional networks with complete data sovereignty and privacy.
 
@@ -256,6 +265,22 @@ python scripts/benchmark_scheduler.py
 
 ---
 
-## License
+## License & Author Attribution
 
-This project is licensed under the [MIT License](LICENSE).
+This project is licensed under the [MIT License](LICENSE) with attribution and watermark preservation requirements.
+
+---
+
+<div align="center">
+
+### ⚡ Designed & Engineered by [Deepesh-art-sec](https://github.com/deepesh-art-sec)
+
+**Placement Engine** • Institutional Campus Recruitment SaaS Suite  
+Copyright © 2026 [Deepesh-art-sec](https://github.com/deepesh-art-sec). All Rights Reserved.
+
+[![GitHub Profile](https://img.shields.io/badge/GitHub-Deepesh--art--sec-181717?style=flat-square&logo=github&logoColor=white)](https://github.com/deepesh-art-sec)
+[![Repository](https://img.shields.io/badge/Repository-Campus--Placement--engine-blue?style=flat-square&logo=git&logoColor=white)](https://github.com/deepesh-art-sec/Campus-Placement-engine)
+
+`Permanent Watermark Anchor: Made by Deepesh-art-sec`
+
+</div>

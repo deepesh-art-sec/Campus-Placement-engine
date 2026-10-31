@@ -29,6 +29,7 @@ from backend.app.scheduler.models import ScheduledItem
 from backend.app.storage.database import get_db
 from backend.app.storage.models.entities import (
     CompanyExportMappingModel,
+    DriveAttendanceModel,
     DriveModel,
     EligibilityDecisionModel,
     SlotModel,
@@ -207,7 +208,7 @@ def export_company_format(
     students = [student_entity_to_domain(s) for s in student_entities]
 
     # Fetch slots
-    slots = db.execute(select(SlotModel).where(SlotModel.drive_id == drive_id)).scalars().all()
+    slots = db.execute(select(SlotModel).options(selectinload(SlotModel.room)).where(SlotModel.drive_id == drive_id)).scalars().all()
     scheduled_items = [
         ScheduledItem(
             schedule_id="sch_1",
@@ -377,6 +378,124 @@ def export_drive_schedule(
 
 
 # -----------------------------------------------------------------------------
+
+
+# -----------------------------------------------------------------------------
+# 3b. Drive Attendance Export (CSV)
+# -----------------------------------------------------------------------------
+
+@router.get("/attendance/{drive_id}/csv")
+@export_alias_router.get("/attendance/{drive_id}/csv")
+def export_drive_attendance_csv(
+    drive_id: str,
+    current_user: UserModel = Depends(require_officer_or_coordinator),
+    db: Session = Depends(get_db),
+) -> Response:
+    """Exports candidate attendance sheet for a drive as CSV."""
+    stmt_drv = select(DriveModel).where(DriveModel.id == drive_id)
+    drive_entity = db.execute(stmt_drv).scalar_one_or_none()
+    if not drive_entity:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Drive not found.")
+
+    clean_comp = drive_entity.company_name.replace(" ", "_")
+    slots = db.execute(select(SlotModel).options(selectinload(SlotModel.room)).where(SlotModel.drive_id == drive_id)).scalars().all()
+    attendance_records = db.execute(select(DriveAttendanceModel).where(DriveAttendanceModel.drive_id == drive_id)).scalars().all()
+    att_map = {f"{a.student_id}_{a.room_name}": a for a in attendance_records}
+    students_cache = {s.id: s for s in db.execute(select(StudentModel)).scalars().all()}
+
+    output = io.StringIO()
+    writer = csv.writer(output)
+    writer.writerow([
+        "Drive ID",
+        "Company Name",
+        "Drive Date",
+        "Student ID",
+        "Roll Number",
+        "Candidate Name",
+        "Branch",
+        "CGPA",
+        "Assigned Room / Cabin",
+        "Reporting Time",
+        "Attendance Status",
+        "Marked By",
+        "Marked At",
+        "Floor Notes",
+    ])
+
+    exported_count = 0
+    if slots:
+        for slot in slots:
+            stu = students_cache.get(slot.student_id)
+            r_name = slot.room.name if (slot.room and slot.room.name) else "Cabin 1"
+            att = att_map.get(f"{slot.student_id}_{r_name}")
+            writer.writerow([
+                drive_entity.id,
+                drive_entity.company_name,
+                drive_entity.drive_date.isoformat() if drive_entity.drive_date else "",
+                slot.student_id,
+                stu.roll_no if stu else slot.student_id,
+                stu.name if stu else "Candidate",
+                stu.branch if stu else "Engineering",
+                f"{stu.cgpa:.2f}" if (stu and stu.cgpa is not None) else "N/A",
+                r_name,
+                slot.start_time.strftime("%H:%M") if slot.start_time else "09:00",
+                att.status.upper() if att else "PENDING",
+                att.marked_by if att else "",
+                att.marked_at.isoformat() if (att and att.marked_at) else "",
+                att.notes if att else "",
+            ])
+            exported_count += 1
+    else:
+        decs = db.execute(
+            select(EligibilityDecisionModel).where(
+                EligibilityDecisionModel.drive_id == drive_id,
+                EligibilityDecisionModel.status == "eligible"
+            )
+        ).scalars().all()
+        student_ids = [d.student_id for d in decs] or list(students_cache.keys())[:30]
+        for sid in student_ids:
+            stu = students_cache.get(sid)
+            if not stu:
+                continue
+            r_name = "Placement Floor / Cabin 1"
+            att = att_map.get(f"{stu.id}_{r_name}")
+            writer.writerow([
+                drive_entity.id,
+                drive_entity.company_name,
+                drive_entity.drive_date.isoformat() if drive_entity.drive_date else "",
+                stu.id,
+                stu.roll_no,
+                stu.name,
+                stu.branch,
+                f"{stu.cgpa:.2f}" if stu.cgpa is not None else "N/A",
+                r_name,
+                "09:00",
+                att.status.upper() if att else "PENDING",
+                att.marked_by if att else "",
+                att.marked_at.isoformat() if (att and att.marked_at) else "",
+                att.notes if att else "",
+            ])
+            exported_count += 1
+
+    AuditService.record_export(
+        db=db,
+        actor=current_user.username,
+        export_type="DRIVE_ATTENDANCE_CSV",
+        company_id=drive_entity.company_id,
+        candidate_count=exported_count,
+    )
+
+    return Response(
+        content=output.getvalue(),
+        media_type="text/csv",
+        headers={
+            "Content-Disposition": f'attachment; filename="{clean_comp}_attendance_roster.csv"',
+            "Access-Control-Expose-Headers": "Content-Disposition",
+            "Cache-Control": "no-cache, no-store, must-revalidate",
+        },
+    )
+
+
 # 4. Student Master Roster Export (CSV)
 # -----------------------------------------------------------------------------
 
@@ -473,7 +592,7 @@ def export_recruiter_roster(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Drive not found.")
 
     students = [student_entity_to_domain(s) for s in db.execute(select(StudentModel).limit(30)).scalars().all()]
-    slots = db.execute(select(SlotModel).where(SlotModel.drive_id == drive_id)).scalars().all()
+    slots = db.execute(select(SlotModel).options(selectinload(SlotModel.room)).where(SlotModel.drive_id == drive_id)).scalars().all()
     scheduled_items = [
         ScheduledItem(
             schedule_id="sch_1",

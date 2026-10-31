@@ -1,6 +1,8 @@
 {
   "name": "campus-placement-engine",
   "version": "1.0.0",
+  "author": "Deepesh-art-sec (https://github.com/deepesh-art-sec)",
+  "homepage": "https://github.com/deepesh-art-sec/Campus-Placement-engine",
   "private": true,
   "scripts": {
     "build": "cd frontend && npm install && npm run build",

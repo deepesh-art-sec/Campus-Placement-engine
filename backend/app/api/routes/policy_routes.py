@@ -28,7 +28,6 @@ from backend.app.domain.models import Drive
 from backend.app.domain.policy.catalog import (
     PROGRESSIVE_MULTIPLIER_POLICY,
     STRICT_ONE_OFFER_POLICY,
-    TIERED_QUOTA_POLICY,
 )
 from backend.app.domain.policy.checker import policy_check
 from backend.app.domain.policy.models import CollegeOfferPolicy, PolicyCheckStatus, ThresholdBasis
@@ -68,7 +67,6 @@ def list_policies(
     catalog = [
         STRICT_ONE_OFFER_POLICY.model_dump(),
         PROGRESSIVE_MULTIPLIER_POLICY.model_dump(),
-        TIERED_QUOTA_POLICY.model_dump(),
     ]
     return catalog
 
@@ -125,8 +123,7 @@ def activate_policy(
         _active_policy = STRICT_ONE_OFFER_POLICY
     elif policy_id == PROGRESSIVE_MULTIPLIER_POLICY.id:
         _active_policy = PROGRESSIVE_MULTIPLIER_POLICY
-    elif policy_id == TIERED_QUOTA_POLICY.id:
-        _active_policy = TIERED_QUOTA_POLICY
+
     else:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Policy '{policy_id}' not found.")
 
@@ -190,7 +187,6 @@ def simulate_policy_check(
         catalog = {
             STRICT_ONE_OFFER_POLICY.id: STRICT_ONE_OFFER_POLICY,
             PROGRESSIVE_MULTIPLIER_POLICY.id: PROGRESSIVE_MULTIPLIER_POLICY,
-            TIERED_QUOTA_POLICY.id: TIERED_QUOTA_POLICY,
         }
         policy = catalog.get(req.policy_id, _active_policy)
     else:

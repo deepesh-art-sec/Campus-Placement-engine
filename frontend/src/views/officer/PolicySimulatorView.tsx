@@ -164,15 +164,6 @@ export const PolicySimulatorView: React.FC = () => {
       setIsInclusive(true);
       setCountOffCampus(true);
       setCoolingDays(0);
-    } else if (presetId === "policy-003-tiered-quota") {
-      setMaxTotalOffers(3);
-      setMaxDreamOffers(2);
-      setDreamThreshold(8.0);
-      setAllowUpgrade(true);
-      setUpgradeMultiplier(1.0);
-      setIsInclusive(true);
-      setCountOffCampus(false);
-      setCoolingDays(0);
     }
   };
 
@@ -303,8 +294,7 @@ export const PolicySimulatorView: React.FC = () => {
             >
               <option value="policy-001-strict-one-offer">Policy 1: Strict One-Offer (Dream &gt;= 10 LPA)</option>
               <option value="policy-002-progressive-multiplier">Policy 2: Progressive 1.5x Multiplier (Max 2 Offers)</option>
-              <option value="policy-003-tiered-quota">Policy 3: Tier-Based Quota (Standard, Dream, Super-Dream)</option>
-            </select>
+                          </select>
           </div>
         </div>
 
